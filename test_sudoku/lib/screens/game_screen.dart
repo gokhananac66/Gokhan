@@ -99,6 +99,8 @@ class _GameScreenState extends State<GameScreen> {
       case 'Orta': return tr('medium');
       case 'Zor': return tr('hard');
       case 'Uzman': return tr('expert');
+      case 'Usta': return tr('master');
+      case 'Ekstrem': return tr('extreme');
       default: return key;
     }
   }
@@ -224,11 +226,13 @@ class _GameScreenState extends State<GameScreen> {
 
   int _getEmptyCells() {
     switch (widget.difficulty) {
-      case 'Kolay': return 30;
-      case 'Orta': return 40;
-      case 'Zor': return 50;
-      case 'Uzman': return 55;
-      default: return 40;
+      case 'Kolay': return 37;
+      case 'Orta': return 48;
+      case 'Zor': return 54;
+      case 'Uzman': return 58;
+      case 'Usta': return 61;
+      case 'Ekstrem': return 64;
+      default: return 48;
     }
   }
 
@@ -236,19 +240,17 @@ class _GameScreenState extends State<GameScreen> {
     // Zorluk seviyesine göre max hata sayısını ayarla
     switch (widget.difficulty) {
       case 'Kolay':
-        maxErrors = 10;
-        break;
       case 'Orta':
-        maxErrors = 8;
-        break;
       case 'Zor':
-        maxErrors = 6;
-        break;
       case 'Uzman':
         maxErrors = 5;
         break;
+      case 'Usta':
+      case 'Ekstrem':
+        maxErrors = 3;
+        break;
       default:
-        maxErrors = 8;
+        maxErrors = 5;
     }
 
     solution = List.generate(9, (_) => List.filled(9, 0));

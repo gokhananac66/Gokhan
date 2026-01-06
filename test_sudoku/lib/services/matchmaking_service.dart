@@ -435,19 +435,25 @@ class MatchmakingService {
     int emptyCells;
     switch (difficulty) {
       case 'Kolay':
-        emptyCells = 30;
+        emptyCells = 37;
         break;
       case 'Orta':
-        emptyCells = 40;
+        emptyCells = 48;
         break;
       case 'Zor':
-        emptyCells = 50;
+        emptyCells = 54;
         break;
       case 'Uzman':
-        emptyCells = 55;
+        emptyCells = 58;
+        break;
+      case 'Usta':
+        emptyCells = 61;
+        break;
+      case 'Ekstrem':
+        emptyCells = 64;
         break;
       default:
-        emptyCells = 40;
+        emptyCells = 48;
     }
 
     List<int> board = List.from(solution);

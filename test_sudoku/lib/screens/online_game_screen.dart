@@ -70,19 +70,17 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   void _setMaxErrors() {
     switch (widget.difficulty) {
       case 'Kolay':
-        maxErrors = 10;
-        break;
       case 'Orta':
-        maxErrors = 8;
-        break;
       case 'Zor':
-        maxErrors = 6;
-        break;
       case 'Uzman':
         maxErrors = 5;
         break;
+      case 'Usta':
+      case 'Ekstrem':
+        maxErrors = 3;
+        break;
       default:
-        maxErrors = 8;
+        maxErrors = 5;
     }
   }
 
