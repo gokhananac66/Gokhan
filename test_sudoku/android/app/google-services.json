@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "528775542030",
+    "firebase_url": "https://multiplayer-sudoku-v1-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "multiplayer-sudoku-v1",
+    "storage_bucket": "multiplayer-sudoku-v1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528775542030:android:53e361ad46533f4ef1d35f",
+        "android_client_info": {
+          "package_name": "com.example.test_sudoku"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528775542030-naenn3n7ctanm62ee7eci3am3t4vfpfq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOtlKQIPfNCjuzLYdbdhtIeoSBXRHWZWw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528775542030-naenn3n7ctanm62ee7eci3am3t4vfpfq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "528775542030-nuset0i0fi2uomoeasu8p194su0a1tor.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sudokuclash.sudoku"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528775542030:android:60423a96888847fcf1d35f",
+        "android_client_info": {
+          "package_name": "com.sudokuclash.sudoku_clash"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528775542030-naenn3n7ctanm62ee7eci3am3t4vfpfq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOtlKQIPfNCjuzLYdbdhtIeoSBXRHWZWw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528775542030-naenn3n7ctanm62ee7eci3am3t4vfpfq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "528775542030-nuset0i0fi2uomoeasu8p194su0a1tor.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sudokuclash.sudoku"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,578 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../services/friend_service.dart';
+import '../services/game_invite_service.dart';
+import '../app_localizations.dart';
+import 'online_game_screen.dart';
+
+class FriendsScreen extends StatefulWidget {
+  final String difficulty;
+
+  const FriendsScreen({
+    super.key,
+    required this.difficulty,
+  });
+
+  @override
+  State<FriendsScreen> createState() => _FriendsScreenState();
+}
+
+class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateMixin {
+  final _friendService = FriendService();
+  final _inviteService = GameInviteService();
+  final _database = FirebaseDatabase.instance.ref();
+
+  List<FriendData> _friends = [];
+  List<FriendRequest> _friendRequests = [];
+  bool _isLoading = true;
+  String? _pendingInviteId;
+  String? _pendingInviteTarget;
+  String? _pendingGameId;
+  int _inviteCountdown = 30;
+  Timer? _countdownTimer;
+
+  StreamSubscription? _friendRequestsSubscription;
+  StreamSubscription? _friendsSubscription;
+
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAnimations();
+    _loadData();
+    _setupInviteListeners();
+    _setupRealtimeListeners();
+    _friendService.setOnlineStatus(true);
+  }
+
+  void _initAnimations() {
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _friendRequestsSubscription?.cancel();
+    _friendsSubscription?.cancel();
+    _pulseController.dispose();
+    _countdownTimer?.cancel();
+    _inviteService.dispose();
+    _friendService.dispose();
+    super.dispose();
+  }
+
+  void _setupRealtimeListeners() {
+    _friendRequestsSubscription = _friendService.watchFriendRequests().listen(
+          (requests) {
+        if (mounted) setState(() => _friendRequests = requests);
+      },
+      onError: (e) => print('Friend requests stream error: $e'),
+    );
+
+    _friendsSubscription = _friendService.watchFriends().listen(
+          (friends) {
+        if (mounted) {
+          setState(() {
+            _friends = friends;
+            _isLoading = false;
+          });
+        }
+      },
+      onError: (e) => print('Friends stream error: $e'),
+    );
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final friends = await _friendService.getFriends();
+      final requests = await _friendService.getFriendRequests();
+
+      setState(() {
+        _friends = friends;
+        _friendRequests = requests;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading data: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _setupInviteListeners() {
+    _inviteService.listenToIncomingInvites((invite) {
+      _showIncomingInviteDialog(invite);
+    });
+
+    _inviteService.onInviteStatusChanged = (inviteId, status) {
+      if (_pendingInviteId == inviteId) {
+        _countdownTimer?.cancel();
+
+        if (status == 'rejected') {
+          setState(() {
+            _pendingInviteId = null;
+            _pendingInviteTarget = null;
+            _pendingGameId = null;
+          });
+          _showSnackBar(tr('inviteRejected'), Colors.orange);
+        } else if (status == 'expired') {
+          setState(() {
+            _pendingInviteId = null;
+            _pendingInviteTarget = null;
+            _pendingGameId = null;
+          });
+          _showSnackBar(tr('inviteExpired'), Colors.grey);
+        } else if (status == 'accepted' && _pendingGameId != null) {
+          _navigateToGame(_pendingGameId!, isPlayer1: true);
+        }
+      }
+    };
+
+    _inviteService.onGameStart = (gameId) async {
+      _countdownTimer?.cancel();
+      setState(() {
+        _pendingInviteId = null;
+        _pendingInviteTarget = null;
+        _pendingGameId = null;
+      });
+
+      await _navigateToGame(gameId, isPlayer1: true);
+    };
+  }
+
+  Future<void> _navigateToGame(String gameId, {required bool isPlayer1}) async {
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OnlineGameScreen(
+            gameId: gameId,
+            isPlayer1: isPlayer1,
+            difficulty: widget.difficulty,
+            startsFirst: isPlayer1,
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showAddFriendDialog() {
+    final controller = TextEditingController();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.blue.shade100, shape: BoxShape.circle),
+                child: Icon(Icons.person_add, color: Colors.blue.shade700),
+              ),
+              const SizedBox(width: 12),
+              Text(tr('addFriend')),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(tr('enterFriendNickname'), style: TextStyle(color: Colors.grey.shade600)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: tr('nickname'),
+                  prefixIcon: const Icon(Icons.alternate_email),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
+                textCapitalization: TextCapitalization.none,
+                autocorrect: false,
+                enabled: !isLoading,
+              ),
+              if (isLoading) ...[
+                const SizedBox(height: 16),
+                const CircularProgressIndicator(),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: Text(tr('cancel')),
+            ),
+            ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                if (controller.text.trim().isEmpty) return;
+                setDialogState(() => isLoading = true);
+                final result = await _friendService.sendFriendRequest(controller.text.trim());
+                setDialogState(() => isLoading = false);
+                Navigator.pop(context);
+                _showSnackBar(result.message, result.success ? Colors.green : Colors.red);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(tr('sendRequest'), style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showIncomingInviteDialog(GameInvite invite) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.green.shade100, shape: BoxShape.circle),
+              child: Icon(Icons.sports_esports, color: Colors.green.shade700),
+            ),
+            const SizedBox(width: 12),
+            Text(tr('gameInvite')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${invite.fromNickname} ${tr('invitesYouToPlay')}', style: const TextStyle(fontSize: 16), textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(20)),
+              child: Text('${tr('difficulty')}: ${invite.difficulty}', style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _inviteService.rejectInvite(invite.id);
+              Navigator.pop(context);
+            },
+            child: Text(tr('reject'), style: const TextStyle(color: Colors.red)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final gameId = await _inviteService.getGameIdFromInvite(invite.id);
+              if (gameId == null) {
+                _showSnackBar(tr('inviteExpired'), Colors.orange);
+                return;
+              }
+              final success = await _inviteService.acceptInvite(invite.id);
+              if (success) {
+                await _navigateToGame(gameId, isPlayer1: false);
+              } else {
+                _showSnackBar(tr('inviteExpired'), Colors.orange);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: Text(tr('accept'), style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendGameInvite(FriendData friend) async {
+    final result = await _inviteService.sendInvite(
+      targetUid: friend.uid,
+      targetNickname: friend.nickname,
+      difficulty: widget.difficulty,
+    );
+
+    if (result.success) {
+      setState(() {
+        _pendingInviteId = result.inviteId;
+        _pendingInviteTarget = friend.nickname;
+        _pendingGameId = result.gameId;
+        _inviteCountdown = 30;
+      });
+
+      _countdownTimer?.cancel();
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() => _inviteCountdown--);
+        if (_inviteCountdown <= 0) {
+          timer.cancel();
+          setState(() {
+            _pendingInviteId = null;
+            _pendingInviteTarget = null;
+            _pendingGameId = null;
+          });
+        }
+      });
+
+      _showSnackBar('${tr('inviteSentTo')} ${friend.nickname}', Colors.green);
+    } else {
+      _showSnackBar(result.message, Colors.red);
+    }
+  }
+
+  Future<void> _cancelPendingInvite() async {
+    if (_pendingInviteId != null) {
+      await _inviteService.cancelInvite(_pendingInviteId!);
+      _countdownTimer?.cancel();
+      setState(() {
+        _pendingInviteId = null;
+        _pendingInviteTarget = null;
+        _pendingGameId = null;
+      });
+    }
+  }
+
+  Future<void> _acceptFriendRequest(FriendRequest request) async {
+    final success = await _friendService.acceptFriendRequest(request.uid);
+    if (success) {
+      _showSnackBar('${request.nickname} ${tr('addedAsFriend')}', Colors.green);
+    }
+  }
+
+  Future<void> _rejectFriendRequest(FriendRequest request) async {
+    await _friendService.rejectFriendRequest(request.uid);
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: Text(tr('friends')),
+        elevation: 0,
+        actions: [
+          IconButton(icon: const Icon(Icons.person_add_rounded), onPressed: _showAddFriendDialog),
+          IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _loadData),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+        onRefresh: _loadData,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.sports_esports, color: Colors.green.shade700),
+                  const SizedBox(width: 12),
+                  Text('${tr('difficulty')}: ${widget.difficulty}', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            if (_pendingInviteId != null) _buildPendingInviteCard(),
+            if (_friendRequests.isNotEmpty) ...[
+              _buildSectionHeader(tr('friendRequests'), Icons.mail_rounded, Colors.orange, badge: _friendRequests.length),
+              const SizedBox(height: 12),
+              ..._friendRequests.map(_buildFriendRequestCard),
+              const SizedBox(height: 24),
+            ],
+            _buildSectionHeader(tr('onlineFriends'), Icons.circle, Colors.green, badge: _friends.where((f) => f.online).length),
+            const SizedBox(height: 12),
+            if (_friends.where((f) => f.online).isEmpty)
+              _buildEmptyOnlineState()
+            else
+              ..._friends.where((f) => f.online).map(_buildFriendCard3D),
+            const SizedBox(height: 24),
+            if (_friends.where((f) => !f.online).isNotEmpty) ...[
+              _buildSectionHeader(tr('offlineFriends'), Icons.circle_outlined, Colors.grey),
+              const SizedBox(height: 12),
+              ..._friends.where((f) => !f.online).map(_buildFriendCard3D),
+            ],
+            if (_friends.isEmpty) _buildEmptyState(),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPendingInviteCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600]),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 50, height: 50, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${tr('waitingFor')} $_pendingInviteTarget...', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('${_inviteCountdown}s', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
+              ],
+            ),
+          ),
+          TextButton(onPressed: _cancelPendingInvite, child: Text(tr('cancel'), style: const TextStyle(color: Colors.white))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color, {int? badge}) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 8),
+        Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+        if (badge != null && badge > 0) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+            child: Text('$badge', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFriendRequestCard(FriendRequest request) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.orange.shade200)),
+      child: Row(
+        children: [
+          CircleAvatar(backgroundColor: Colors.orange.shade100, child: Text(request.nickname.isNotEmpty ? request.nickname[0].toUpperCase() : '?', style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold))),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(request.nickname, style: const TextStyle(fontWeight: FontWeight.bold)), Text(tr('wantsToBeYourFriend'), style: TextStyle(fontSize: 12, color: Colors.grey.shade600))])),
+          IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => _acceptFriendRequest(request)),
+          IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () => _rejectFriendRequest(request)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFriendCard3D(FriendData friend) {
+    final isOnline = friend.online;
+    final isPending = _pendingInviteTarget == friend.nickname;
+
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {},
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: isOnline ? [const Color(0xFF1DB954), const Color(0xFF1ED760)] : [const Color(0xFF2D2D2D), const Color(0xFF1A1A1A)]),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    _buildAvatar(friend, isOnline),
+                    const SizedBox(width: 16),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(friend.nickname, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Row(children: [_buildLevelBadge(friend.level), const SizedBox(width: 8), Text(isOnline ? tr('online') : friend.lastSeenText, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12))])])),
+                    if (isOnline && !isPending) _buildInviteButton(friend) else if (isPending) const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAvatar(FriendData friend, bool isOnline) {
+    return Stack(
+      children: [
+        Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.3), width: 2)), child: Center(child: Text(friend.nickname.isNotEmpty ? friend.nickname[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)))),
+        Positioned(right: 0, bottom: 0, child: Container(width: 16, height: 16, decoration: BoxDecoration(color: isOnline ? Colors.green : Colors.grey, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)))),
+      ],
+    );
+  }
+
+  Widget _buildLevelBadge(int level) {
+    Color badgeColor = level <= 20 ? Colors.brown : level <= 40 ? Colors.grey : level <= 60 ? Colors.amber : level <= 80 ? Colors.cyan : Colors.purple;
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: badgeColor.withOpacity(0.3), borderRadius: BorderRadius.circular(8), border: Border.all(color: badgeColor, width: 1)), child: Text('Lv.$level', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)));
+  }
+
+  Widget _buildInviteButton(FriendData friend) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _sendGameInvite(friend),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFF6B35), Color(0xFFFF8C42)]), borderRadius: BorderRadius.circular(12)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.sports_esports, color: Colors.white, size: 18), const SizedBox(width: 6), Text(tr('invite'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))]),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyOnlineState() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(16)),
+      child: Column(children: [Icon(Icons.person_off, size: 48, color: Colors.grey.shade400), const SizedBox(height: 12), Text(tr('noOnlineFriends'), style: TextStyle(color: Colors.grey.shade600))]),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle), child: Icon(Icons.people_outline, size: 64, color: Colors.blue.shade300)),
+          const SizedBox(height: 24),
+          Text(tr('noFriendsYet'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+          const SizedBox(height: 8),
+          Text(tr('addFriendsToPlay'), style: TextStyle(color: Colors.grey.shade500), textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(onPressed: _showAddFriendDialog, icon: const Icon(Icons.person_add), label: Text(tr('addFriend')), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+        ],
+      ),
+    );
+  }
+}
