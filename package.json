@@ -1,0 +1,22 @@
+{
+  "name": "sudoku-clash",
+  "version": "1.0.0",
+  "description": "A modern, interactive web-based Sudoku game with competitive features",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000"
+  },
+  "keywords": [
+    "sudoku",
+    "game",
+    "puzzle",
+    "web-game",
+    "javascript"
+  ],
+  "author": "gokhananac66",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gokhananac66/sudoku_clash.git"
+  }
+}
