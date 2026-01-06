@@ -432,12 +432,17 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _gameSubscription?.cancel();
 
     String winner = widget.isPlayer1 ? player2Name : player1Name;
+
+    // Firebase'e oyun sonu bilgisini yaz
     await _database.child('games/${widget.gameId}').update({
       'status': 'finished',
       'winner': winner,
       'winReason': 'abandoned',
       'finishedAt': ServerValue.timestamp,
     });
+
+    // Firebase'in update'i yayması için kısa bir bekleme
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (mounted) Navigator.pop(context);
   }
