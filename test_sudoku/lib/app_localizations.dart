@@ -192,6 +192,10 @@ class AppLocalizations {
       'lbAllTime': 'All Time',
       'noScoresYet': 'No scores yet',
       'yourRank': 'Your Rank',
+
+      // Progression
+      'win': 'win',
+      'more': 'more',
     },
     'tr': {
       // Genel
@@ -336,6 +340,10 @@ class AppLocalizations {
       'lbAllTime': 'Tüm Zamanlar',
       'noScoresYet': 'Henüz skor yok',
       'yourRank': 'Sıralaman',
+
+      // Progression
+      'win': 'kazanma',
+      'more': 'daha',
     },
   };
 

@@ -6,6 +6,7 @@ import 'dart:math';
 import 'dart:convert';
 import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
+import '../services/progression_service.dart';
 
 enum GameMode { single, multiplayer }
 
@@ -420,6 +421,9 @@ class _GameScreenState extends State<GameScreen> {
       String bestScoreKey = 'bestScore${widget.difficulty}';
       int bestScore = prefs.getInt(bestScoreKey) ?? 0;
       if (score > bestScore) await prefs.setInt(bestScoreKey, score);
+
+      // Progression system - zorluk seviyesi kazanma sayısını artır
+      await ProgressionService.incrementWins(widget.difficulty);
     } else {
       await prefs.setInt('gamesLost', gamesLost + 1);
     }

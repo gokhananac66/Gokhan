@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../services/leaderboard_service.dart';
+import '../services/progression_service.dart';
 import '../widgets/game_result_dialog.dart';
 
 class OnlineGameScreen extends StatefulWidget {
@@ -359,6 +360,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           scoreEarned: iWon ? myScore : 0,
         );
         print('✅ Leaderboard submission SUCCESS!');
+
+        // Progression system - kazanıldıysa zorluk seviyesi kazanma sayısını artır
+        if (iWon) {
+          await ProgressionService.incrementWins(widget.difficulty);
+          print('📈 Progression updated for difficulty: ${widget.difficulty}');
+        }
       } catch (e) {
         print('❌ Leaderboard submission ERROR: $e');
       }

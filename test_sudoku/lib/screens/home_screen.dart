@@ -6,6 +6,7 @@ import 'settings_screen.dart';
 import 'lobby_screen.dart';
 import 'friends_screen.dart';
 import '../app_localizations.dart';
+import '../services/progression_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': tr('medium'), 'key': 'Orta', 'emoji': '😐', 'description': tr('mediumDesc')},
     {'name': tr('hard'), 'key': 'Zor', 'emoji': '😣', 'description': tr('hardDesc')},
     {'name': tr('expert'), 'key': 'Uzman', 'emoji': '🤯', 'description': tr('expertDesc')},
+    {'name': tr('master'), 'key': 'Usta', 'emoji': '🔥', 'description': tr('masterDesc')},
+    {'name': tr('extreme'), 'key': 'Ekstrem', 'emoji': '💀', 'description': tr('extremeDesc')},
   ];
 
   @override
@@ -68,6 +71,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Orta': return tr('medium');
       case 'Zor': return tr('hard');
       case 'Uzman': return tr('expert');
+      case 'Usta': return tr('master');
+      case 'Ekstrem': return tr('extreme');
       default: return key;
     }
   }
@@ -389,36 +394,68 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isSelected = currentSelection == diff['key'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return InkWell(
-      onTap: () => onSelect(diff['key']),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade50 : (isDark ? Colors.grey.shade800 : Colors.transparent),
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(color: Colors.blue.shade200, width: 2)
-              : Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200, width: 1),
-        ),
-        child: Row(
-          children: [
-            Text(diff['emoji'], style: const TextStyle(fontSize: 28)),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(diff['name'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isSelected ? Colors.blue.shade700 : null)),
-                  Text(diff['description'], style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                ],
+    return FutureBuilder<bool>(
+      future: ProgressionService.isLocked(diff['key']),
+      builder: (context, snapshot) {
+        final isLocked = snapshot.data ?? false;
+
+        return FutureBuilder<int>(
+          future: isLocked ? ProgressionService.getRemainingWinsToUnlock(diff['key']) : Future.value(0),
+          builder: (context, remainingSnapshot) {
+            final remaining = remainingSnapshot.data ?? 0;
+            final unlockInfo = ProgressionService.getUnlockInfo(diff['key']);
+
+            return Opacity(
+              opacity: isLocked ? 0.5 : 1.0,
+              child: InkWell(
+                onTap: isLocked ? null : () => onSelect(diff['key']),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.blue.shade50 : (isDark ? Colors.grey.shade800 : Colors.transparent),
+                    borderRadius: BorderRadius.circular(12),
+                    border: isSelected
+                        ? Border.all(color: Colors.blue.shade200, width: 2)
+                        : Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200, width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(diff['emoji'], style: const TextStyle(fontSize: 28)),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(diff['name'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isSelected ? Colors.blue.shade700 : null)),
+                                if (isLocked) ...[
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.lock, size: 16, color: Colors.grey.shade600),
+                                ],
+                              ],
+                            ),
+                            if (isLocked && unlockInfo != null)
+                              Text(
+                                '${_getLocalizedDifficulty(unlockInfo['previousLevel'])} ${tr('win')} $remaining ${tr('more')}',
+                                style: TextStyle(fontSize: 12, color: Colors.orange.shade700, fontWeight: FontWeight.w500),
+                              )
+                            else
+                              Text(diff['description'], style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                          ],
+                        ),
+                      ),
+                      if (isSelected && !isLocked) Icon(Icons.check_circle, color: Colors.blue.shade600),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            if (isSelected) Icon(Icons.check_circle, color: Colors.blue.shade600),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
