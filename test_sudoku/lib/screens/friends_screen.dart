@@ -97,17 +97,36 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     setState(() => _isLoading = true);
 
     try {
-      final friends = await _friendService.getFriends();
-      final requests = await _friendService.getFriendRequests();
+      // 10 saniyelik timeout ekle
+      final friends = await _friendService.getFriends().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('getFriends timeout!');
+          return [];
+        },
+      );
 
-      setState(() {
-        _friends = friends;
-        _friendRequests = requests;
-        _isLoading = false;
-      });
+      final requests = await _friendService.getFriendRequests().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('getFriendRequests timeout!');
+          return [];
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _friends = friends;
+          _friendRequests = requests;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error loading data: $e');
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnackBar('Bağlantı hatası! Lütfen internet bağlantınızı kontrol edin.', Colors.red);
+      }
     }
   }
 

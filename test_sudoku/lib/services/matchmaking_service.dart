@@ -85,7 +85,7 @@ class MatchmakingService {
       final myLeague = RankCalculator.getLeagueFromLevel(myLevel);
       _myLeague = RankCalculator.getLeagueKey(myLeague);
 
-      print('Starting matchmaking - uid: $uid, nickname: $myNickname, level: $myLevel, league: $_myLeague');
+      print('Starting matchmaking - uid: $uid, nickname: $myNickname, level: $myLevel, league: $_myLeague, gameMode: $gameMode');
 
       // Kendi ligimin kuyruğuna ekle
       _myQueueKey = uid; // UID'yi key olarak kullan (duplicate önleme)
@@ -192,8 +192,12 @@ class MatchmakingService {
           // Aynı zorluk seviyesinde mi
           if (data['difficulty'] != difficulty) continue;
 
-          // Aynı oyun modunda mı
-          if (data['gameMode'] != gameMode) continue;
+          // Aynı oyun modunda mı (null ise classic kabul et)
+          final queueGameMode = data['gameMode'] ?? 'classic';
+          if (queueGameMode != gameMode) {
+            print('Skipping opponent - gameMode mismatch: $queueGameMode != $gameMode');
+            continue;
+          }
 
           // Level farkı kontrolü (±15 seviye)
           final opponentLevel = data['level'] ?? 1;
