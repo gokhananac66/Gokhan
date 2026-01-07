@@ -293,30 +293,38 @@ class FriendService {
   /// Kullanıcı online mı kontrol et
   Future<bool> _isUserOnline(String uid) async {
     try {
-      final presenceSnapshot = await _ref.child('presence/$uid').get();
-      if (presenceSnapshot.exists && presenceSnapshot.value != null) {
-        final data = Map<String, dynamic>.from(presenceSnapshot.value as Map);
-        final online = data['online'] == true;
-        final lastSeen = data['lastSeen'] as int?;
-
-        if (lastSeen != null) {
-          final diff = DateTime.now().millisecondsSinceEpoch - lastSeen;
-          if (diff < 120000) return true;
-        }
-        if (online) return true;
-      }
-
+      // Önce users path'ini kontrol et (daha güvenilir)
       final userSnapshot = await _ref.child('users/$uid').get();
       if (userSnapshot.exists && userSnapshot.value != null) {
         final data = Map<String, dynamic>.from(userSnapshot.value as Map);
-        final online = data['isOnline'] == true;
+
+        // Boolean tip kontrolü - Firebase bazen string olarak dönebilir
+        final isOnline = data['isOnline'];
+        final online = (isOnline == true || isOnline == 'true');
+        final lastSeen = data['lastSeen'] as int?;
+
+        // Son görülme 3 dakikadan yeniyse online kabul et
+        if (lastSeen != null) {
+          final diff = DateTime.now().millisecondsSinceEpoch - lastSeen;
+          if (diff < 180000) return true; // 3 dakika
+        }
+
+        if (online) return true;
+      }
+
+      // Alternatif olarak presence path'ini kontrol et
+      final presenceSnapshot = await _ref.child('presence/$uid').get();
+      if (presenceSnapshot.exists && presenceSnapshot.value != null) {
+        final data = Map<String, dynamic>.from(presenceSnapshot.value as Map);
+        final isOnline = data['online'];
+        final online = (isOnline == true || isOnline == 'true');
         final lastSeen = data['lastSeen'] as int?;
 
         if (lastSeen != null) {
           final diff = DateTime.now().millisecondsSinceEpoch - lastSeen;
-          if (diff < 120000) return true;
+          if (diff < 180000) return true; // 3 dakika
         }
-        return online;
+        if (online) return true;
       }
 
       return false;
