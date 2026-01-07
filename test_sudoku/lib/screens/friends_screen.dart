@@ -756,7 +756,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _sendInvite(friend),
+          onTap: () => _sendGameInvite(friend),
           borderRadius: BorderRadius.circular(12),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),

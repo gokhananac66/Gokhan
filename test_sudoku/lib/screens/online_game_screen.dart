@@ -641,7 +641,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     required int errors,
     required bool isMyTurn,
     required bool isMe,
-    required Color color,
+    required MaterialColor color,
     required bool isDark,
   }) {
     final progress = (maxErrors - errors) / maxErrors;
