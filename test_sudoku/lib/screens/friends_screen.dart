@@ -2,17 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/friend_service.dart';
 import '../services/game_invite_service.dart';
+import '../services/difficulty_calculator.dart';
 import '../app_localizations.dart';
 import 'online_game_screen.dart';
 
 class FriendsScreen extends StatefulWidget {
-  final String difficulty;
-
   const FriendsScreen({
     super.key,
-    required this.difficulty,
   });
 
   @override
@@ -298,10 +297,30 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   Future<void> _sendGameInvite(FriendData friend) async {
+    // 1. Get current user level
+    final prefs = await SharedPreferences.getInstance();
+    final myLevel = prefs.getInt('level') ?? 1;
+
+    // 2. Check level difference (max ±20)
+    if (!DifficultyCalculator.isLevelDifferenceAcceptable(myLevel, friend.level, isFriend: true)) {
+      final diff = DifficultyCalculator.getLevelDifference(myLevel, friend.level);
+      _showSnackBar('Level farkı çok büyük! (Fark: $diff, Max: 20)', Colors.red);
+      return;
+    }
+
+    // 3. Calculate automatic difficulty
+    final autoDifficulty = DifficultyCalculator.calculateDifficulty(myLevel, friend.level);
+
+    // 4. Show game mode selection dialog
+    final gameMode = await _showGameModeDialog(friend, autoDifficulty);
+    if (gameMode == null) return; // User cancelled
+
+    // 5. Send invite with auto difficulty and selected gameMode
     final result = await _inviteService.sendInvite(
       targetUid: friend.uid,
       targetNickname: friend.nickname,
-      difficulty: widget.difficulty,
+      difficulty: autoDifficulty,
+      gameMode: gameMode,
     );
 
     if (result.success) {
@@ -775,6 +794,154 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Mod seçim dialog'u - Classic vs Race
+  Future<String?> _showGameModeDialog(FriendData friend, String difficulty) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.sports_esports, color: Colors.green.shade700, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Oyun Modu Seç', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('${friend.nickname} ile oynamak için', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Auto difficulty badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome, size: 14, color: Colors.orange.shade700),
+                    const SizedBox(width: 4),
+                    Text('Otomatik Zorluk: $difficulty', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange.shade800)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Classic Mode
+              _buildModeOption(
+                icon: Icons.sports_esports,
+                title: '⚔️ Klasik Mod',
+                description: 'Sırayla hamle yapın, 30 saniye turlar',
+                color: Colors.blue,
+                onTap: () => Navigator.pop(context, 'classic'),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 12),
+
+              // Race Mode
+              _buildModeOption(
+                icon: Icons.speed,
+                title: '🏁 Race Mod',
+                description: 'Ayrı tahtalar, ilk bitiren kazanır',
+                color: Colors.purple,
+                onTap: () => Navigator.pop(context, 'race'),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+
+              // Cancel button
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('İptal', style: TextStyle(color: Colors.grey.shade600)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeOption({
+    required IconData icon,
+    required String title,
+    required String description,
+    required Color color,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.8), color],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(description, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12)),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.white.withOpacity(0.8), size: 18),
+            ],
           ),
         ),
       ),

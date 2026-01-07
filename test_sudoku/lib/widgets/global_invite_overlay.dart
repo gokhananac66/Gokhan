@@ -163,10 +163,38 @@ class _GlobalInviteOverlayState extends State<GlobalInviteOverlay> with SingleTi
                 ],
               ),
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)),
-                child: Text('Zorluk: ${_currentInvite?.difficulty ?? "Orta"}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)),
+                    child: Text('${_currentInvite?.difficulty ?? "Orta"}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _currentInvite?.gameMode == 'race' ? Colors.purple : Colors.blue,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _currentInvite?.gameMode == 'race' ? Icons.speed : Icons.sports_esports,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _currentInvite?.gameMode == 'race' ? 'Race' : 'Klasik',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Row(

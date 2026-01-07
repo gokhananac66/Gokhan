@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         } else {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => FriendsScreen(difficulty: tempDifficulty)),
+                            MaterialPageRoute(builder: (context) => const FriendsScreen()),
                           );
                         }
                       },

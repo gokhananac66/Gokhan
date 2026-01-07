@@ -76,6 +76,12 @@
         ".read": "auth != null",
         ".write": "auth != null"
       }
+    },
+    "invite_blocks": {
+      "$blockKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
     }
   }
 }

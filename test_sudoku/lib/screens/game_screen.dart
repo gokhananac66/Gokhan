@@ -8,7 +8,7 @@ import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
 
-enum GameMode { single, multiplayer }
+enum GameMode { single, multiplayer, race }
 
 class GameScreen extends StatefulWidget {
   final GameMode gameMode;

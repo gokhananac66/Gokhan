@@ -10,6 +10,7 @@ class GameInvite {
   final String fromNickname;
   final String toUid;
   final String difficulty;
+  final String gameMode; // 'classic' or 'race'
   final String status;
   final DateTime createdAt;
   String? gameId;
@@ -20,6 +21,7 @@ class GameInvite {
     required this.fromNickname,
     required this.toUid,
     required this.difficulty,
+    required this.gameMode,
     required this.status,
     required this.createdAt,
     this.gameId,
@@ -112,6 +114,7 @@ class GameInviteService {
         fromNickname: fromNickname,
         toUid: uid,
         difficulty: data['difficulty']?.toString() ?? 'Orta',
+        gameMode: data['gameMode']?.toString() ?? 'classic',
         status: 'pending',
         createdAt: createdAt != null
             ? DateTime.fromMillisecondsSinceEpoch(createdAt)
@@ -152,6 +155,7 @@ class GameInviteService {
     required String targetUid,
     required String targetNickname,
     required String difficulty,
+    String gameMode = 'classic', // 'classic' or 'race'
   }) async {
     final uid = currentUserId;
     if (uid == null) {
@@ -192,6 +196,7 @@ class GameInviteService {
         'toUid': targetUid,
         'toNickname': targetNickname,
         'difficulty': difficulty,
+        'gameMode': gameMode, // 'classic' or 'race'
         'status': 'pending',
         'gameId': gameId, // OYUN ID'Sİ ZATEN MEVCUT
         'createdAt': ServerValue.timestamp,
