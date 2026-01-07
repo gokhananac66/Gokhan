@@ -306,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showDifficultyDialog({required bool isRandom}) {
     String tempDifficulty = selectedDifficulty;
+    String tempGameMode = 'classic'; // Default to classic
 
     showDialog(
       context: context,
@@ -335,9 +336,82 @@ class _HomeScreenState extends State<HomeScreen> {
                     isRandom ? tr('randomOpponent') : tr('playWithFriend'),
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 4),
-                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+
+                  // Game Mode Selection (only for random)
+                  if (isRandom) ...[
+                    const SizedBox(height: 20),
+                    Text('Oyun Modu Seç', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setDialogState(() => tempGameMode = 'classic'),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: tempGameMode == 'classic'
+                                    ? [Color(0xFF2196F3), Color(0xFF1976D2)]
+                                    : [Colors.grey.shade300, Colors.grey.shade400],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: tempGameMode == 'classic' ? Colors.blue.shade700 : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.sports_esports, color: Colors.white, size: 32),
+                                  const SizedBox(height: 8),
+                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  Text('Sırayla', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                  Text('30s turlar', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setDialogState(() => tempGameMode = 'race'),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: tempGameMode == 'race'
+                                    ? [Color(0xFF9C27B0), Color(0xFF7B1FA2)]
+                                    : [Colors.grey.shade300, Colors.grey.shade400],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: tempGameMode == 'race' ? Colors.purple.shade700 : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.speed, color: Colors.white, size: 32),
+                                  const SizedBox(height: 8),
+                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  Text('Aynı anda', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: 20),
+                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
                   ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
                     setDialogState(() => tempDifficulty = selected);
                   })),
@@ -352,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (isRandom) {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => LobbyScreen(difficulty: tempDifficulty)),
+                            MaterialPageRoute(builder: (context) => LobbyScreen(difficulty: tempDifficulty, gameMode: tempGameMode)),
                           );
                         } else {
                           Navigator.push(

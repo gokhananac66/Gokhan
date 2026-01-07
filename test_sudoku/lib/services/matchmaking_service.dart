@@ -52,6 +52,7 @@ class MatchmakingService {
     required Function(MatchResult) onMatch,
     required Function() onTimeoutCallback,
     Function(int)? onWaitTime,
+    String gameMode = 'classic',
   }) async {
     final uid = currentUserId;
     if (uid == null) return;
@@ -94,6 +95,7 @@ class MatchmakingService {
         'level': myLevel,
         'winRate': myWinRate,
         'difficulty': difficulty,
+        'gameMode': gameMode,
         'timestamp': ServerValue.timestamp,
         'matched': false,
         'gameId': null,
@@ -189,6 +191,9 @@ class MatchmakingService {
           // Aynı zorluk seviyesinde mi
           if (data['difficulty'] != difficulty) continue;
 
+          // Aynı oyun modunda mı
+          if (data['gameMode'] != gameMode) continue;
+
           // Level farkı kontrolü (±15 seviye)
           final opponentLevel = data['level'] ?? 1;
           final levelDifference = (myLevel - opponentLevel).abs();
@@ -214,6 +219,7 @@ class MatchmakingService {
             myNickname: myNickname,
             myLevel: myLevel,
             difficulty: difficulty,
+            gameMode: gameMode,
           );
 
           if (matchResult != null) {
@@ -247,6 +253,7 @@ class MatchmakingService {
     required String myNickname,
     required int myLevel,
     required String difficulty,
+    required String gameMode,
   }) async {
     try {
       // Rakibin kaydını transaction ile kilitle
@@ -279,6 +286,7 @@ class MatchmakingService {
       // Transaction başarılı, oyun oluştur
       final gameId = await _createGame(
         difficulty: difficulty,
+        gameMode: gameMode,
         player1Uid: myUid,
         player1Name: myNickname,
         player1Level: myLevel,
@@ -360,6 +368,7 @@ class MatchmakingService {
   /// Oyun oluştur
   Future<String?> _createGame({
     required String difficulty,
+    required String gameMode,
     required String player1Uid,
     required String player1Name,
     required int player1Level,
@@ -376,7 +385,7 @@ class MatchmakingService {
         'board': puzzleData['board'],
         'solution': puzzleData['solution'],
         'difficulty': difficulty,
-        'gameMode': 'classic', // Random matchmaking always uses Classic mode
+        'gameMode': gameMode, // Use selected game mode
         'player1Uid': player1Uid,
         'player2Uid': player2Uid,
         'player1Name': player1Name,

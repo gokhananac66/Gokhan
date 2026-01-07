@@ -6,10 +6,12 @@ import 'online_game_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   final String difficulty;
+  final String gameMode;
 
   const LobbyScreen({
     super.key,
     required this.difficulty,
+    this.gameMode = 'classic',
   });
 
   @override
@@ -62,6 +64,7 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
   Future<void> _startMatchmaking() async {
     await _matchmakingService.startMatchmaking(
       difficulty: widget.difficulty,
+      gameMode: widget.gameMode,
       onMatch: (result) async {
         if (!mounted) return;
 
