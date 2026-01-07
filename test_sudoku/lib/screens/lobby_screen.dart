@@ -62,10 +62,14 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
   }
 
   Future<void> _startMatchmaking() async {
-    await _matchmakingService.startMatchmaking(
-      difficulty: widget.difficulty,
-      gameMode: widget.gameMode,
-      onMatch: (result) async {
+    print('🔴 [LOBBY] Starting matchmaking with difficulty: ${widget.difficulty}, gameMode: ${widget.gameMode}');
+
+    try {
+      await _matchmakingService.startMatchmaking(
+        difficulty: widget.difficulty,
+        gameMode: widget.gameMode,
+        onMatch: (result) async {
+          print('🟢 [LOBBY] Match found! gameId: ${result.gameId}');
         if (!mounted) return;
 
         setState(() {
@@ -98,6 +102,7 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
         });
       },
       onTimeoutCallback: () {
+        print('🟡 [LOBBY] Matchmaking timeout');
         if (!mounted) return;
 
         setState(() {
@@ -116,7 +121,35 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
           if (mounted) Navigator.pop(context);
         });
       },
+      onWaitTime: (seconds) {
+        // Her 2 saniyede log at
+        if (seconds % 10 == 0) {
+          print('🔵 [LOBBY] Waiting for $seconds seconds...');
+        }
+      },
     );
+    } catch (e, stackTrace) {
+      print('❌ [LOBBY] Error starting matchmaking: $e');
+      print('Stack trace: $stackTrace');
+
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+          _statusText = 'Bağlantı hatası';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Matchmaking başlatılamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) Navigator.pop(context);
+        });
+      }
+    }
   }
 
   void _cancelSearch() {
