@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/friend_service.dart';
 import '../services/game_invite_service.dart';
 import '../services/difficulty_calculator.dart';
+import '../services/invite_cooldown_service.dart';
 import '../app_localizations.dart';
 import 'online_game_screen.dart';
 
@@ -21,6 +22,7 @@ class FriendsScreen extends StatefulWidget {
 class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateMixin {
   final _friendService = FriendService();
   final _inviteService = GameInviteService();
+  final _cooldownService = InviteCooldownService();
   final _database = FirebaseDatabase.instance.ref();
 
   List<FriendData> _friends = [];
@@ -425,22 +427,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.sports_esports, color: Colors.green.shade700),
-                  const SizedBox(width: 12),
-                  Text('${tr('difficulty')}: ${widget.difficulty}', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
             if (_pendingInviteId != null) _buildPendingInviteCard(),
             if (_friendRequests.isNotEmpty) ...[
               _buildSectionHeader(tr('friendRequests'), Icons.mail_rounded, Colors.orange, badge: _friendRequests.length),
