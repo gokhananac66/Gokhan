@@ -196,6 +196,30 @@ class AppLocalizations {
       // Progression
       'win': 'win',
       'more': 'more',
+
+      // Profile
+      'notSpecified': 'Not set yet',
+      'personalInfo': 'Personal Information',
+      'fullName': 'Full Name',
+      'enterFullName': 'Enter your full name',
+      'birthDate': 'Birth Date',
+      'selectBirthDate': 'Select Birth Date',
+      'age': 'Age',
+      'yearsOld': 'years old',
+      'country': 'Country',
+      'selectCountry': 'Select Country',
+      'signOut': 'Sign Out',
+      'addNickname': 'Add Nickname',
+      'enterNickname': 'Enter nickname',
+      'nicknameSaved': 'Nickname saved!',
+      'nameSaved': 'Name saved!',
+      'nicknameEmpty': 'Nickname cannot be empty',
+      'nicknameShort': 'Nickname must be at least 3 characters',
+      'nicknameLong': 'Nickname must be maximum 15 characters',
+      'nicknameChars': 'Nickname can only contain letters, numbers and underscore',
+      'nicknameTaken': 'This nickname is already taken',
+      'googlePhoto': 'Using Google profile photo',
+      'guestUser': 'Guest User',
     },
     'tr': {
       // Genel
@@ -344,6 +368,30 @@ class AppLocalizations {
       // Progression
       'win': 'kazanma',
       'more': 'daha',
+
+      // Profil
+      'notSpecified': 'Henüz belirlenmedi',
+      'personalInfo': 'Kişisel Bilgiler',
+      'fullName': 'İsim Soyisim',
+      'enterFullName': 'İsim soyisminizi girin',
+      'birthDate': 'Doğum Tarihi',
+      'selectBirthDate': 'Doğum Tarihi Seç',
+      'age': 'Yaş',
+      'yearsOld': 'yaşında',
+      'country': 'Ülke',
+      'selectCountry': 'Ülke Seç',
+      'signOut': 'Çıkış Yap',
+      'addNickname': 'Kullanıcı Adı Ekle',
+      'enterNickname': 'Kullanıcı adı girin',
+      'nicknameSaved': 'Kullanıcı adı kaydedildi!',
+      'nameSaved': 'İsim kaydedildi!',
+      'nicknameEmpty': 'Kullanıcı adı boş olamaz',
+      'nicknameShort': 'Kullanıcı adı en az 3 karakter olmalı',
+      'nicknameLong': 'Kullanıcı adı en fazla 15 karakter olmalı',
+      'nicknameChars': 'Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir',
+      'nicknameTaken': 'Bu kullanıcı adı zaten kullanılıyor',
+      'googlePhoto': 'Google profil fotoğrafı kullanılıyor',
+      'guestUser': 'Misafir Kullanıcı',
     },
   };
 
