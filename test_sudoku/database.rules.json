@@ -1,0 +1,62 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "games": {
+      "$gameId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "matchmaking": {
+      "$league": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["difficulty", "timestamp", "matched"]
+      }
+    },
+    "leaderboard": {
+      "multiplayer": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["level", "totalScore", "winRate"]
+      },
+      "daily": {
+        "$date": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".indexOn": ["level", "totalScore"]
+        }
+      },
+      "weekly": {
+        "$week": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".indexOn": ["level", "totalScore"]
+        }
+      }
+    },
+    "friends": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "friendRequests": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "profiles": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}
