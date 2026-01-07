@@ -487,32 +487,173 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   Widget _buildFriendCard3D(FriendData friend) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isOnline = friend.online;
     final isPending = _pendingInviteTarget == friend.nickname;
+
+    // League color
+    Color getLeagueColor() {
+      if (friend.level <= 20) return const Color(0xFFCD7F32); // Bronze
+      if (friend.level <= 40) return const Color(0xFFC0C0C0); // Silver
+      if (friend.level <= 60) return const Color(0xFFFFD700); // Gold
+      if (friend.level <= 80) return const Color(0xFF00CED1); // Platinum
+      return const Color(0xFF9400D3); // Diamond
+    }
+
+    final leagueColor = getLeagueColor();
 
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 16),
           child: Material(
             color: Colors.transparent,
+            elevation: 0,
             child: InkWell(
               onTap: () {},
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: isOnline ? [const Color(0xFF1DB954), const Color(0xFF1ED760)] : [const Color(0xFF2D2D2D), const Color(0xFF1A1A1A)]),
+                  gradient: LinearGradient(
+                    colors: isOnline
+                      ? [leagueColor.withOpacity(0.3), leagueColor.withOpacity(0.15)]
+                      : isDark
+                        ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
+                        : [Colors.white, Colors.grey.shade50],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    _buildAvatar(friend, isOnline),
-                    const SizedBox(width: 16),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(friend.nickname, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Row(children: [_buildLevelBadge(friend.level), const SizedBox(width: 8), Text(isOnline ? tr('online') : friend.lastSeenText, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12))])])),
-                    if (isOnline && !isPending) _buildInviteButton(friend) else if (isPending) const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                  border: Border.all(
+                    color: isOnline ? leagueColor : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                    width: isOnline ? 2.5 : 1.5,
+                  ),
+                  boxShadow: isOnline ? [
+                    BoxShadow(
+                      color: leagueColor.withOpacity(0.4),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ] : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
                   ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
+                    children: [
+                      // Animated background pulse for online friends
+                      if (isOnline)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  leagueColor.withOpacity(0.2 * _pulseAnimation.value),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            // Avatar
+                            _buildModernAvatar(friend, isOnline, leagueColor, isDark),
+                            const SizedBox(width: 16),
+
+                            // Info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Nickname
+                                  Text(
+                                    friend.nickname,
+                                    style: TextStyle(
+                                      color: isOnline
+                                        ? Colors.white
+                                        : (isDark ? Colors.white : Colors.black87),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+
+                                  // Level & Status
+                                  Row(
+                                    children: [
+                                      _buildModernLevelBadge(friend.level, leagueColor, isOnline),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: isOnline ? Colors.greenAccent : Colors.grey,
+                                                shape: BoxShape.circle,
+                                                boxShadow: isOnline ? [
+                                                  BoxShadow(
+                                                    color: Colors.greenAccent.withOpacity(0.6),
+                                                    blurRadius: 6,
+                                                    spreadRadius: 1,
+                                                  ),
+                                                ] : null,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              child: Text(
+                                                isOnline ? tr('online') : friend.lastSeenText,
+                                                style: TextStyle(
+                                                  color: isOnline
+                                                    ? Colors.white.withOpacity(0.9)
+                                                    : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Action button
+                            if (isOnline && !isPending)
+                              _buildModernInviteButton(friend)
+                            else if (isPending)
+                              const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -522,18 +663,122 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildAvatar(FriendData friend, bool isOnline) {
-    return Stack(
-      children: [
-        Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.3), width: 2)), child: Center(child: Text(friend.nickname.isNotEmpty ? friend.nickname[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)))),
-        Positioned(right: 0, bottom: 0, child: Container(width: 16, height: 16, decoration: BoxDecoration(color: isOnline ? Colors.green : Colors.grey, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)))),
-      ],
+  Widget _buildModernAvatar(FriendData friend, bool isOnline, Color leagueColor, bool isDark) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isOnline
+            ? [leagueColor.withOpacity(0.8), leagueColor]
+            : isDark
+              ? [Colors.grey.shade700, Colors.grey.shade800]
+              : [Colors.grey.shade300, Colors.grey.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: isOnline ? leagueColor.withOpacity(0.4) : Colors.black.withOpacity(0.15),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          friend.nickname.isNotEmpty ? friend.nickname[0].toUpperCase() : '?',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildLevelBadge(int level) {
-    Color badgeColor = level <= 20 ? Colors.brown : level <= 40 ? Colors.grey : level <= 60 ? Colors.amber : level <= 80 ? Colors.cyan : Colors.purple;
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: badgeColor.withOpacity(0.3), borderRadius: BorderRadius.circular(8), border: Border.all(color: badgeColor, width: 1)), child: Text('Lv.$level', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)));
+  Widget _buildModernLevelBadge(int level, Color leagueColor, bool isOnline) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isOnline
+            ? [leagueColor.withOpacity(0.3), leagueColor.withOpacity(0.15)]
+            : [Colors.grey.withOpacity(0.2), Colors.grey.withOpacity(0.1)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isOnline ? leagueColor : Colors.grey,
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.stars_rounded,
+            color: isOnline ? Colors.white : Colors.grey.shade600,
+            size: 14,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$level',
+            style: TextStyle(
+              color: isOnline ? Colors.white : Colors.grey.shade700,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernInviteButton(FriendData friend) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4CAF50).withOpacity(0.4),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _sendInvite(friend),
+          borderRadius: BorderRadius.circular(12),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 6),
+                Text(
+                  'DAVET',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildInviteButton(FriendData friend) {
