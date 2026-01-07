@@ -174,6 +174,7 @@ class GameInviteService {
         'board': puzzleData['board'],
         'solution': puzzleData['solution'],
         'difficulty': difficulty,
+        'gameMode': gameMode, // 'classic' or 'race'
         'player1Uid': uid,
         'player2Uid': targetUid,
         'player1Name': myNickname,

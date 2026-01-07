@@ -189,10 +189,17 @@ class MatchmakingService {
           // Aynı zorluk seviyesinde mi
           if (data['difficulty'] != difficulty) continue;
 
+          // Level farkı kontrolü (±15 seviye)
+          final opponentLevel = data['level'] ?? 1;
+          final levelDifference = (myLevel - opponentLevel).abs();
+          if (levelDifference > 15) {
+            print('Skipping opponent - level difference too large: $levelDifference (my: $myLevel, opp: $opponentLevel)');
+            continue;
+          }
+
           // Rakip buldum! Ama önce Transaction ile kilitle
           final opponentUid = data['uid'];
           final opponentNickname = data['nickname'] ?? 'Rakip';
-          final opponentLevel = data['level'] ?? 1;
 
           print('Found potential opponent: $opponentNickname (Level $opponentLevel) in $leagueKey');
 
@@ -369,6 +376,7 @@ class MatchmakingService {
         'board': puzzleData['board'],
         'solution': puzzleData['solution'],
         'difficulty': difficulty,
+        'gameMode': 'classic', // Random matchmaking always uses Classic mode
         'player1Uid': player1Uid,
         'player2Uid': player2Uid,
         'player1Name': player1Name,

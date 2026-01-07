@@ -151,6 +151,19 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   Future<void> _navigateToGame(String gameId, {required bool isPlayer1}) async {
+    if (!mounted) return;
+
+    // Fetch game data to get difficulty and gameMode
+    final gameSnapshot = await FirebaseDatabase.instance.ref('games/$gameId').get();
+    if (!gameSnapshot.exists) {
+      _showSnackBar('Oyun bulunamadı!', Colors.red);
+      return;
+    }
+
+    final gameData = Map<String, dynamic>.from(gameSnapshot.value as Map);
+    final difficulty = gameData['difficulty'] ?? 'Orta';
+    final gameMode = gameData['gameMode'] ?? 'classic';
+
     if (mounted) {
       Navigator.push(
         context,
@@ -158,7 +171,8 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           builder: (_) => OnlineGameScreen(
             gameId: gameId,
             isPlayer1: isPlayer1,
-            difficulty: widget.difficulty,
+            difficulty: difficulty,
+            gameMode: gameMode,
             startsFirst: isPlayer1,
           ),
         ),
@@ -297,6 +311,17 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   Future<void> _sendGameInvite(FriendData friend) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    // 0. Check cooldown - 2 red = 1 minute ban
+    final canSend = await _cooldownService.canSendInvite(uid, friend.uid);
+    if (!canSend) {
+      final remainingSeconds = await _cooldownService.getRemainingCooldownSeconds(uid, friend.uid);
+      _showSnackBar('Bu kullanıcıya $remainingSeconds saniye sonra davet gönderebilirsiniz!', Colors.orange);
+      return;
+    }
+
     // 1. Get current user level
     final prefs = await SharedPreferences.getInstance();
     final myLevel = prefs.getInt('level') ?? 1;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../services/matchmaking_service.dart';
 import '../app_localizations.dart';
 import 'online_game_screen.dart';
@@ -61,13 +62,19 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
   Future<void> _startMatchmaking() async {
     await _matchmakingService.startMatchmaking(
       difficulty: widget.difficulty,
-      onMatch: (result) {
+      onMatch: (result) async {
         if (!mounted) return;
 
         setState(() {
           _isSearching = false;
           _statusText = tr('matchFound');
         });
+
+        // Fetch game data to get difficulty and gameMode
+        final gameSnapshot = await FirebaseDatabase.instance.ref('games/${result.gameId}').get();
+        final gameData = gameSnapshot.exists ? Map<String, dynamic>.from(gameSnapshot.value as Map) : null;
+        final difficulty = gameData?['difficulty'] ?? widget.difficulty;
+        final gameMode = gameData?['gameMode'] ?? 'classic';
 
         // Kısa bir gecikme sonra oyuna git
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -79,7 +86,8 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
               builder: (_) => OnlineGameScreen(
                 gameId: result.gameId!,
                 isPlayer1: result.isPlayer1,
-                difficulty: widget.difficulty,
+                difficulty: difficulty,
+                gameMode: gameMode,
                 startsFirst: result.isPlayer1,
               ),
             ),

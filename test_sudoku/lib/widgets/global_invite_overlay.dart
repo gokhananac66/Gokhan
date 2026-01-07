@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/game_invite_service.dart';
+import '../services/invite_cooldown_service.dart';
 
 class GlobalInviteOverlay extends StatefulWidget {
   final Widget child;
@@ -19,6 +20,8 @@ class GlobalInviteOverlay extends StatefulWidget {
 }
 
 class _GlobalInviteOverlayState extends State<GlobalInviteOverlay> with SingleTickerProviderStateMixin {
+  final _cooldownService = InviteCooldownService();
+
   GameInvite? _currentInvite;
   int _countdown = 30;
   Timer? _countdownTimer;
@@ -90,9 +93,13 @@ class _GlobalInviteOverlayState extends State<GlobalInviteOverlay> with SingleTi
     }
   }
 
-  void _rejectInvite() {
+  void _rejectInvite() async {
     if (_currentInvite != null) {
       final invite = _currentInvite!;
+
+      // Record rejection for cooldown tracking
+      await _cooldownService.recordRejection(invite.fromUid, invite.toUid);
+
       _dismissInvite();
       widget.onReject(invite);
     }

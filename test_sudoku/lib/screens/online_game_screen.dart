@@ -12,6 +12,7 @@ class OnlineGameScreen extends StatefulWidget {
   final String gameId;
   final bool isPlayer1;
   final String difficulty;
+  final String gameMode; // 'classic' or 'race'
   final bool startsFirst;
 
   const OnlineGameScreen({
@@ -19,6 +20,7 @@ class OnlineGameScreen extends StatefulWidget {
     required this.gameId,
     required this.isPlayer1,
     required this.difficulty,
+    this.gameMode = 'classic',
     required this.startsFirst,
   });
 
@@ -51,6 +53,18 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
   int seconds = 0;
   bool isPaused = false;
+
+  // Turn timer for Classic mode
+  int turnTimeRemaining = 30;
+  Timer? _turnTimer;
+  int _lastTurnNumber = 0;
+
+  // Combo and speed bonus tracking
+  int _consecutiveCorrect = 0;
+  int _player1ConsecutiveCorrect = 0;
+  int _player2ConsecutiveCorrect = 0;
+  DateTime? _lastMoveTime;
+  bool _firstMoveMade = false;
 
   bool soundEnabled = true;
   bool vibrationEnabled = true;
@@ -127,6 +141,11 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
     setState(() => _isLoading = false);
     _listenToGame();
+
+    // Start turn timer for Classic mode
+    if (widget.gameMode == 'classic') {
+      _startTurnTimer();
+    }
   }
 
   void _listenToGame() {
@@ -137,17 +156,27 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       if (!event.snapshot.exists || _gameEnded) return;
 
       final gameData = Map<String, dynamic>.from(event.snapshot.value as Map);
+      final newTurn = gameData['currentTurn'] ?? 1;
 
       setState(() {
         player1Score = gameData['player1Score'] ?? 0;
         player2Score = gameData['player2Score'] ?? 0;
         player1Errors = gameData['player1Errors'] ?? 0;
         player2Errors = gameData['player2Errors'] ?? 0;
-        currentTurn = gameData['currentTurn'] ?? 1;
 
         if (gameData['board'] != null) {
           List<int> flatBoard = List<int>.from(gameData['board']);
           board = List.generate(9, (i) => flatBoard.sublist(i * 9, (i + 1) * 9));
+        }
+
+        // Check if turn changed
+        if (currentTurn != newTurn) {
+          currentTurn = newTurn;
+          if (widget.gameMode == 'classic') {
+            _startTurnTimer();
+          }
+        } else {
+          currentTurn = newTurn;
         }
       });
 
@@ -179,6 +208,36 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
   void _vibrateHeavy() {
     if (vibrationEnabled) HapticFeedback.heavyImpact();
+  }
+
+  void _startTurnTimer() {
+    if (widget.gameMode != 'classic') return; // Only for Classic mode
+
+    _turnTimer?.cancel();
+    setState(() => turnTimeRemaining = 30);
+
+    _turnTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || _gameEnded) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() => turnTimeRemaining--);
+
+      if (turnTimeRemaining <= 0) {
+        timer.cancel();
+        _handleTurnTimeout();
+      }
+    });
+  }
+
+  Future<void> _handleTurnTimeout() async {
+    if (!isMyTurn || _gameEnded) return;
+
+    // Auto-switch turn on timeout
+    await _database.child('games/${widget.gameId}').update({
+      'currentTurn': widget.isPlayer1 ? 2 : 1,
+    });
   }
 
   bool get isMyTurn => widget.isPlayer1 ? currentTurn == 1 : currentTurn == 2;
@@ -237,12 +296,55 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       if (isCorrect) {
         String scoreKey = widget.isPlayer1 ? 'player1Score' : 'player2Score';
         int currentScore = widget.isPlayer1 ? player1Score : player2Score;
-        updates[scoreKey] = currentScore + 10;
+
+        // Calculate score with bonuses
+        int points = 10; // Base score
+
+        // First move bonus
+        if (!_firstMoveMade) {
+          points += 10;
+          _firstMoveMade = true;
+        }
+
+        // Speed bonus (move within 10 seconds)
+        final now = DateTime.now();
+        if (_lastMoveTime != null) {
+          final diff = now.difference(_lastMoveTime!).inSeconds;
+          if (diff <= 10) {
+            points += 50;
+          }
+        }
+        _lastMoveTime = now;
+
+        // Combo bonus (3+ consecutive correct moves)
+        _consecutiveCorrect++;
+        if (widget.isPlayer1) {
+          _player1ConsecutiveCorrect++;
+        } else {
+          _player2ConsecutiveCorrect++;
+        }
+
+        if (_consecutiveCorrect >= 3) {
+          points += 5;
+        }
+
+        updates[scoreKey] = currentScore + points;
 
         setState(() {
           board[row][col] = number;
           notes[row][col].clear();
         });
+
+        // Show bonus notification if earned
+        if (points > 10) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🎉 +$points puan! ${points > 50 ? 'Hızlı hareket!' : points > 15 ? 'Kombo!' : 'İlk hamle bonusu!'}'),
+              duration: const Duration(seconds: 1),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
 
         if (_checkWin()) {
           await _database.child('games/${widget.gameId}').update(updates);
@@ -251,6 +353,14 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         }
       } else {
         _vibrateHeavy();
+
+        // Reset combo on wrong move
+        _consecutiveCorrect = 0;
+        if (widget.isPlayer1) {
+          _player1ConsecutiveCorrect = 0;
+        } else {
+          _player2ConsecutiveCorrect = 0;
+        }
 
         String errorKey = widget.isPlayer1 ? 'player1Errors' : 'player2Errors';
         int currentErrors = widget.isPlayer1 ? player1Errors : player2Errors;
@@ -466,6 +576,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   @override
   void dispose() {
     _gameSubscription?.cancel();
+    _turnTimer?.cancel();
     super.dispose();
   }
 
@@ -614,6 +725,38 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                   ),
                   child: const Text('⚔️', style: TextStyle(fontSize: 16)),
                 ),
+                if (widget.gameMode == 'classic') ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: turnTimeRemaining <= 10 ? Colors.red.shade600 : Colors.blue.shade600,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (turnTimeRemaining <= 10 ? Colors.red : Colors.blue).withOpacity(0.3),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.timer, size: 14, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          '$turnTimeRemaining',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
