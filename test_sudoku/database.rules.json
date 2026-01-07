@@ -12,6 +12,13 @@
         ".write": "auth != null"
       }
     },
+    "game_invites": {
+      "$inviteId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["fromUid", "toUid", "status"]
+      }
+    },
     "matchmaking": {
       "$league": {
         ".read": "auth != null",
@@ -56,6 +63,18 @@
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "nicknames": {
+      "$nickname": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "presence": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     }
   }

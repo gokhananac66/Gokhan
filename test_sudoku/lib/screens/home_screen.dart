@@ -87,79 +87,46 @@ class _HomeScreenState extends State<HomeScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.person, color: Colors.blue.shade700, size: 32),
-                ),
-                const SizedBox(height: 12),
-                Text(tr('singlePlayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
-                const SizedBox(height: 20),
-                ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
-                  setDialogState(() => tempDifficulty = selected);
-                })),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() => selectedDifficulty = tempDifficulty);
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => GameScreen(
-                            gameMode: GameMode.single,
-                            difficulty: tempDifficulty,
-                            continueGame: false,
-                          ),
-                        ),
-                      ).then((_) => _checkSavedGame());
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade100,
+                      shape: BoxShape.circle,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.play_arrow, size: 28),
-                        const SizedBox(width: 8),
-                        Text(tr('newGame'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                    child: Icon(Icons.person, color: Colors.blue.shade700, size: 32),
                   ),
-                ),
-                if (_hasSavedGame) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+                  Text(tr('singlePlayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                  const SizedBox(height: 20),
+                  ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
+                    setDialogState(() => tempDifficulty = selected);
+                  })),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
+                        setState(() => selectedDifficulty = tempDifficulty);
                         Navigator.pop(context);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => GameScreen(
                               gameMode: GameMode.single,
-                              difficulty: _savedGameDifficulty,
-                              continueGame: true,
+                              difficulty: tempDifficulty,
+                              continueGame: false,
                             ),
                           ),
                         ).then((_) => _checkSavedGame());
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -167,20 +134,55 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.play_circle_outline, size: 28),
+                          const Icon(Icons.play_arrow, size: 28),
                           const SizedBox(width: 8),
-                          Text('${tr('continue')} (${_getLocalizedDifficulty(_savedGameDifficulty)})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(tr('newGame'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
                   ),
+                  if (_hasSavedGame) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GameScreen(
+                                gameMode: GameMode.single,
+                                difficulty: _savedGameDifficulty,
+                                continueGame: true,
+                              ),
+                            ),
+                          ).then((_) => _checkSavedGame());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.play_circle_outline, size: 28),
+                            const SizedBox(width: 8),
+                            Text('${tr('continue')} (${_getLocalizedDifficulty(_savedGameDifficulty)})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
+                  ),
                 ],
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -312,77 +314,79 @@ class _HomeScreenState extends State<HomeScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isRandom ? Colors.orange.shade100 : Colors.green.shade100,
-                    shape: BoxShape.circle,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isRandom ? Colors.orange.shade100 : Colors.green.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isRandom ? Icons.shuffle : Icons.people,
+                      color: isRandom ? Colors.orange.shade700 : Colors.green.shade700,
+                      size: 32,
+                    ),
                   ),
-                  child: Icon(
-                    isRandom ? Icons.shuffle : Icons.people,
-                    color: isRandom ? Colors.orange.shade700 : Colors.green.shade700,
-                    size: 32,
+                  const SizedBox(height: 12),
+                  Text(
+                    isRandom ? tr('randomOpponent') : tr('playWithFriend'),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isRandom ? tr('randomOpponent') : tr('playWithFriend'),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
-                const SizedBox(height: 20),
-                ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
-                  setDialogState(() => tempDifficulty = selected);
-                })),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() => selectedDifficulty = tempDifficulty);
-                      Navigator.pop(context);
+                  const SizedBox(height: 4),
+                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                  const SizedBox(height: 20),
+                  ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
+                    setDialogState(() => tempDifficulty = selected);
+                  })),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() => selectedDifficulty = tempDifficulty);
+                        Navigator.pop(context);
 
-                      if (isRandom) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => LobbyScreen(difficulty: tempDifficulty)),
-                        );
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => FriendsScreen(difficulty: tempDifficulty)),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isRandom ? Colors.orange : Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(isRandom ? Icons.search : Icons.people, size: 24),
-                        const SizedBox(width: 8),
-                        Text(
-                          isRandom ? tr('findOpponent') : tr('viewFriends'),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                        if (isRandom) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => LobbyScreen(difficulty: tempDifficulty)),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => FriendsScreen(difficulty: tempDifficulty)),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isRandom ? Colors.orange : Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(isRandom ? Icons.search : Icons.people, size: 24),
+                          const SizedBox(width: 8),
+                          Text(
+                            isRandom ? tr('findOpponent') : tr('viewFriends'),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
