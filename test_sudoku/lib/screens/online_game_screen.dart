@@ -492,7 +492,6 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         child: Column(
           children: [
             _buildTopBar(),
-            _buildTurnIndicator(),
             _buildScoreBar(),
             Expanded(
               child: Padding(
@@ -562,108 +561,73 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     );
   }
 
-  Widget _buildTurnIndicator() {
-    String turnText = isMyTurn ? '🎯 SENİN SIRAN!' : '⏳ Rakibin oynuyor...';
-    Color bgColor = isMyTurn ? Colors.green.shade100 : Colors.grey.shade200;
-    Color textColor = isMyTurn ? Colors.green.shade700 : Colors.grey.shade600;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      color: bgColor,
-      child: Text(
-        turnText,
-        textAlign: TextAlign.center,
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
-      ),
-    );
-  }
-
   Widget _buildScoreBar() {
     bool amIPlayer1 = widget.isPlayer1;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+            ? [Color(0xFF1E1E1E), Color(0xFF2D2D2D)]
+            : [Colors.grey.shade100, Colors.white],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
       child: Row(
         children: [
+          // Player 1 Card
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: (currentTurn == 1) ? Colors.green.shade100 : (amIPlayer1 ? Colors.blue.shade50 : Colors.white),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: (currentTurn == 1) ? Colors.green : (amIPlayer1 ? Colors.blue : Colors.grey.shade300),
-                  width: (currentTurn == 1) ? 2 : 1,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          player1Name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: (currentTurn == 1) ? Colors.green.shade700 : Colors.black87,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (amIPlayer1) const SizedBox(width: 4),
-                      if (amIPlayer1) const Text('(Sen)', style: TextStyle(fontSize: 10, color: Colors.blue)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text('$player1Score puan', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  Text('❌ $player1Errors / $maxErrors', style: TextStyle(fontSize: 11, color: Colors.red.shade400)),
-                ],
-              ),
+            child: _buildPlayerCard(
+              name: player1Name,
+              score: player1Score,
+              errors: player1Errors,
+              isMyTurn: currentTurn == 1,
+              isMe: amIPlayer1,
+              color: Colors.blue,
+              isDark: isDark,
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text('⚔️', style: TextStyle(fontSize: 20)),
-          ),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: (currentTurn == 2) ? Colors.green.shade100 : (!amIPlayer1 ? Colors.blue.shade50 : Colors.white),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: (currentTurn == 2) ? Colors.green : (!amIPlayer1 ? Colors.blue : Colors.grey.shade300),
-                  width: (currentTurn == 2) ? 2 : 1,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          player2Name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: (currentTurn == 2) ? Colors.green.shade700 : Colors.black87,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+
+          // VS Divider
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Colors.purple.shade400, Colors.pink.shade400],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: 1,
                       ),
-                      if (!amIPlayer1) const SizedBox(width: 4),
-                      if (!amIPlayer1) const Text('(Sen)', style: TextStyle(fontSize: 10, color: Colors.blue)),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text('$player2Score puan', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  Text('❌ $player2Errors / $maxErrors', style: TextStyle(fontSize: 11, color: Colors.red.shade400)),
-                ],
-              ),
+                  child: const Text('⚔️', style: TextStyle(fontSize: 16)),
+                ),
+              ],
+            ),
+          ),
+
+          // Player 2 Card
+          Expanded(
+            child: _buildPlayerCard(
+              name: player2Name,
+              score: player2Score,
+              errors: player2Errors,
+              isMyTurn: currentTurn == 2,
+              isMe: !amIPlayer1,
+              color: Colors.orange,
+              isDark: isDark,
             ),
           ),
         ],
@@ -671,21 +635,231 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     );
   }
 
+  Widget _buildPlayerCard({
+    required String name,
+    required int score,
+    required int errors,
+    required bool isMyTurn,
+    required bool isMe,
+    required Color color,
+    required bool isDark,
+  }) {
+    final progress = (maxErrors - errors) / maxErrors;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isMyTurn
+            ? [color.withOpacity(0.3), color.withOpacity(0.15)]
+            : isDark
+              ? [Colors.grey.shade800, Colors.grey.shade900]
+              : [Colors.white, Colors.grey.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isMyTurn ? color : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+          width: isMyTurn ? 3 : 1.5,
+        ),
+        boxShadow: isMyTurn ? [
+          BoxShadow(
+            color: color.withOpacity(0.4),
+            blurRadius: 12,
+            spreadRadius: 2,
+          ),
+        ] : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Avatar + Name
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [color.shade300, color.shade600],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    name.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: isMyTurn ? color.shade700 : (isDark ? Colors.white : Colors.black87),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (isMe)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'SEN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Score
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '⭐',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$score',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: isMyTurn ? color.shade700 : (isDark ? Colors.white : Colors.black87),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Progress Bar
+          Column(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                  valueColor: AlwaysStoppedAnimation(
+                    progress > 0.5 ? Colors.green : (progress > 0.25 ? Colors.orange : Colors.red),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '❌ $errors / $maxErrors',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+
+          // Turn Indicator
+          if (isMyTurn) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.shade300, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('💚', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Text(
+                    isMe ? 'SENDE!' : 'OYNUYOR',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildSudokuGrid() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, 2))],
+        color: isDark ? Color(0xFF2D2D2D) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
-          padding: const EdgeInsets.all(2),
+          padding: const EdgeInsets.all(8),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(12),
             child: Container(
-              decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 2)),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
+                  width: 2.5,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Column(
                 children: List.generate(9, (row) => Expanded(
                   child: Row(children: List.generate(9, (col) => Expanded(child: _buildCell(row, col)))),
@@ -699,37 +873,90 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   Widget _buildCell(int row, int col) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     bool isSelected = row == selectedRow && col == selectedCol;
     bool isOriginalCell = isOriginal[row][col];
     bool isWrong = board[row][col] != 0 && board[row][col] != solution[row][col] && !isOriginalCell;
     int value = board[row][col];
     Set<int> cellNotes = notes[row][col];
 
-    double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.5;
-    double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.5;
+    // Border widths for 3x3 blocks
+    double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
+    double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
+
+    // Colors
+    Color bgColor;
+    if (isWrong) {
+      bgColor = Colors.red.shade100;
+    } else if (isSelected) {
+      bgColor = isMyTurn
+        ? Colors.blue.shade100
+        : Colors.grey.shade300;
+    } else {
+      bgColor = isDark ? Color(0xFF2D2D2D) : Colors.white;
+    }
 
     return GestureDetector(
       onTap: () => _selectCell(row, col),
       child: Container(
+        margin: const EdgeInsets.all(0.5),
         decoration: BoxDecoration(
-          color: isSelected ? (isMyTurn ? Colors.green.shade100 : Colors.grey.shade200) : isWrong ? Colors.red.shade50 : Colors.white,
+          color: bgColor,
           border: Border(
-            top: BorderSide(color: Colors.grey.shade800, width: row == 0 ? 0 : 0.5),
-            left: BorderSide(color: Colors.grey.shade800, width: col == 0 ? 0 : 0.5),
-            right: BorderSide(color: (col == 2 || col == 5) ? Colors.black : Colors.grey.shade800, width: rightBorder),
-            bottom: BorderSide(color: (row == 2 || row == 5) ? Colors.black : Colors.grey.shade800, width: bottomBorder),
+            top: BorderSide(
+              color: row == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              width: 0,
+            ),
+            left: BorderSide(
+              color: col == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              width: 0,
+            ),
+            right: BorderSide(
+              color: (col == 2 || col == 5)
+                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
+                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+              width: rightBorder,
+            ),
+            bottom: BorderSide(
+              color: (row == 2 || row == 5)
+                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
+                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+              width: bottomBorder,
+            ),
           ),
         ),
         child: Center(
           child: value != 0
-              ? Text('$value', style: TextStyle(fontSize: 24, fontWeight: isOriginalCell ? FontWeight.bold : FontWeight.normal, color: isOriginalCell ? Colors.black87 : isWrong ? Colors.red : Colors.blue.shade700))
+              ? Text(
+                  '$value',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: isOriginalCell ? FontWeight.w700 : FontWeight.w500,
+                    color: isOriginalCell
+                        ? (isDark ? Colors.white : Colors.black87)
+                        : isWrong
+                            ? Colors.red.shade700
+                            : Colors.blue.shade600,
+                  ),
+                )
               : cellNotes.isNotEmpty
-              ? GridView.count(
-            crossAxisCount: 3,
-            padding: const EdgeInsets.all(2),
-            children: List.generate(9, (i) => Center(child: Text(cellNotes.contains(i + 1) ? '${i + 1}' : '', style: TextStyle(fontSize: 9, color: Colors.grey.shade600)))),
-          )
-              : null,
+                  ? GridView.count(
+                      crossAxisCount: 3,
+                      padding: const EdgeInsets.all(2),
+                      children: List.generate(
+                        9,
+                        (i) => Center(
+                          child: Text(
+                            cellNotes.contains(i + 1) ? '${i + 1}' : '',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
         ),
       ),
     );
