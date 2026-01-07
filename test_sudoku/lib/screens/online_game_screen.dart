@@ -691,7 +691,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: [color.shade300, color.shade600],
+                    colors: [color[300]!, color[600]!],
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -722,7 +722,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
-                        color: isMyTurn ? color.shade700 : (isDark ? Colors.white : Colors.black87),
+                        color: isMyTurn ? color[700]! : (isDark ? Colors.white : Colors.black87),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -764,7 +764,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: isMyTurn ? color.shade700 : (isDark ? Colors.white : Colors.black87),
+                  color: isMyTurn ? color[700]! : (isDark ? Colors.white : Colors.black87),
                 ),
               ),
             ],
