@@ -350,17 +350,20 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     print('I Won: $iWon');
     print('======================');
 
-    // KAZANAN İÇİN LEADERBOARD'A KAYDET
-    if (iWon && !isDraw) {
-      print('📊 Submitting to leaderboard with score: $myScore');
+    // LEADERBOARD'A KAYDET (Kazanan ve Kaybeden için)
+    if (!isDraw) {
+      print('📊 Submitting to leaderboard - Won: $iWon, Score: $myScore');
       try {
-        await LeaderboardService.submitMultiplayerWin(scoreEarned: myScore);
+        await LeaderboardService.submitGameResult(
+          won: iWon,
+          scoreEarned: iWon ? myScore : 0,
+        );
         print('✅ Leaderboard submission SUCCESS!');
       } catch (e) {
         print('❌ Leaderboard submission ERROR: $e');
       }
     } else {
-      print('⏭️ NOT submitting to leaderboard - iWon: $iWon, isDraw: $isDraw');
+      print('⏭️ Draw - NOT submitting to leaderboard');
     }
 
     _showWinDialog(winner, reason, iWon, isDraw);
