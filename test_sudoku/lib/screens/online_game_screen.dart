@@ -93,6 +93,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   Future<void> _loadGame() async {
+    print('🎮 Loading game with ID: ${widget.gameId}');
+    print('🎮 Am I Player1: ${widget.isPlayer1}');
+
     final gameSnapshot = await _database.child('games/${widget.gameId}').get();
 
     if (!gameSnapshot.exists) {
@@ -104,6 +107,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
     List<int> flatBoard = List<int>.from(gameData['board']);
     List<int> flatSolution = List<int>.from(gameData['solution']);
+
+    print('📊 Board first 9 cells: ${flatBoard.sublist(0, 9)}');
+    print('📊 Solution first 9 cells: ${flatSolution.sublist(0, 9)}');
 
     board = List.generate(9, (i) => flatBoard.sublist(i * 9, (i + 1) * 9));
     solution = List.generate(9, (i) => flatSolution.sublist(i * 9, (i + 1) * 9));
