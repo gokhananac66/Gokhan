@@ -11,7 +11,8 @@ class LeaderboardScreen extends StatefulWidget {
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
+class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   String _selectedTimeFilter = 'all';
   String? _selectedLeagueFilter;
   List<Map<String, dynamic>> _scores = [];
@@ -19,6 +20,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   int? _userRank;
   PlayerRank? _userRankInfo;
   final _currentUserId = FirebaseAuth.instance.currentUser?.uid;
+  String _currentMode = 'overall'; // 'classic', 'race', 'overall'
 
   final List<String> _avatars = ['😀', '😎', '🤓', '🦊', '🐱', '🐶', '🦁', '🐯', '🐻', '🐼', '🐨', '🐸', '🦄', '🐲', '👻', '🤖'];
 
@@ -34,8 +36,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      setState(() {
+        _currentMode = ['classic', 'race', 'overall'][_tabController.index];
+      });
+      _loadLeaderboard();
+    });
     _loadLeaderboard();
     _loadUserRankInfo();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserRankInfo() async {
@@ -46,8 +62,32 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Future<void> _loadLeaderboard() async {
     setState(() => _isLoading = true);
     try {
-      final scores = await LeaderboardService.getLeaderboard(_selectedTimeFilter, leagueFilter: _selectedLeagueFilter);
-      final userRank = await LeaderboardService.getUserRank(_selectedTimeFilter, leagueFilter: _selectedLeagueFilter);
+      List<Map<String, dynamic>> scores;
+
+      if (_currentMode == 'overall') {
+        // Overall mode - kullan mevcut sistemi
+        scores = await LeaderboardService.getLeaderboard(_selectedTimeFilter, leagueFilter: _selectedLeagueFilter);
+      } else {
+        // Classic veya Race mode - mod bazlı leaderboard
+        scores = await LeaderboardService.getModeLeaderboard(_currentMode, _selectedTimeFilter);
+
+        // League filter uygula
+        if (_selectedLeagueFilter != null) {
+          scores = scores.where((s) => s['league'] == _selectedLeagueFilter).toList();
+        }
+      }
+
+      // User rank hesapla
+      int? userRank;
+      if (_currentUserId != null) {
+        for (int i = 0; i < scores.length; i++) {
+          if (scores[i]['odaId'] == _currentUserId) {
+            userRank = i + 1;
+            break;
+          }
+        }
+      }
+
       setState(() { _scores = scores; _userRank = userRank; _isLoading = false; });
     } catch (e) {
       setState(() => _isLoading = false);
@@ -67,6 +107,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         centerTitle: true,
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: Colors.blue,
+          unselectedLabelColor: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+          indicatorColor: Colors.blue,
+          indicatorWeight: 3,
+          tabs: const [
+            Tab(icon: Icon(Icons.sports_esports, size: 20), text: '⚔️ Klasik'),
+            Tab(icon: Icon(Icons.speed, size: 20), text: '🏁 Race'),
+            Tab(icon: Icon(Icons.emoji_events, size: 20), text: '🌍 Genel'),
+          ],
+        ),
       ),
       body: Column(children: [
         if (_userRankInfo != null) _buildUserInfoBar(isDark),
@@ -225,16 +277,28 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             if (isCurrentUser) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(4)), child: const Text('SEN', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))),
           ]),
           Row(children: [
-            Text(leagueEmoji, style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 4),
-            Text('Lvl $level', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-            const SizedBox(width: 8),
-            Text('%${(winRate * 100).toStringAsFixed(0)}', style: TextStyle(fontSize: 12, color: Colors.green.shade600)),
+            if (_currentMode == 'overall') ...[
+              Text(leagueEmoji, style: const TextStyle(fontSize: 12)),
+              const SizedBox(width: 4),
+              Text('Lvl $level', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              const SizedBox(width: 8),
+              Text('%${(winRate * 100).toStringAsFixed(0)}', style: TextStyle(fontSize: 12, color: Colors.green.shade600)),
+            ] else ...[
+              Text('${score['wins'] ?? 0} galibiyet', style: TextStyle(fontSize: 12, color: Colors.green.shade600)),
+              const SizedBox(width: 8),
+              Text('${score['gamesPlayed'] ?? 0} oyun', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              if (_currentMode == 'race' && score['fastestWin'] != null) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.timer, size: 12, color: Colors.orange.shade600),
+                const SizedBox(width: 2),
+                Text(_formatTime(score['fastestWin']), style: TextStyle(fontSize: 12, color: Colors.orange.shade600)),
+              ],
+            ],
           ]),
         ])),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text('$totalScore', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text('puan', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+          Text(_currentMode == 'overall' ? 'puan' : 'skor', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
         ]),
       ]),
     );
@@ -249,11 +313,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         const SizedBox(width: 8),
         Text('${AppLocalizations.get('yourRank')}: ', style: const TextStyle(fontSize: 16)),
         Text('#$_userRank', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
-        if (_userRankInfo != null) ...[
+        if (_userRankInfo != null && _currentMode == 'overall') ...[
           const SizedBox(width: 16),
           Text('${_userRankInfo!.leagueEmoji} ${_userRankInfo!.leagueName}', style: TextStyle(fontSize: 14, color: Color(_userRankInfo!.leagueColor))),
         ],
       ]),
     );
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes}:${secs.toString().padLeft(2, '0')}';
   }
 }

@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_localizations.dart';
 import '../services/friend_service.dart';
+import '../services/leaderboard_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,6 +28,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   int _selectedAvatar = 0;
+
+  // Mode-based statistics
+  Map<String, dynamic>? _classicStats;
+  Map<String, dynamic>? _raceStats;
 
   static const List<Map<String, dynamic>> _avatars = [
     {'icon': Icons.person, 'color': 0xFF9C27B0},
@@ -74,6 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _user = _auth.currentUser;
     _loadUserData();
+    _loadModeStats();
   }
 
   Future<void> _loadUserData() async {
@@ -91,6 +97,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _birthDate = DateTime.tryParse(birthDateStr);
       }
     });
+  }
+
+  Future<void> _loadModeStats() async {
+    try {
+      final classicStats = await LeaderboardService.getUserModeStats('classic');
+      final raceStats = await LeaderboardService.getUserModeStats('race');
+      setState(() {
+        _classicStats = classicStats;
+        _raceStats = raceStats;
+      });
+    } catch (e) {
+      // Stats yüklenemedi, boş bırak
+    }
   }
 
   int _calculateAge() {
@@ -604,6 +623,103 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 16),
 
+            // Mode-based Statistics
+            if (_classicStats != null || _raceStats != null)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: isDark ? Colors.black26 : Colors.grey.shade200, blurRadius: 10, offset: const Offset(0, 4))],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.bar_chart, color: Colors.blue, size: 24),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Oyun Modu İstatistikleri',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Classic Mode Stats
+                    if (_classicStats != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1976D2)]),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.sports_esports, color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
+                                Text('⚔️ Klasik Mod', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _buildStatChip('Oyun', '${_classicStats!['gamesPlayed'] ?? 0}', Colors.white.withOpacity(0.9)),
+                                _buildStatChip('Galibiyet', '${_classicStats!['wins'] ?? 0}', Colors.white.withOpacity(0.9)),
+                                _buildStatChip('Win %', '${_classicStats!['winRate'] ?? '0.0'}', Colors.white.withOpacity(0.9)),
+                                _buildStatChip('Skor', '${_classicStats!['totalScore'] ?? 0}', Colors.white.withOpacity(0.9)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // Race Mode Stats
+                    if (_raceStats != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFF7B1FA2)]),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.speed, color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
+                                Text('🏁 Race Mod', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _buildStatChip('Oyun', '${_raceStats!['gamesPlayed'] ?? 0}', Colors.white.withOpacity(0.9)),
+                                _buildStatChip('Galibiyet', '${_raceStats!['wins'] ?? 0}', Colors.white.withOpacity(0.9)),
+                                _buildStatChip('Win %', '${_raceStats!['winRate'] ?? '0.0'}', Colors.white.withOpacity(0.9)),
+                                if (_raceStats!['fastestWin'] != null)
+                                  _buildStatChip('En Hızlı', _formatTime(_raceStats!['fastestWin']), Colors.white.withOpacity(0.9)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 16),
+
             // Cikis Butonu
             Container(
               width: double.infinity,
@@ -727,5 +843,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildStatChip(String label, String value, Color textColor) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(value, style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 11)),
+      ],
+    );
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes}:${secs.toString().padLeft(2, '0')}';
   }
 }

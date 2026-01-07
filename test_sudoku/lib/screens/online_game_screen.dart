@@ -463,11 +463,13 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
     // LEADERBOARD'A KAYDET (Kazanan ve Kaybeden için)
     if (!isDraw) {
-      print('📊 Submitting to leaderboard - Won: $iWon, Score: $myScore');
+      print('📊 Submitting to leaderboard - Won: $iWon, Score: $myScore, Mode: ${widget.gameMode}');
       try {
         await LeaderboardService.submitGameResult(
           won: iWon,
           scoreEarned: iWon ? myScore : 0,
+          gameMode: widget.gameMode,
+          gameTimeSeconds: seconds, // Oyun süresi (Race mode için fastest win tracking)
         );
         print('✅ Leaderboard submission SUCCESS!');
 

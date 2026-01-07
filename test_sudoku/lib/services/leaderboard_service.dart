@@ -11,6 +11,8 @@ class LeaderboardService {
   static Future<RankChange?> submitGameResult({
     required bool won,
     required int scoreEarned,
+    String gameMode = 'classic', // 'classic' or 'race'
+    int? gameTimeSeconds, // For race mode - fastest win tracking
   }) async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -49,6 +51,15 @@ class LeaderboardService {
       rank: rankChange.newRank,
       scoreEarned: won ? scoreEarned : 0,
       won: won,
+    );
+
+    // Mode-based stats güncelle
+    await _updateModeBasedStats(
+      odaId: odaId,
+      gameMode: gameMode,
+      won: won,
+      scoreEarned: won ? scoreEarned : 0,
+      gameTimeSeconds: gameTimeSeconds,
     );
 
     return rankChange;
@@ -257,6 +268,115 @@ class LeaderboardService {
     if (!snapshot.exists) return null;
 
     return Map<String, dynamic>.from(snapshot.value as Map);
+  }
+
+  /// Mode-based istatistikleri güncelle
+  static Future<void> _updateModeBasedStats({
+    required String odaId,
+    required String gameMode,
+    required bool won,
+    required int scoreEarned,
+    int? gameTimeSeconds,
+  }) async {
+    final statsPath = 'users/$odaId/stats/$gameMode';
+    final snapshot = await _database.child(statsPath).get();
+
+    int gamesPlayed = 0;
+    int wins = 0;
+    int totalScore = 0;
+    int? fastestWin;
+
+    if (snapshot.exists) {
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      gamesPlayed = data['gamesPlayed'] ?? 0;
+      wins = data['wins'] ?? 0;
+      totalScore = data['totalScore'] ?? 0;
+      fastestWin = data['fastestWin'];
+    }
+
+    gamesPlayed++;
+    if (won) wins++;
+    totalScore += scoreEarned;
+
+    // Race mode için en hızlı kazanmayı kaydet
+    if (gameMode == 'race' && won && gameTimeSeconds != null) {
+      if (fastestWin == null || gameTimeSeconds < fastestWin) {
+        fastestWin = gameTimeSeconds;
+      }
+    }
+
+    final winRate = gamesPlayed > 0 ? (wins / gamesPlayed * 100).toStringAsFixed(1) : '0.0';
+
+    Map<String, dynamic> updates = {
+      'gamesPlayed': gamesPlayed,
+      'wins': wins,
+      'winRate': winRate,
+      'totalScore': totalScore,
+      'lastUpdated': ServerValue.timestamp,
+    };
+
+    if (gameMode == 'race' && fastestWin != null) {
+      updates['fastestWin'] = fastestWin;
+    }
+
+    await _database.child(statsPath).set(updates);
+  }
+
+  /// Kullanıcının mode-based istatistiklerini getir
+  static Future<Map<String, dynamic>?> getUserModeStats(String gameMode) async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final snapshot = await _database.child('users/${user.uid}/stats/$gameMode').get();
+
+    if (!snapshot.exists) return null;
+
+    return Map<String, dynamic>.from(snapshot.value as Map);
+  }
+
+  /// Mod bazlı leaderboard getir
+  static Future<List<Map<String, dynamic>>> getModeLeaderboard(String gameMode, String timeFilter) async {
+    // Mode-based leaderboard için tüm kullanıcıları getir
+    final snapshot = await _database.child('users').get();
+
+    if (!snapshot.exists) return [];
+
+    List<Map<String, dynamic>> scores = [];
+    final usersData = Map<String, dynamic>.from(snapshot.value as Map);
+
+    for (var entry in usersData.entries) {
+      final uid = entry.key;
+      final userData = Map<String, dynamic>.from(entry.value as Map);
+
+      if (userData['stats'] != null) {
+        final stats = Map<String, dynamic>.from(userData['stats'] as Map);
+
+        if (stats[gameMode] != null) {
+          final modeStats = Map<String, dynamic>.from(stats[gameMode] as Map);
+
+          scores.add({
+            'odaId': uid,
+            'nickname': userData['nickname'] ?? 'Anonim',
+            'avatar': userData['avatarIndex'] ?? 0,
+            'country': userData['country'] ?? '🇹🇷',
+            'gamesPlayed': modeStats['gamesPlayed'] ?? 0,
+            'wins': modeStats['wins'] ?? 0,
+            'winRate': modeStats['winRate'] ?? '0.0',
+            'totalScore': modeStats['totalScore'] ?? 0,
+            'fastestWin': modeStats['fastestWin'],
+          });
+        }
+      }
+    }
+
+    // Sıralama: wins > totalScore
+    scores.sort((a, b) {
+      int winsCompare = (b['wins'] ?? 0).compareTo(a['wins'] ?? 0);
+      if (winsCompare != 0) return winsCompare;
+      return (b['totalScore'] ?? 0).compareTo(a['totalScore'] ?? 0);
+    });
+
+    return scores.take(100).toList();
   }
 
   static String _getTodayKey() {
