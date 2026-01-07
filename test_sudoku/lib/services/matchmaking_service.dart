@@ -131,7 +131,7 @@ class MatchmakingService {
       _searchTimer = Timer.periodic(const Duration(seconds: 2), (_) {
         _waitTimeSeconds += 2;
         onWaitTimeUpdate?.call(_waitTimeSeconds);
-        _searchForMatch(difficulty, uid, myNickname, myLevel, myWinRate);
+        _searchForMatch(difficulty, uid, myNickname, myLevel, myWinRate, gameMode);
       });
 
       // 90 saniye timeout
@@ -142,7 +142,7 @@ class MatchmakingService {
       });
 
       // İlk aramayı hemen yap
-      _searchForMatch(difficulty, uid, myNickname, myLevel, myWinRate);
+      _searchForMatch(difficulty, uid, myNickname, myLevel, myWinRate, gameMode);
 
     } catch (e) {
       print('Error starting matchmaking: $e');
@@ -157,6 +157,7 @@ class MatchmakingService {
       String myNickname,
       int myLevel,
       double myWinRate,
+      String gameMode,
       ) async {
     if (!_isSearching) return;
 
