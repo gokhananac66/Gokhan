@@ -579,18 +579,20 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         player1Name: player1Name,
         player2Name: player2Name,
         onNewGame: () {
-          Navigator.of(dialogContext).pop(); // Dialog'u kapat
-          Future.microtask(() {
-            if (Navigator.of(gameContext).canPop()) {
-              Navigator.of(gameContext).pop(); // Game screen'i kapat
+          Navigator.pop(dialogContext); // Dialog'u kapat
+          // Dialog animasyonu bitsin diye kısa delay
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted && Navigator.canPop(gameContext)) {
+              Navigator.pop(gameContext); // Game screen'i kapat
             }
           });
         },
         onMainMenu: () {
-          Navigator.of(dialogContext).pop(); // Dialog'u kapat
-          Future.microtask(() {
-            if (Navigator.of(gameContext).canPop()) {
-              Navigator.of(gameContext).pop(); // Game screen'i kapat
+          Navigator.pop(dialogContext); // Dialog'u kapat
+          // Dialog animasyonu bitsin diye kısa delay
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted && Navigator.canPop(gameContext)) {
+              Navigator.pop(gameContext); // Game screen'i kapat - Friends/Home screen'e dön
             }
           });
         },
