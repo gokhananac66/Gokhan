@@ -543,11 +543,13 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   void _showWinDialog(String? winner, String reason, bool iWon, bool isDraw) {
+    final gameContext = context; // Game screen context'ini yakala
+
     showDialog(
-      context: context,
+      context: gameContext,
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.7),
-      builder: (context) => GameResultDialog(
+      builder: (dialogContext) => GameResultDialog(
         isWin: iWon,
         isDraw: isDraw,
         score: widget.isPlayer1 ? player1Score : player2Score,
@@ -560,12 +562,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         player1Name: player1Name,
         player2Name: player2Name,
         onNewGame: () {
-          Navigator.pop(context);
-          Navigator.pop(context);
+          Navigator.pop(dialogContext); // Dialog'u kapat
+          Navigator.pop(gameContext);   // Game screen'i kapat
         },
         onMainMenu: () {
-          Navigator.pop(context);
-          Navigator.pop(context);
+          Navigator.pop(dialogContext); // Dialog'u kapat
+          Navigator.pop(gameContext);   // Game screen'i kapat
         },
       ),
     );
