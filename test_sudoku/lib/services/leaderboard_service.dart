@@ -56,6 +56,9 @@ class LeaderboardService {
     // Mode-based stats güncelle
     await _updateModeBasedStats(
       odaId: odaId,
+      nickname: nickname,
+      avatar: avatar,
+      country: country,
       gameMode: gameMode,
       won: won,
       scoreEarned: won ? scoreEarned : 0,
@@ -273,6 +276,9 @@ class LeaderboardService {
   /// Mode-based istatistikleri güncelle
   static Future<void> _updateModeBasedStats({
     required String odaId,
+    required String nickname,
+    required int avatar,
+    required String country,
     required String gameMode,
     required bool won,
     required int scoreEarned,
@@ -308,6 +314,10 @@ class LeaderboardService {
     final winRate = gamesPlayed > 0 ? (wins / gamesPlayed * 100).toStringAsFixed(1) : '0.0';
 
     Map<String, dynamic> updates = {
+      'odaId': odaId,
+      'nickname': nickname,
+      'avatar': avatar,
+      'country': country,
       'gamesPlayed': gamesPlayed,
       'wins': wins,
       'winRate': winRate,
@@ -336,22 +346,21 @@ class LeaderboardService {
 
   /// Mod bazlı leaderboard getir
   static Future<List<Map<String, dynamic>>> getModeLeaderboard(String gameMode, String timeFilter) async {
-    // 1. Önce tüm leaderboard verilerini tek seferde çek (N+1 problemi önlemek için)
-    final leaderboardSnapshot = await _database.child('leaderboard/multiplayer').get();
-    Map<String, dynamic> allLeaderboardData = {};
-
-    if (leaderboardSnapshot.exists) {
-      allLeaderboardData = Map<String, dynamic>.from(leaderboardSnapshot.value as Map);
-    }
-
-    // 2. User stats'leri çek
+    // User stats'leri çek - artık nickname de stats içinde!
     final usersSnapshot = await _database.child('users').get();
     if (!usersSnapshot.exists) return [];
 
     List<Map<String, dynamic>> scores = [];
     final usersData = Map<String, dynamic>.from(usersSnapshot.value as Map);
 
-    // 3. Her kullanıcı için stats + leaderboard birleştir
+    // Leaderboard verisi (league bilgisi için)
+    final leaderboardSnapshot = await _database.child('leaderboard/multiplayer').get();
+    Map<String, dynamic> allLeaderboardData = {};
+    if (leaderboardSnapshot.exists) {
+      allLeaderboardData = Map<String, dynamic>.from(leaderboardSnapshot.value as Map);
+    }
+
+    // Her kullanıcı için stats'leri oku
     for (var entry in usersData.entries) {
       final uid = entry.key;
       final userData = Map<String, dynamic>.from(entry.value as Map);
@@ -362,17 +371,15 @@ class LeaderboardService {
         if (stats[gameMode] != null) {
           final modeStats = Map<String, dynamic>.from(stats[gameMode] as Map);
 
-          // Leaderboard verisinden nickname al (zaten hafızada var, query yok!)
-          String nickname = 'Anonim';
-          int avatar = 0;
-          String country = '🇹🇷';
-          String league = 'bronze';
+          // Nickname artık modeStats içinde! (yeni kayıtlar için)
+          String nickname = modeStats['nickname'] ?? 'Anonim';
+          int avatar = modeStats['avatar'] ?? 0;
+          String country = modeStats['country'] ?? '🇹🇷';
 
+          // League bilgisi için leaderboard'a bak
+          String league = 'bronze';
           if (allLeaderboardData.containsKey(uid)) {
             final userLeaderboard = Map<String, dynamic>.from(allLeaderboardData[uid] as Map);
-            nickname = userLeaderboard['nickname'] ?? 'Anonim';
-            avatar = userLeaderboard['avatar'] ?? 0;
-            country = userLeaderboard['country'] ?? '🇹🇷';
             league = userLeaderboard['league'] ?? 'bronze';
           }
 
