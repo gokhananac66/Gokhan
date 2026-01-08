@@ -236,7 +236,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.green,
                 onTap: () {
                   Navigator.pop(context);
-                  _showDifficultyDialog(isRandom: false);
+                  // Direkt arkadaşlar ekranına git, zorluk seçme!
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FriendsScreen()),
+                  );
                 },
               ),
 
