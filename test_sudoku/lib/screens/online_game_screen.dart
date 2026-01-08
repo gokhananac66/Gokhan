@@ -240,7 +240,13 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     });
   }
 
-  bool get isMyTurn => widget.isPlayer1 ? currentTurn == 1 : currentTurn == 2;
+  bool get isMyTurn {
+    // Race mode: herkes her zaman oynayabilir
+    if (widget.gameMode == 'race') return true;
+
+    // Classic mode: sıra bazlı
+    return widget.isPlayer1 ? currentTurn == 1 : currentTurn == 2;
+  }
 
   int get myScore => widget.isPlayer1 ? player1Score : player2Score;
 
@@ -366,7 +372,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         int currentErrors = widget.isPlayer1 ? player1Errors : player2Errors;
         int newErrors = currentErrors + 1;
         updates[errorKey] = newErrors;
-        updates['currentTurn'] = widget.isPlayer1 ? 2 : 1;
+
+        // Classic mode: yanlış yaparsan sıra değişir
+        // Race mode: sıra değişmez, herkes devam eder
+        if (widget.gameMode == 'classic') {
+          updates['currentTurn'] = widget.isPlayer1 ? 2 : 1;
+        }
 
         setState(() {
           board[row][col] = number;
@@ -402,6 +413,20 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         winner = widget.isPlayer1 ? player2Name : player1Name;
       } else {
         winner = widget.isPlayer1 ? player1Name : player2Name;
+      }
+    } else if (reason == 'completed') {
+      // Race mode: İlk bitiren kazanır (bu fonksiyonu çağıran kazanır)
+      // Classic mode: Skor karşılaştır
+      if (widget.gameMode == 'race') {
+        winner = widget.isPlayer1 ? player1Name : player2Name; // Ben bitirdim, ben kazandım
+      } else {
+        if (player1Score > player2Score) {
+          winner = player1Name;
+        } else if (player2Score > player1Score) {
+          winner = player2Name;
+        } else {
+          winner = 'draw';
+        }
       }
     } else {
       if (player1Score > player2Score) {
@@ -943,8 +968,8 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             ],
           ),
 
-          // Turn Indicator
-          if (isMyTurn) ...[
+          // Turn Indicator (only in Classic mode)
+          if (isMyTurn && widget.gameMode == 'classic') ...[
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
