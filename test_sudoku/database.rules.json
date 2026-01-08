@@ -20,13 +20,9 @@
       }
     },
     "matchmaking": {
-      ".read": "auth != null",
-      ".write": "auth != null",
       "$league": {
-        "$queueKey": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
+        ".read": "auth != null",
+        ".write": "auth != null",
         ".indexOn": ["difficulty", "timestamp", "matched", "gameMode", "level"]
       }
     },
