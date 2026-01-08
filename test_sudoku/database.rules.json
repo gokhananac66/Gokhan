@@ -13,11 +13,9 @@
       }
     },
     "game_invites": {
-      "$inviteId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
-        ".indexOn": ["fromUid", "toUid", "status"]
-      }
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["fromUid", "toUid", "status"]
     },
     "matchmaking": {
       "$league": {
