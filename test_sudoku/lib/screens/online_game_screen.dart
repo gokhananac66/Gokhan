@@ -47,9 +47,15 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   int player2Score = 0;
   int player1Errors = 0;
   int player2Errors = 0;
+  int player1Progress = 0; // 0-81 (Race mode için)
+  int player2Progress = 0; // 0-81 (Race mode için)
 
   int currentTurn = 1;
   late int maxErrors;
+
+  // Race mode warning
+  bool _showOpponentWarning = false;
+  int _lastOpponentProgress = 0;
 
   int seconds = 0;
   bool isPaused = false;
@@ -152,6 +158,8 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     player2Score = gameData['player2Score'] ?? 0;
     player1Errors = gameData['player1Errors'] ?? 0;
     player2Errors = gameData['player2Errors'] ?? 0;
+    player1Progress = gameData['player1Progress'] ?? 0;
+    player2Progress = gameData['player2Progress'] ?? 0;
     currentTurn = gameData['currentTurn'] ?? (widget.startsFirst ? (widget.isPlayer1 ? 1 : 2) : (widget.isPlayer1 ? 2 : 1));
 
     setState(() => _isLoading = false);
@@ -178,6 +186,8 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         player2Score = gameData['player2Score'] ?? 0;
         player1Errors = gameData['player1Errors'] ?? 0;
         player2Errors = gameData['player2Errors'] ?? 0;
+        player1Progress = gameData['player1Progress'] ?? 0;
+        player2Progress = gameData['player2Progress'] ?? 0;
 
         // Race mode: Kendi board'umu güncelle
         // Classic mode: Paylaşılan board'u güncelle
@@ -187,6 +197,17 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             List<int> flatBoard = List<int>.from(gameData[myBoardKey]);
             board = List.generate(9, (i) => flatBoard.sublist(i * 9, (i + 1) * 9));
           }
+
+          // Race mode: Rakip ilerlemesini kontrol et ve uyar
+          int opponentProgress = widget.isPlayer1 ? player2Progress : player1Progress;
+          if (opponentProgress > _lastOpponentProgress && opponentProgress >= 65) {
+            _showOpponentWarning = true;
+            _vibrateHeavy();
+            Future.delayed(const Duration(seconds: 3), () {
+              if (mounted) setState(() => _showOpponentWarning = false);
+            });
+          }
+          _lastOpponentProgress = opponentProgress;
         } else {
           if (gameData['board'] != null) {
             List<int> flatBoard = List<int>.from(gameData['board']);
@@ -377,6 +398,20 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         }
 
         updates[scoreKey] = currentScore + points;
+
+        // Race mode: Progress güncelle (kaç doğru hücre dolduruldu)
+        if (widget.gameMode == 'race') {
+          int correctCells = 0;
+          for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+              if (board[i][j] != 0 && board[i][j] == solution[i][j]) {
+                correctCells++;
+              }
+            }
+          }
+          String progressKey = widget.isPlayer1 ? 'player1Progress' : 'player2Progress';
+          updates[progressKey] = correctCells;
+        }
 
         setState(() {
           board[row][col] = number;
@@ -777,91 +812,126 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           end: Alignment.bottomCenter,
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Player 1 Card
-          Expanded(
-            child: _buildPlayerCard(
-              name: player1Name,
-              score: player1Score,
-              errors: player1Errors,
-              isMyTurn: widget.gameMode == 'race' ? amIPlayer1 : currentTurn == 1,
-              isMe: amIPlayer1,
-              color: Colors.blue,
-              isDark: isDark,
-            ),
-          ),
-
-          // VS Divider
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade400, Colors.pink.shade400],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.purple.withOpacity(0.3),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: const Text('⚔️', style: TextStyle(fontSize: 16)),
-                ),
-                if (widget.gameMode == 'classic') ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: turnTimeRemaining <= 10 ? Colors.red.shade600 : Colors.blue.shade600,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (turnTimeRemaining <= 10 ? Colors.red : Colors.blue).withOpacity(0.3),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.timer, size: 14, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text(
-                          '$turnTimeRemaining',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+          // Warning Banner (Race mode)
+          if (widget.gameMode == 'race' && _showOpponentWarning)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade600,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.warning_amber, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    '⚠️ Rakip bitirmeye çok yakın! Hızlan!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
+          if (widget.gameMode == 'race' && _showOpponentWarning)
+            const SizedBox(height: 8),
 
-          // Player 2 Card
-          Expanded(
-            child: _buildPlayerCard(
-              name: player2Name,
-              score: player2Score,
-              errors: player2Errors,
-              isMyTurn: widget.gameMode == 'race' ? !amIPlayer1 : currentTurn == 2,
-              isMe: !amIPlayer1,
-              color: Colors.orange,
-              isDark: isDark,
-            ),
+          // Player Cards
+          Row(
+            children: [
+              // Player 1 Card (my card if I'm player1)
+              Expanded(
+                child: _buildPlayerCard(
+                  name: player1Name,
+                  score: player1Score,
+                  errors: player1Errors,
+                  progress: player1Progress,
+                  isMyTurn: widget.gameMode == 'race' ? amIPlayer1 : currentTurn == 1,
+                  isMe: amIPlayer1,
+                  color: Colors.blue,
+                  isDark: isDark,
+                ),
+              ),
+
+              // VS Divider
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Colors.purple.shade400, Colors.pink.shade400],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.purple.withOpacity(0.3),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: const Text('⚔️', style: TextStyle(fontSize: 16)),
+                    ),
+                    if (widget.gameMode == 'classic') ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: turnTimeRemaining <= 10 ? Colors.red.shade600 : Colors.blue.shade600,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (turnTimeRemaining <= 10 ? Colors.red : Colors.blue).withOpacity(0.3),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.timer, size: 14, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text(
+                              '$turnTimeRemaining',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Player 2 Card (my card if I'm player2)
+              Expanded(
+                child: _buildPlayerCard(
+                  name: player2Name,
+                  score: player2Score,
+                  errors: player2Errors,
+                  progress: player2Progress,
+                  isMyTurn: widget.gameMode == 'race' ? !amIPlayer1 : currentTurn == 2,
+                  isMe: !amIPlayer1,
+                  color: Colors.orange,
+                  isDark: isDark,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -872,12 +942,14 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     required String name,
     required int score,
     required int errors,
+    required int progress, // 0-81 for race mode
     required bool isMyTurn,
     required bool isMe,
     required MaterialColor color,
     required bool isDark,
   }) {
-    final progress = (maxErrors - errors) / maxErrors;
+    final errorProgress = (maxErrors - errors) / maxErrors;
+    final completionProgress = progress / 81.0; // Race mode: 0.0-1.0
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -1005,17 +1077,55 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
           const SizedBox(height: 8),
 
-          // Progress Bar
+          // Progress Bars
           Column(
             children: [
+              // Race mode: Completion Progress
+              if (widget.gameMode == 'race') ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: completionProgress,
+                    minHeight: 8,
+                    backgroundColor: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                    valueColor: AlwaysStoppedAnimation(
+                      completionProgress >= 0.8
+                        ? Colors.red
+                        : (completionProgress >= 0.6 ? Colors.orange : Colors.green),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$progress/81',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (progress >= 65)
+                      Text(
+                        '🏁',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+              ],
+
+              // Error Progress
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
-                  value: progress,
+                  value: errorProgress,
                   minHeight: 6,
                   backgroundColor: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
                   valueColor: AlwaysStoppedAnimation(
-                    progress > 0.5 ? Colors.green : (progress > 0.25 ? Colors.orange : Colors.red),
+                    errorProgress > 0.5 ? Colors.green : (errorProgress > 0.25 ? Colors.orange : Colors.red),
                   ),
                 ),
               ),
