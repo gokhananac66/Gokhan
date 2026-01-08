@@ -120,7 +120,18 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
     final gameData = Map<String, dynamic>.from(gameSnapshot.value as Map);
 
-    List<int> flatBoard = List<int>.from(gameData['board']);
+    // Race mode: Her oyuncu kendi board'unu görür
+    // Classic mode: Tek board paylaşılır
+    List<int> flatBoard;
+    if (widget.gameMode == 'race') {
+      final myBoardKey = widget.isPlayer1 ? 'player1Board' : 'player2Board';
+      flatBoard = List<int>.from(gameData[myBoardKey] ?? []);
+      print('🏁 [RACE] Loading my board: $myBoardKey');
+    } else {
+      flatBoard = List<int>.from(gameData['board'] ?? []);
+      print('⚔️ [CLASSIC] Loading shared board');
+    }
+
     List<int> flatSolution = List<int>.from(gameData['solution']);
 
     print('📊 Board first 9 cells: ${flatBoard.sublist(0, 9)}');
@@ -164,9 +175,19 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         player1Errors = gameData['player1Errors'] ?? 0;
         player2Errors = gameData['player2Errors'] ?? 0;
 
-        if (gameData['board'] != null) {
-          List<int> flatBoard = List<int>.from(gameData['board']);
-          board = List.generate(9, (i) => flatBoard.sublist(i * 9, (i + 1) * 9));
+        // Race mode: Kendi board'umu güncelle
+        // Classic mode: Paylaşılan board'u güncelle
+        if (widget.gameMode == 'race') {
+          final myBoardKey = widget.isPlayer1 ? 'player1Board' : 'player2Board';
+          if (gameData[myBoardKey] != null) {
+            List<int> flatBoard = List<int>.from(gameData[myBoardKey]);
+            board = List.generate(9, (i) => flatBoard.sublist(i * 9, (i + 1) * 9));
+          }
+        } else {
+          if (gameData['board'] != null) {
+            List<int> flatBoard = List<int>.from(gameData['board']);
+            board = List.generate(9, (i) => flatBoard.sublist(i * 9, (i + 1) * 9));
+          }
         }
 
         // Check if turn changed
@@ -297,7 +318,15 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       List<int> flatBoard = board.expand((r) => r).toList();
       flatBoard[row * 9 + col] = number;
 
-      Map<String, dynamic> updates = {'board': flatBoard};
+      // Race mode: Kendi board'umu güncelle
+      // Classic mode: Paylaşılan board'u güncelle
+      Map<String, dynamic> updates = {};
+      if (widget.gameMode == 'race') {
+        final myBoardKey = widget.isPlayer1 ? 'player1Board' : 'player2Board';
+        updates[myBoardKey] = flatBoard;
+      } else {
+        updates['board'] = flatBoard;
+      }
 
       if (isCorrect) {
         String scoreKey = widget.isPlayer1 ? 'player1Score' : 'player2Score';
