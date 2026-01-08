@@ -383,6 +383,11 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           notes[row][col].clear();
         });
 
+        // Classic mode: Doğru hamle yaptı, timer'ı reset et!
+        if (widget.gameMode == 'classic') {
+          _startTurnTimer();
+        }
+
         // Show bonus notification if earned
         if (points > 10) {
           ScaffoldMessenger.of(context).showSnackBar(
