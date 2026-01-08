@@ -73,6 +73,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   bool _isLoading = true;
   bool _gameEnded = false;
 
+  // Yanlış girilen hücreyi takip et
+  int? _lastWrongRow;
+  int? _lastWrongCol;
+
   @override
   void initState() {
     super.initState();
@@ -304,6 +308,15 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     int row = selectedRow!;
     int col = selectedCol!;
 
+    // Önceki yanlış hücreyi temizle
+    if (_lastWrongRow != null && _lastWrongCol != null) {
+      if (board[_lastWrongRow!][_lastWrongCol!] != solution[_lastWrongRow!][_lastWrongCol!]) {
+        board[_lastWrongRow!][_lastWrongCol!] = 0;
+      }
+      _lastWrongRow = null;
+      _lastWrongCol = null;
+    }
+
     if (notesMode) {
       setState(() {
         if (notes[row][col].contains(number)) {
@@ -407,6 +420,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         if (widget.gameMode == 'classic') {
           updates['currentTurn'] = widget.isPlayer1 ? 2 : 1;
         }
+
+        // Yanlış hücreyi kaydet
+        _lastWrongRow = row;
+        _lastWrongCol = col;
 
         setState(() {
           board[row][col] = number;
@@ -761,7 +778,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
               name: player1Name,
               score: player1Score,
               errors: player1Errors,
-              isMyTurn: currentTurn == 1,
+              isMyTurn: widget.gameMode == 'race' ? amIPlayer1 : currentTurn == 1,
               isMe: amIPlayer1,
               color: Colors.blue,
               isDark: isDark,
@@ -833,7 +850,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
               name: player2Name,
               score: player2Score,
               errors: player2Errors,
-              isMyTurn: currentTurn == 2,
+              isMyTurn: widget.gameMode == 'race' ? !amIPlayer1 : currentTurn == 2,
               isMe: !amIPlayer1,
               color: Colors.orange,
               isDark: isDark,

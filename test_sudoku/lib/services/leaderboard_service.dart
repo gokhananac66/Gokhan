@@ -354,11 +354,27 @@ class LeaderboardService {
         if (stats[gameMode] != null) {
           final modeStats = Map<String, dynamic>.from(stats[gameMode] as Map);
 
+          // Nickname'i leaderboard/multiplayer'dan al
+          String nickname = 'Anonim';
+          int avatar = 0;
+          String country = '🇹🇷';
+          String league = 'bronze';
+
+          final leaderboardSnapshot = await _database.child('leaderboard/multiplayer/$uid').get();
+          if (leaderboardSnapshot.exists) {
+            final leaderboardData = Map<String, dynamic>.from(leaderboardSnapshot.value as Map);
+            nickname = leaderboardData['nickname'] ?? 'Anonim';
+            avatar = leaderboardData['avatar'] ?? 0;
+            country = leaderboardData['country'] ?? '🇹🇷';
+            league = leaderboardData['league'] ?? 'bronze';
+          }
+
           scores.add({
             'odaId': uid,
-            'nickname': userData['nickname'] ?? 'Anonim',
-            'avatar': userData['avatarIndex'] ?? 0,
-            'country': userData['country'] ?? '🇹🇷',
+            'nickname': nickname,
+            'avatar': avatar,
+            'country': country,
+            'league': league,
             'gamesPlayed': modeStats['gamesPlayed'] ?? 0,
             'wins': modeStats['wins'] ?? 0,
             'winRate': modeStats['winRate'] ?? '0.0',
