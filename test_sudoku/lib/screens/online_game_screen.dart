@@ -49,6 +49,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   int player2Errors = 0;
   int player1Progress = 0; // 0-81 (Race mode için)
   int player2Progress = 0; // 0-81 (Race mode için)
+  int totalEmptyCells = 0; // Toplam boş hücre sayısı (Race mode progress max değeri)
 
   int currentTurn = 1;
   late int maxErrors;
@@ -152,6 +153,17 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     isOriginal = List.generate(9, (i) => List.generate(9, (j) => board[i][j] != 0));
     notes = List.generate(9, (_) => List.generate(9, (_) => <int>{}));
 
+    // Race mode: Toplam boş hücre sayısını hesapla (progress max değeri için)
+    if (widget.gameMode == 'race') {
+      totalEmptyCells = 0;
+      for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+          if (!isOriginal[i][j]) totalEmptyCells++;
+        }
+      }
+      print('🏁 [RACE] Total empty cells: $totalEmptyCells');
+    }
+
     player1Name = gameData['player1Name'] ?? 'Oyuncu 1';
     player2Name = gameData['player2Name'] ?? 'Oyuncu 2';
     player1Score = gameData['player1Score'] ?? 0;
@@ -199,8 +211,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           }
 
           // Race mode: Rakip ilerlemesini kontrol et ve uyar
+          // Warning: Rakip %70 tamamladığında uyar
           int opponentProgress = widget.isPlayer1 ? player2Progress : player1Progress;
-          if (opponentProgress > _lastOpponentProgress && opponentProgress >= 65) {
+          int warningThreshold = (totalEmptyCells * 0.7).toInt();
+          if (opponentProgress > _lastOpponentProgress && opponentProgress >= warningThreshold && totalEmptyCells > 0) {
             _showOpponentWarning = true;
             _vibrateHeavy();
             Future.delayed(const Duration(seconds: 3), () {
@@ -399,12 +413,13 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
         updates[scoreKey] = currentScore + points;
 
-        // Race mode: Progress güncelle (kaç doğru hücre dolduruldu)
+        // Race mode: Progress güncelle (sadece KULLANICININ doldurduğu doğru hücreler)
         if (widget.gameMode == 'race') {
           int correctCells = 0;
           for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
-              if (board[i][j] != 0 && board[i][j] == solution[i][j]) {
+              // Sadece kullanıcının doldurduğu doğru hücreleri say (başlangıç hücreleri değil!)
+              if (!isOriginal[i][j] && board[i][j] != 0 && board[i][j] == solution[i][j]) {
                 correctCells++;
               }
             }
@@ -942,14 +957,15 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     required String name,
     required int score,
     required int errors,
-    required int progress, // 0-81 for race mode
+    required int progress, // 0-totalEmptyCells for race mode
     required bool isMyTurn,
     required bool isMe,
     required MaterialColor color,
     required bool isDark,
   }) {
     final errorProgress = (maxErrors - errors) / maxErrors;
-    final completionProgress = progress / 81.0; // Race mode: 0.0-1.0
+    // Race mode: Progress bar 0.0-1.0 arası (totalEmptyCells'e göre)
+    final completionProgress = totalEmptyCells > 0 ? (progress / totalEmptyCells) : 0.0;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -1100,14 +1116,14 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '$progress/81',
+                      '$progress/$totalEmptyCells',
                       style: TextStyle(
                         fontSize: 10,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (progress >= 65)
+                    if (totalEmptyCells > 0 && progress >= (totalEmptyCells * 0.7).toInt())
                       Text(
                         '🏁',
                         style: TextStyle(fontSize: 12),
