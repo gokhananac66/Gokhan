@@ -191,11 +191,10 @@ class GameInviteService {
       final gameId = gameRef.key!;
       print('🆔 [INVITE] Game ID: $gameId');
 
-      await gameRef.set({
-        'board': puzzleData['board'],
+      Map<String, dynamic> gameData = {
         'solution': puzzleData['solution'],
         'difficulty': difficulty,
-        'gameMode': gameMode, // 'classic' or 'race'
+        'gameMode': gameMode,
         'player1Uid': uid,
         'player2Uid': targetUid,
         'player1Name': myNickname,
@@ -205,10 +204,23 @@ class GameInviteService {
         'player1Errors': 0,
         'player2Errors': 0,
         'currentTurn': 1,
-        'status': 'waiting', // Bekliyor durumunda başla
+        'status': 'waiting',
         'createdAt': ServerValue.timestamp,
         'gameType': 'friend_invite',
-      });
+      };
+
+      // Race mode: Her oyuncunun ayrı board'u var
+      if (gameMode == 'race') {
+        gameData['player1Board'] = puzzleData['board'];
+        gameData['player2Board'] = puzzleData['board'];
+        gameData['player1Progress'] = 0;
+        gameData['player2Progress'] = 0;
+      } else {
+        // Classic mode: Tek board paylaşılır
+        gameData['board'] = puzzleData['board'];
+      }
+
+      await gameRef.set(gameData);
 
       // SONRA DAVETİ GÖNDER (gameId ile birlikte)
       print('📨 [INVITE] Sending invite to Firebase...');

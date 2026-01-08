@@ -386,11 +386,10 @@ class MatchmakingService {
       final gameRef = _ref.child('games').push();
       final gameId = gameRef.key!;
 
-      await gameRef.set({
-        'board': puzzleData['board'],
+      Map<String, dynamic> gameData = {
         'solution': puzzleData['solution'],
         'difficulty': difficulty,
-        'gameMode': gameMode, // Use selected game mode
+        'gameMode': gameMode,
         'player1Uid': player1Uid,
         'player2Uid': player2Uid,
         'player1Name': player1Name,
@@ -405,7 +404,20 @@ class MatchmakingService {
         'status': 'playing',
         'createdAt': ServerValue.timestamp,
         'gameType': 'matchmaking',
-      });
+      };
+
+      // Race mode: Her oyuncunun ayrı board'u var
+      if (gameMode == 'race') {
+        gameData['player1Board'] = puzzleData['board'];
+        gameData['player2Board'] = puzzleData['board'];
+        gameData['player1Progress'] = 0; // Kaç hücre dolduruldu (0-81)
+        gameData['player2Progress'] = 0;
+      } else {
+        // Classic mode: Tek board paylaşılır
+        gameData['board'] = puzzleData['board'];
+      }
+
+      await gameRef.set(gameData);
 
       return gameId;
     } catch (e) {
