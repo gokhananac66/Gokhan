@@ -217,6 +217,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           if (opponentProgress > _lastOpponentProgress && opponentProgress >= warningThreshold && totalEmptyCells > 0) {
             _showOpponentWarning = true;
             _vibrateHeavy();
+            // Ses efekti çal
+            if (soundEnabled) {
+              SystemSound.play(SystemSoundType.alert);
+            }
             Future.delayed(const Duration(seconds: 3), () {
               if (mounted) setState(() => _showOpponentWarning = false);
             });
@@ -897,6 +901,13 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                       ),
                       child: const Text('⚔️', style: TextStyle(fontSize: 16)),
                     ),
+
+                    // Race mode: Progress difference
+                    if (widget.gameMode == 'race' && totalEmptyCells > 0) ...[
+                      const SizedBox(height: 6),
+                      _buildProgressDifference(isDark),
+                    ],
+
                     if (widget.gameMode == 'classic') ...[
                       const SizedBox(height: 8),
                       Container(
@@ -947,6 +958,63 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressDifference(bool isDark) {
+    final amIPlayer1 = widget.isPlayer1;
+    final myProgress = amIPlayer1 ? player1Progress : player2Progress;
+    final opponentProgress = amIPlayer1 ? player2Progress : player1Progress;
+    final difference = myProgress - opponentProgress;
+
+    if (difference == 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          'EŞIT',
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+      );
+    }
+
+    final isAhead = difference > 0;
+    final absValue = difference.abs();
+    final displayColor = isAhead ? Colors.green : Colors.red;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: displayColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: displayColor.withOpacity(0.5), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAhead ? Icons.arrow_upward : Icons.arrow_downward,
+            size: 10,
+            color: displayColor,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            isAhead ? '+$absValue' : '-$absValue',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: displayColor,
+            ),
           ),
         ],
       ),
@@ -1098,18 +1166,28 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             children: [
               // Race mode: Completion Progress
               if (widget.gameMode == 'race') ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: completionProgress,
-                    minHeight: 8,
-                    backgroundColor: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-                    valueColor: AlwaysStoppedAnimation(
-                      completionProgress >= 0.8
-                        ? Colors.red
-                        : (completionProgress >= 0.6 ? Colors.orange : Colors.green),
-                    ),
+                TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOutCubic,
+                  tween: Tween<double>(
+                    begin: 0.0,
+                    end: completionProgress,
                   ),
+                  builder: (context, value, child) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: value,
+                        minHeight: 8,
+                        backgroundColor: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                        valueColor: AlwaysStoppedAnimation(
+                          value >= 0.8
+                            ? Colors.red
+                            : (value >= 0.6 ? Colors.orange : Colors.green),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 3),
                 Row(
