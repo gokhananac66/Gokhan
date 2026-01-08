@@ -357,8 +357,8 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     // 3. Calculate automatic difficulty
     final autoDifficulty = DifficultyCalculator.calculateDifficulty(myLevel, friend.level);
 
-    // 4. Show game mode selection dialog
-    final gameMode = await _showGameModeDialog(friend, autoDifficulty);
+    // 4. Show ONLY game mode selection dialog (no difficulty selection)
+    final gameMode = await _showGameModeDialogSimple(friend, autoDifficulty);
     if (gameMode == null) return; // User cancelled
 
     // 5. Send invite with auto difficulty and selected gameMode
@@ -830,7 +830,96 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     );
   }
 
-  /// Mod seçim dialog'u - Classic vs Race
+  /// Basitleştirilmiş mod seçim dialog'u - Sadece mod seç, zorluk yok
+  Future<String?> _showGameModeDialogSimple(FriendData friend, String difficulty) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.sports_esports, color: Colors.green.shade700, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Oyun Modu Seç', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('${friend.nickname} ile oynamak için', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Auto difficulty badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome, size: 14, color: Colors.orange.shade700),
+                    const SizedBox(width: 4),
+                    Text('Otomatik Zorluk: $difficulty', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange.shade800)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Classic Mode
+              _buildModeOption(
+                icon: Icons.sports_esports,
+                title: '⚔️ Klasik Mod',
+                description: 'Sırayla hamle yapın, 30 saniye turlar',
+                color: Colors.blue,
+                onTap: () => Navigator.pop(context, 'classic'),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 12),
+
+              // Race Mode
+              _buildModeOption(
+                icon: Icons.speed,
+                title: '🏁 Race Mod',
+                description: 'Aynı anda oynayın, ilk bitiren kazanır',
+                color: Colors.purple,
+                onTap: () => Navigator.pop(context, 'race'),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+
+              // Cancel button
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('İptal', style: TextStyle(color: Colors.grey.shade600)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Eski mod seçim dialog'u (kullanılmıyor artık)
   Future<String?> _showGameModeDialog(FriendData friend, String difficulty) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

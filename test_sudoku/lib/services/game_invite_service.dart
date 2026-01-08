@@ -77,8 +77,12 @@ class GameInviteService {
   /// Gelen davetleri dinle
   void listenToIncomingInvites(Function(GameInvite) callback) {
     final uid = currentUserId;
-    if (uid == null) return;
+    if (uid == null) {
+      print('❌ [INVITE_LISTEN] No user logged in');
+      return;
+    }
 
+    print('👂 [INVITE_LISTEN] Starting to listen for invites for uid: $uid');
     onIncomingInvite = callback;
 
     _inviteSubscription?.cancel();
@@ -88,10 +92,20 @@ class GameInviteService {
         .equalTo(uid)
         .onChildAdded
         .listen((event) async {
-      if (!event.snapshot.exists) return;
+      print('🔔 [INVITE_LISTEN] New invite detected!');
+
+      if (!event.snapshot.exists) {
+        print('⚠️ [INVITE_LISTEN] Snapshot does not exist');
+        return;
+      }
 
       final data = Map<String, dynamic>.from(event.snapshot.value as Map);
-      if (data['status'] != 'pending') return;
+      print('📩 [INVITE_LISTEN] Invite data: status=${data['status']}, fromNickname=${data['fromNickname']}');
+
+      if (data['status'] != 'pending') {
+        print('⚠️ [INVITE_LISTEN] Invite status is not pending, skipping');
+        return;
+      }
 
       // Davet eski mi kontrol et
       final createdAt = data['createdAt'] as int?;
@@ -157,18 +171,25 @@ class GameInviteService {
     required String difficulty,
     String gameMode = 'classic', // 'classic' or 'race'
   }) async {
+    print('🎮 [INVITE] Sending invite to $targetNickname (mode: $gameMode, difficulty: $difficulty)');
+
     final uid = currentUserId;
     if (uid == null) {
+      print('❌ [INVITE] No user logged in');
       return InviteResult(success: false, message: 'Oturum açılmamış');
     }
 
     try {
+      print('🔍 [INVITE] Getting my nickname for uid: $uid');
       final myNickname = await _friendService.getNicknameByUid(uid);
+      print('✅ [INVITE] My nickname: $myNickname');
 
       // ÖNCE OYUNU OLUŞTUR
+      print('🎲 [INVITE] Creating game...');
       final puzzleData = _generateSudokuPuzzle(difficulty);
       final gameRef = _ref.child('games').push();
       final gameId = gameRef.key!;
+      print('🆔 [INVITE] Game ID: $gameId');
 
       await gameRef.set({
         'board': puzzleData['board'],
@@ -190,6 +211,7 @@ class GameInviteService {
       });
 
       // SONRA DAVETİ GÖNDER (gameId ile birlikte)
+      print('📨 [INVITE] Sending invite to Firebase...');
       final inviteRef = _ref.child('game_invites').push();
       await inviteRef.set({
         'fromUid': uid,
@@ -202,6 +224,7 @@ class GameInviteService {
         'gameId': gameId, // OYUN ID'Sİ ZATEN MEVCUT
         'createdAt': ServerValue.timestamp,
       });
+      print('✅ [INVITE] Invite sent! Invite ID: ${inviteRef.key}');
 
       // Timeout sonrası expire et
       Future.delayed(Duration(seconds: inviteTimeoutSeconds), () async {

@@ -353,13 +353,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                 gradient: LinearGradient(
                                   colors: tempGameMode == 'classic'
                                     ? [Color(0xFF2196F3), Color(0xFF1976D2)]
-                                    : [Colors.grey.shade300, Colors.grey.shade400],
+                                    : [Color(0xFF64B5F6), Color(0xFF42A5F5)],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: tempGameMode == 'classic' ? Colors.blue.shade700 : Colors.transparent,
-                                  width: 2,
+                                  color: tempGameMode == 'classic' ? Colors.white : Colors.transparent,
+                                  width: 3,
                                 ),
+                                boxShadow: tempGameMode == 'classic' ? [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.5),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ] : [],
                               ),
                               child: Column(
                                 children: [
@@ -384,13 +391,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                 gradient: LinearGradient(
                                   colors: tempGameMode == 'race'
                                     ? [Color(0xFF9C27B0), Color(0xFF7B1FA2)]
-                                    : [Colors.grey.shade300, Colors.grey.shade400],
+                                    : [Color(0xFFBA68C8), Color(0xFFAB47BC)],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: tempGameMode == 'race' ? Colors.purple.shade700 : Colors.transparent,
-                                  width: 2,
+                                  color: tempGameMode == 'race' ? Colors.white : Colors.transparent,
+                                  width: 3,
                                 ),
+                                boxShadow: tempGameMode == 'race' ? [
+                                  BoxShadow(
+                                    color: Colors.purple.withOpacity(0.5),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ] : [],
                               ),
                               child: Column(
                                 children: [
