@@ -336,14 +336,22 @@ class LeaderboardService {
 
   /// Mod bazlı leaderboard getir
   static Future<List<Map<String, dynamic>>> getModeLeaderboard(String gameMode, String timeFilter) async {
-    // Mode-based leaderboard için tüm kullanıcıları getir
-    final snapshot = await _database.child('users').get();
+    // 1. Önce tüm leaderboard verilerini tek seferde çek (N+1 problemi önlemek için)
+    final leaderboardSnapshot = await _database.child('leaderboard/multiplayer').get();
+    Map<String, dynamic> allLeaderboardData = {};
 
-    if (!snapshot.exists) return [];
+    if (leaderboardSnapshot.exists) {
+      allLeaderboardData = Map<String, dynamic>.from(leaderboardSnapshot.value as Map);
+    }
+
+    // 2. User stats'leri çek
+    final usersSnapshot = await _database.child('users').get();
+    if (!usersSnapshot.exists) return [];
 
     List<Map<String, dynamic>> scores = [];
-    final usersData = Map<String, dynamic>.from(snapshot.value as Map);
+    final usersData = Map<String, dynamic>.from(usersSnapshot.value as Map);
 
+    // 3. Her kullanıcı için stats + leaderboard birleştir
     for (var entry in usersData.entries) {
       final uid = entry.key;
       final userData = Map<String, dynamic>.from(entry.value as Map);
@@ -354,19 +362,18 @@ class LeaderboardService {
         if (stats[gameMode] != null) {
           final modeStats = Map<String, dynamic>.from(stats[gameMode] as Map);
 
-          // Nickname'i leaderboard/multiplayer'dan al
+          // Leaderboard verisinden nickname al (zaten hafızada var, query yok!)
           String nickname = 'Anonim';
           int avatar = 0;
           String country = '🇹🇷';
           String league = 'bronze';
 
-          final leaderboardSnapshot = await _database.child('leaderboard/multiplayer/$uid').get();
-          if (leaderboardSnapshot.exists) {
-            final leaderboardData = Map<String, dynamic>.from(leaderboardSnapshot.value as Map);
-            nickname = leaderboardData['nickname'] ?? 'Anonim';
-            avatar = leaderboardData['avatar'] ?? 0;
-            country = leaderboardData['country'] ?? '🇹🇷';
-            league = leaderboardData['league'] ?? 'bronze';
+          if (allLeaderboardData.containsKey(uid)) {
+            final userLeaderboard = Map<String, dynamic>.from(allLeaderboardData[uid] as Map);
+            nickname = userLeaderboard['nickname'] ?? 'Anonim';
+            avatar = userLeaderboard['avatar'] ?? 0;
+            country = userLeaderboard['country'] ?? '🇹🇷';
+            league = userLeaderboard['league'] ?? 'bronze';
           }
 
           scores.add({
