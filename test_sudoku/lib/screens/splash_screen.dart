@@ -89,31 +89,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
             );
           },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // GA Studios Logo
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  'assets/images/ga_studios_logo.jpeg',
-                  width: 200,
-                  height: 200,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Studios Text
-              const Text(
-                'GA STUDIOS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 4,
-                ),
-              ),
-            ],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              'assets/images/ga_studios_logo.jpeg',
+              width: 200,
+              height: 200,
+              fit: BoxFit.cover,
+            ),
           ),
         ),
       ),
