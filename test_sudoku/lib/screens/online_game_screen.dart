@@ -7,7 +7,10 @@ import 'dart:async';
 import '../services/leaderboard_service.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
+import '../services/recent_players_service.dart';
+import '../services/game_invite_service.dart';
 import '../widgets/game_result_dialog.dart';
+import '../widgets/post_game_stats_dialog.dart';
 
 class OnlineGameScreen extends StatefulWidget {
   final String gameId;
@@ -619,12 +622,124 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       print('⏭️ Draw - NOT submitting to leaderboard');
     }
 
+    // Record recent player
+    await _recordRecentPlayer(iWon, isDraw);
+
     _showWinDialog(winner, reason, iWon, isDraw);
+  }
+
+  Future<void> _recordRecentPlayer(bool iWon, bool isDraw) async {
+    try {
+      final opponentUid = await _getOpponentUid();
+      if (opponentUid == null) return;
+
+      final opponentName = widget.isPlayer1 ? player2Name : player1Name;
+      final gameResult = isDraw ? 'draw' : (iWon ? 'win' : 'loss');
+
+      await RecentPlayersService().addRecentPlayer(
+        opponentUid: opponentUid,
+        opponentNickname: opponentName,
+        gameResult: gameResult,
+        gameMode: widget.gameMode,
+        difficulty: widget.difficulty,
+      );
+
+      print('✅ Recent player recorded: $opponentName ($gameResult)');
+    } catch (e) {
+      print('❌ Failed to record recent player: $e');
+    }
+  }
+
+  Future<String?> _getOpponentUid() async {
+    try {
+      final gameSnapshot = await _database.child('games/${widget.gameId}').get();
+      if (!gameSnapshot.exists) return null;
+
+      final gameData = Map<String, dynamic>.from(gameSnapshot.value as Map);
+      final player1Uid = gameData['player1Uid'];
+      final player2Uid = gameData['player2Uid'];
+
+      return widget.isPlayer1 ? player2Uid : player1Uid;
+    } catch (e) {
+      print('❌ Failed to get opponent UID: $e');
+      return null;
+    }
   }
 
   void _showWinDialog(String? winner, String reason, bool iWon, bool isDraw) {
     final gameContext = context; // Game screen context'ini yakala
 
+    // Calculate move counts (approximate from score)
+    final myMoves = (widget.isPlayer1 ? player1Score : player2Score) ~/ 10;
+    final opponentMoves = (widget.isPlayer1 ? player2Score : player1Score) ~/ 10;
+    final myErrors = widget.isPlayer1 ? player1Errors : player2Errors;
+    final opponentErrors = widget.isPlayer1 ? player2Errors : player1Errors;
+    final opponentName = widget.isPlayer1 ? player2Name : player1Name;
+
+    showDialog(
+      context: gameContext,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (dialogContext) => PostGameStatsDialog(
+        isWinner: iWon,
+        isDraw: isDraw,
+        opponentNickname: opponentName,
+        myTime: seconds,
+        opponentTime: seconds, // Both players have same game time
+        myMoves: myMoves,
+        opponentMoves: opponentMoves,
+        myErrors: myErrors,
+        opponentErrors: opponentErrors,
+        gameMode: widget.gameMode,
+        difficulty: widget.difficulty,
+        onRematch: () async {
+          // Get opponent UID for rematch invite
+          final opponentUid = await _getOpponentUid();
+          if (opponentUid != null) {
+            final inviteService = GameInviteService();
+            final result = await inviteService.sendInvite(
+              targetUid: opponentUid,
+              targetNickname: opponentName,
+              difficulty: widget.difficulty,
+              gameMode: widget.gameMode,
+            );
+
+            if (result.success) {
+              // Navigate back to home or friends screen
+              if (mounted && Navigator.canPop(gameContext)) {
+                Navigator.popUntil(gameContext, (route) => route.isFirst || route.settings.name == '/home');
+              }
+
+              // Show success message
+              ScaffoldMessenger.of(gameContext).showSnackBar(
+                SnackBar(
+                  content: Text('Revanche daveti gönderildi! 🔥'),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(gameContext).showSnackBar(
+                SnackBar(
+                  content: Text(result.message),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        },
+        onClose: () {
+          // Navigate back to home
+          if (mounted && Navigator.canPop(gameContext)) {
+            Navigator.popUntil(gameContext, (route) => route.isFirst || route.settings.name == '/home');
+          }
+        },
+      ),
+    );
+
+    // Keep old dialog commented for reference
+    /*
     showDialog(
       context: gameContext,
       barrierDismissible: false,
@@ -665,6 +780,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         },
       ),
     );
+    */
   }
 
   void _showError(String message) {

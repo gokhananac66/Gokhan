@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_localizations.dart';
 import '../services/leaderboard_service.dart';
+import '../widgets/stats_bar_chart.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -92,6 +93,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return 0;
   }
 
+  int _calculateDraws(Map<String, dynamic> stats) {
+    final gamesPlayed = stats['gamesPlayed'] ?? 0;
+    final wins = stats['wins'] ?? 0;
+    final losses = stats['losses'] ?? 0;
+    return gamesPlayed - wins - losses;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -178,6 +185,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // BAR CHART
+                  StatsBarChart(
+                    wins: currentStats['wins'] ?? 0,
+                    losses: currentStats['losses'] ?? 0,
+                    draws: _calculateDraws(currentStats),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 24),
+
                   // OYUNLAR BOLUMU
                   _buildSectionTitle('Oyunlar', isDark),
                   const SizedBox(height: 12),

@@ -9,6 +9,7 @@ import '../services/game_invite_service.dart';
 import '../services/difficulty_calculator.dart';
 import '../services/invite_cooldown_service.dart';
 import '../services/user_status_service.dart';
+import '../services/recent_players_service.dart';
 import '../app_localizations.dart';
 import 'online_game_screen.dart';
 
@@ -25,10 +26,12 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   final _friendService = FriendService();
   final _inviteService = GameInviteService();
   final _cooldownService = InviteCooldownService();
+  final _recentPlayersService = RecentPlayersService();
   final _database = FirebaseDatabase.instance.ref();
 
   List<FriendData> _friends = [];
   List<FriendRequest> _friendRequests = [];
+  List<RecentPlayer> _recentPlayers = [];
   bool _isLoading = true;
   String? _pendingInviteId;
   String? _pendingInviteTarget;
@@ -120,10 +123,19 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         },
       );
 
+      final recentPlayers = await _recentPlayersService.getRecentPlayers().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('getRecentPlayers timeout!');
+          return [];
+        },
+      );
+
       if (mounted) {
         setState(() {
           _friends = friends;
           _friendRequests = requests;
+          _recentPlayers = recentPlayers;
           _isLoading = false;
         });
       }
@@ -348,6 +360,76 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     }
   }
 
+  Future<void> _sendGameInviteToRecentPlayer(RecentPlayer player) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    // Check if friend is in an online game
+    final statusService = UserStatusService();
+    final isInOnlineGame = await statusService.isUserInOnlineGame(player.uid);
+    if (isInOnlineGame) {
+      _showSnackBar('${player.nickname} şu anda bir oyunda! Oyunu bitirmesini bekleyin.', Colors.orange);
+      return;
+    }
+
+    // Check cooldown
+    final canSend = await _cooldownService.canSendInvite(uid, player.uid);
+    if (!canSend) {
+      final remainingSeconds = await _cooldownService.getRemainingCooldownSeconds(uid, player.uid);
+      _showSnackBar('Bu kullanıcıya $remainingSeconds saniye sonra davet gönderebilirsiniz!', Colors.orange);
+      return;
+    }
+
+    // Get current user level
+    final prefs = await SharedPreferences.getInstance();
+    final myLevel = prefs.getInt('level') ?? 1;
+
+    // Get recent player's current level from Firebase
+    final playerSnapshot = await _database.child('users/${player.uid}/level').get();
+    final playerLevel = playerSnapshot.exists ? (playerSnapshot.value as int) : 1;
+
+    // Check level difference
+    if (!DifficultyCalculator.isLevelDifferenceAcceptable(myLevel, playerLevel, isFriend: false)) {
+      final diff = DifficultyCalculator.getLevelDifference(myLevel, playerLevel);
+      _showSnackBar('Level farkı çok büyük! (Fark: $diff, Max: 20)', Colors.red);
+      return;
+    }
+
+    // Use the same game mode and difficulty as last time
+    final result = await _inviteService.sendInvite(
+      targetUid: player.uid,
+      targetNickname: player.nickname,
+      difficulty: player.difficulty,
+      gameMode: player.gameMode,
+    );
+
+    if (result.success) {
+      setState(() {
+        _pendingInviteId = result.inviteId;
+        _pendingInviteTarget = player.nickname;
+        _pendingGameId = result.gameId;
+        _inviteCountdown = 30;
+      });
+
+      _countdownTimer?.cancel();
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() => _inviteCountdown--);
+        if (_inviteCountdown <= 0) {
+          timer.cancel();
+          setState(() {
+            _pendingInviteId = null;
+            _pendingInviteTarget = null;
+            _pendingGameId = null;
+          });
+        }
+      });
+
+      _showSnackBar('Revanche daveti gönderildi! ${player.gameMode == 'race' ? '🏁' : '⚔️'} ${player.difficulty}', Colors.green);
+    } else {
+      _showSnackBar(result.message, Colors.red);
+    }
+  }
+
   Future<void> _cancelPendingInvite() async {
     if (_pendingInviteId != null) {
       await _inviteService.cancelInvite(_pendingInviteId!);
@@ -399,6 +481,12 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           padding: const EdgeInsets.all(16),
           children: [
             if (_pendingInviteId != null) _buildPendingInviteCard(),
+            if (_recentPlayers.isNotEmpty) ...[
+              _buildSectionHeader('Son Oynadıklarınız', Icons.history_rounded, Colors.purple, badge: _recentPlayers.length),
+              const SizedBox(height: 12),
+              ..._recentPlayers.take(3).map(_buildRecentPlayerCard),
+              const SizedBox(height: 24),
+            ],
             if (_friendRequests.isNotEmpty) ...[
               _buildSectionHeader(tr('friendRequests'), Icons.mail_rounded, Colors.orange, badge: _friendRequests.length),
               const SizedBox(height: 12),
@@ -467,6 +555,138 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildRecentPlayerCard(RecentPlayer player) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final resultColor = RecentPlayer.getResultColor(player.gameResult);
+    final locale = AppLocalizations.currentLanguage;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        elevation: 2,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [const Color(0xFF2D2D2D), const Color(0xFF1E1E1E)]
+                  : [Colors.white, Colors.grey.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: resultColor.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Result icon badge
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: resultColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: resultColor, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    player.getResultIcon(),
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Player info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      player.nickname,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue, width: 1),
+                          ),
+                          child: Text(
+                            player.gameMode == 'race' ? '🏁 Race' : '⚔️ Classic',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.blue.shade300 : Colors.blue.shade700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '• ${player.getRelativeTime(locale)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Re-invite button
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF9C27B0).withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _sendGameInviteToRecentPlayer(player),
+                    borderRadius: BorderRadius.circular(12),
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
