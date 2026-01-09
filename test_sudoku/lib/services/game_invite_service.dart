@@ -13,6 +13,7 @@ class GameInvite {
   final String gameMode; // 'classic' or 'race'
   final String status;
   final DateTime createdAt;
+  final bool isRevanche; // Revanche daveti mi?
   String? gameId;
 
   GameInvite({
@@ -24,6 +25,7 @@ class GameInvite {
     required this.gameMode,
     required this.status,
     required this.createdAt,
+    this.isRevanche = false,
     this.gameId,
   });
 }
@@ -137,6 +139,7 @@ class GameInviteService {
         createdAt: createdAt != null
             ? DateTime.fromMillisecondsSinceEpoch(createdAt)
             : DateTime.now(),
+        isRevanche: data['isRevanche'] == true,
         gameId: data['gameId']?.toString(),
       );
 
@@ -174,8 +177,9 @@ class GameInviteService {
     required String targetNickname,
     required String difficulty,
     String gameMode = 'classic', // 'classic' or 'race'
+    bool isRevanche = false, // Revanche daveti mi?
   }) async {
-    print('🎮 [INVITE] Sending invite to $targetNickname (mode: $gameMode, difficulty: $difficulty)');
+    print('🎮 [INVITE] Sending ${isRevanche ? "REVANCHE" : "regular"} invite to $targetNickname (mode: $gameMode, difficulty: $difficulty)');
 
     final uid = currentUserId;
     if (uid == null) {
@@ -238,6 +242,7 @@ class GameInviteService {
         'gameMode': gameMode, // 'classic' or 'race'
         'status': 'pending',
         'gameId': gameId, // OYUN ID'Sİ ZATEN MEVCUT
+        'isRevanche': isRevanche, // Revanche daveti mi?
         'createdAt': ServerValue.timestamp,
       });
       print('✅ [INVITE] Invite sent! Invite ID: ${inviteRef.key}');

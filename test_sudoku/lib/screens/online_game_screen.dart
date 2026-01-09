@@ -702,6 +702,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
               targetNickname: opponentName,
               difficulty: widget.difficulty,
               gameMode: widget.gameMode,
+              isRevanche: true,
             );
 
             if (result.success) {

@@ -130,10 +130,16 @@ class _GlobalInviteOverlayState extends State<GlobalInviteOverlay> with SingleTi
   }
 
   Widget _buildInviteCard() {
+    final isRevanche = _currentInvite?.isRevanche ?? false;
+
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.green.shade600, Colors.green.shade800]),
+        gradient: LinearGradient(
+          colors: isRevanche
+            ? [const Color(0xFF9C27B0), const Color(0xFF6A1B9A)] // Mor gradient (revanche)
+            : [Colors.green.shade600, Colors.green.shade800], // Yeşil gradient (normal)
+        ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
       ),
@@ -149,15 +155,27 @@ class _GlobalInviteOverlayState extends State<GlobalInviteOverlay> with SingleTi
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                    child: const Icon(Icons.sports_esports, color: Colors.white, size: 28),
+                    child: Icon(
+                      isRevanche ? Icons.refresh_rounded : Icons.sports_esports,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Oyun Daveti!', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('${_currentInvite?.fromNickname ?? "Birisi"} seni oyuna davet ediyor', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
+                        Text(
+                          isRevanche ? 'Revanche Daveti! 🔥' : 'Oyun Daveti!',
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          isRevanche
+                            ? '${_currentInvite?.fromNickname ?? "Birisi"} sana revanche gönderiyor'
+                            : '${_currentInvite?.fromNickname ?? "Birisi"} seni oyuna davet ediyor',
+                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                        ),
                       ],
                     ),
                   ),
