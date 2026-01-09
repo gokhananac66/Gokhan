@@ -399,11 +399,20 @@ class LeaderboardService {
       }
     }
 
-    // Sıralama: wins > totalScore
+    // Sıralama: TotalScore > WinRate > Wins
     scores.sort((a, b) {
-      int winsCompare = (b['wins'] ?? 0).compareTo(a['wins'] ?? 0);
-      if (winsCompare != 0) return winsCompare;
-      return (b['totalScore'] ?? 0).compareTo(a['totalScore'] ?? 0);
+      // 1. Önce PUAN'a bak (en önemli metrik)
+      int scoreCompare = (b['totalScore'] ?? 0).compareTo(a['totalScore'] ?? 0);
+      if (scoreCompare != 0) return scoreCompare;
+
+      // 2. Eşitlik durumunda WinRate'e bak (kalite göstergesi)
+      double aWinRate = double.tryParse(a['winRate']?.toString() ?? '0') ?? 0.0;
+      double bWinRate = double.tryParse(b['winRate']?.toString() ?? '0') ?? 0.0;
+      int winRateCompare = bWinRate.compareTo(aWinRate);
+      if (winRateCompare != 0) return winRateCompare;
+
+      // 3. Son olarak toplam kazanma sayısına bak
+      return (b['wins'] ?? 0).compareTo(a['wins'] ?? 0);
     });
 
     return scores.take(100).toList();
