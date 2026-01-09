@@ -274,6 +274,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       appBar: AppBar(
         title: Text(tr('settings')),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Hero(
+              tag: 'settings_icon',
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.settings_rounded,
+                  color: isDark ? Colors.white : Colors.black87,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

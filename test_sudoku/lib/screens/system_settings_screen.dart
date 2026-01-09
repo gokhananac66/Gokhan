@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../app_localizations.dart';
+import '../services/sound_service.dart';
+import '../services/haptic_service.dart';
 
 class SystemSettingsScreen extends StatefulWidget {
   const SystemSettingsScreen({super.key});
@@ -126,9 +128,15 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
             subtitle: tr('soundEffectsDesc'),
             colors: [Colors.green.shade500, Colors.green.shade700],
             value: soundEnabled,
-            onChanged: (v) {
+            onChanged: (v) async {
               setState(() => soundEnabled = v);
               _saveSetting('soundEnabled', v);
+              // Update sound service
+              await SoundService().toggleSound(v);
+              // Play test sound if enabled
+              if (v) {
+                await SoundService().playButtonClick();
+              }
             },
           ),
 
@@ -141,9 +149,15 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
             subtitle: tr('vibrationDesc'),
             colors: [Colors.purple.shade500, Colors.purple.shade700],
             value: vibrationEnabled,
-            onChanged: (v) {
+            onChanged: (v) async {
               setState(() => vibrationEnabled = v);
               _saveSetting('vibrationEnabled', v);
+              // Update haptic service
+              await HapticService().toggleHaptic(v);
+              // Test vibration if enabled
+              if (v) {
+                await HapticService().mediumImpact();
+              }
             },
           ),
 

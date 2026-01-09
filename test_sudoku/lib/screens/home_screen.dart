@@ -9,6 +9,7 @@ import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/friend_service.dart';
+import '../services/haptic_service.dart';
 import '../widgets/sudoku_clash_logo.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -728,6 +729,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: tr('singlePlayerDesc'),
                   colors: [Colors.blue.shade500, Colors.blue.shade700],
                   badge: _hasSavedGame ? '⏸️' : null,
+                  heroTag: 'single_player_icon',
                   onTap: _showSinglePlayerDialog,
                 ),
                 const SizedBox(height: 16),
@@ -738,6 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: tr('onlineMultiplayer'),
                   subtitle: tr('onlineMultiplayerDesc'),
                   colors: [Colors.orange.shade500, Colors.orange.shade700],
+                  heroTag: 'online_icon',
                   onTap: _showOnlineDialog,
                 ),
                 const SizedBox(height: 16),
@@ -748,10 +751,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: tr('settings'),
                   subtitle: tr('settingsDesc'),
                   colors: [Colors.grey.shade600, Colors.grey.shade800],
+                  heroTag: 'settings_icon', // Hero tag for smooth transition
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          const begin = Offset(1.0, 0.0);
+                          const end = Offset.zero;
+                          const curve = Curves.easeInOutCubic;
+                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                          return SlideTransition(position: animation.drive(tween), child: child);
+                        },
+                        transitionDuration: const Duration(milliseconds: 300),
+                      ),
                     ).then((_) {
                       setState(() {});
                     });
@@ -773,12 +787,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required List<Color> colors,
     String? badge,
+    String? heroTag,
     required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          HapticService().lightImpact();
+          onTap();
+        },
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           clipBehavior: Clip.none,
@@ -803,14 +821,26 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 28),
-                  ),
+                  heroTag != null
+                      ? Hero(
+                          tag: heroTag,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(icon, color: Colors.white, size: 28),
+                          ),
+                        )
+                      : Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(icon, color: Colors.white, size: 28),
+                        ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(

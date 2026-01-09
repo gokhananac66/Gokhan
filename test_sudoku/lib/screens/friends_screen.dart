@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/friend_service.dart';
 import '../services/game_invite_service.dart';
 import '../services/difficulty_calculator.dart';
@@ -391,7 +392,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildLoadingSkeleton()
           : RefreshIndicator(
         onRefresh: _loadData,
         child: ListView(
@@ -1055,6 +1056,80 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           ElevatedButton.icon(onPressed: _showAddFriendDialog, icon: const Icon(Icons.person_add), label: Text(tr('addFriend')), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
         ],
       ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+          highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Avatar skeleton
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Text skeleton
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 100,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Button skeleton
+                  Container(
+                    width: 80,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
