@@ -341,7 +341,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
   Widget _buildUserRankBar(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5))]),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        border: Border.all(color: Colors.purple, width: 3),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5))],
+      ),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         const Icon(Icons.person, color: Colors.blue),
         const SizedBox(width: 8),
