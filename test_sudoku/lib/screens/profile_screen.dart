@@ -425,11 +425,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // Avatar ve Temel Bilgiler
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: isDark ? Colors.black26 : Colors.grey.shade200, blurRadius: 10, offset: const Offset(0, 4))],
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF9C27B0).withOpacity(isDark ? 0.3 : 0.1),
+                    Color(0xFFE91E63).withOpacity(isDark ? 0.2 : 0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Color(0xFF9C27B0).withOpacity(0.3),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xFF9C27B0).withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -438,14 +456,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: _showAvatarPicker,
                     child: Stack(
                       children: [
-                        if (hasGooglePhoto)
-                          CircleAvatar(radius: 50, backgroundImage: NetworkImage(_user!.photoURL!))
-                        else
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Color(currentAvatar['color']).withOpacity(0.2),
-                            child: Icon(currentAvatar['icon'], size: 50, color: Color(currentAvatar['color'])),
+                        // Gradient Ring
+                        Container(
+                          width: 108,
+                          height: 108,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF9C27B0), Color(0xFFE91E63)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFF9C27B0).withOpacity(0.5),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                              ),
+                            ],
                           ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                              ),
+                              child: hasGooglePhoto
+                                  ? CircleAvatar(radius: 50, backgroundImage: NetworkImage(_user!.photoURL!))
+                                  : CircleAvatar(
+                                      radius: 50,
+                                      backgroundColor: Color(currentAvatar['color']).withOpacity(0.2),
+                                      child: Icon(currentAvatar['icon'], size: 50, color: Color(currentAvatar['color'])),
+                                    ),
+                            ),
+                          ),
+                        ),
                         Positioned(
                           bottom: 0,
                           right: 0,

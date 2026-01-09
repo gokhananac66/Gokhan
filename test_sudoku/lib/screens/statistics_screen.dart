@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_localizations.dart';
+import '../services/leaderboard_service.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -10,11 +11,12 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  String _selectedDifficulty = 'Kolay';
+  String _selectedMode = 'Klasik';
 
-  final List<String> _difficulties = ['Kolay', 'Orta', 'Zor', 'Uzman'];
+  final List<String> _modes = ['Klasik', 'Race', 'Genel'];
 
   Map<String, Map<String, dynamic>> _stats = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -22,172 +24,121 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     _loadAllStats();
   }
 
-  String _getLocalizedDifficulty(String key) {
-    switch (key) {
-      case 'Kolay': return tr('easy');
-      case 'Orta': return tr('medium');
-      case 'Zor': return tr('hard');
-      case 'Uzman': return tr('expert');
-      default: return key;
-    }
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes}:${secs.toString().padLeft(2, '0')}';
   }
 
   Future<void> _loadAllStats() async {
-    final prefs = await SharedPreferences.getInstance();
+    setState(() => _isLoading = true);
 
-    Map<String, Map<String, dynamic>> stats = {};
+    try {
+      // Multiplayer stats from LeaderboardService
+      final classicStats = await LeaderboardService.getUserModeStats('classic');
+      final raceStats = await LeaderboardService.getUserModeStats('race');
+      final overallStats = await LeaderboardService.getUserStats();
 
-    for (String diff in _difficulties) {
-      stats[diff] = {
-        'gamesStarted': prefs.getInt('gamesStarted$diff') ?? 0,
-        'gamesWon': prefs.getInt('gamesWon$diff') ?? 0,
-        'gamesLost': prefs.getInt('gamesLost$diff') ?? 0,
-        'perfectWins': prefs.getInt('perfectWins$diff') ?? 0,
-        'bestScore': prefs.getInt('bestScore$diff') ?? 0,
-        'bestScoreToday': prefs.getInt('bestScoreToday$diff') ?? 0,
-        'bestScoreWeek': prefs.getInt('bestScoreWeek$diff') ?? 0,
-        'bestScoreMonth': prefs.getInt('bestScoreMonth$diff') ?? 0,
-        'currentWinStreak': prefs.getInt('currentWinStreak$diff') ?? 0,
-        'bestWinStreak': prefs.getInt('bestWinStreak$diff') ?? 0,
+      Map<String, Map<String, dynamic>> stats = {};
+
+      stats['Klasik'] = classicStats ?? {
+        'gamesPlayed': 0,
+        'wins': 0,
+        'winRate': '0.0',
+        'totalScore': 0,
       };
+
+      stats['Race'] = raceStats ?? {
+        'gamesPlayed': 0,
+        'wins': 0,
+        'winRate': '0.0',
+        'totalScore': 0,
+        'fastestWin': null,
+      };
+
+      stats['Genel'] = overallStats ?? {
+        'totalScore': 0,
+        'wins': 0,
+        'losses': 0,
+        'winRate': 0.0,
+      };
+
+      setState(() {
+        _stats = stats;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading stats: $e');
+      setState(() => _isLoading = false);
     }
-
-    int totalGamesWon = prefs.getInt('gamesWon') ?? 0;
-    int totalGamesLost = prefs.getInt('gamesLost') ?? 0;
-    int totalGames = prefs.getInt('totalGames') ?? 0;
-    int perfectWins = prefs.getInt('perfectWins') ?? 0;
-    int currentStreak = prefs.getInt('currentWinStreak') ?? 0;
-    int bestStreak = prefs.getInt('bestWinStreak') ?? 0;
-
-    stats['Genel'] = {
-      'gamesStarted': totalGames,
-      'gamesWon': totalGamesWon,
-      'gamesLost': totalGamesLost,
-      'perfectWins': perfectWins,
-      'currentWinStreak': currentStreak,
-      'bestWinStreak': bestStreak,
-    };
-
-    setState(() => _stats = stats);
   }
 
-  double _getWinRate(String difficulty) {
-    final stats = _stats[difficulty];
+  double _getWinRate(String mode) {
+    final stats = _stats[mode];
     if (stats == null) return 0;
 
-    int won = stats['gamesWon'] ?? 0;
-    int lost = stats['gamesLost'] ?? 0;
-    int total = won + lost;
+    // Try to parse winRate as string or double
+    final winRateValue = stats['winRate'];
+    if (winRateValue == null) return 0;
 
-    if (total == 0) return 0;
-    return (won / total * 100);
+    if (winRateValue is String) {
+      return double.tryParse(winRateValue) ?? 0;
+    } else if (winRateValue is double) {
+      return winRateValue;
+    } else if (winRateValue is int) {
+      return winRateValue.toDouble();
+    }
+
+    return 0;
   }
 
-  Future<void> _resetStatistics() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tr('resetStats')),
-        content: Text(tr('resetConfirm')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(tr('cancel')),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              final prefs = await SharedPreferences.getInstance();
-
-              await prefs.remove('totalGames');
-              await prefs.remove('gamesWon');
-              await prefs.remove('gamesLost');
-              await prefs.remove('perfectWins');
-              await prefs.remove('currentWinStreak');
-              await prefs.remove('bestWinStreak');
-
-              for (String diff in _difficulties) {
-                await prefs.remove('gamesStarted$diff');
-                await prefs.remove('gamesWon$diff');
-                await prefs.remove('gamesLost$diff');
-                await prefs.remove('perfectWins$diff');
-                await prefs.remove('bestScore$diff');
-                await prefs.remove('bestScoreToday$diff');
-                await prefs.remove('bestScoreWeek$diff');
-                await prefs.remove('bestScoreMonth$diff');
-                await prefs.remove('currentWinStreak$diff');
-                await prefs.remove('bestWinStreak$diff');
-                await prefs.remove('bestTime$diff');
-              }
-
-              await _loadAllStats();
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(tr('statsReset')),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: Text(tr('reset'), style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currentStats = _stats[_selectedDifficulty] ?? {};
-    final generalStats = _stats['Genel'] ?? {};
+    final currentStats = _stats[_selectedMode] ?? {};
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade50,
       appBar: AppBar(
         title: Text(tr('statistics')),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            onPressed: _resetStatistics,
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Zorluk secici
-          Container(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: _difficulties.map((diff) {
-                bool isSelected = _selectedDifficulty == diff;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedDifficulty = diff),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: isSelected ? Colors.blue : Colors.transparent,
-                          width: 2,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Mode selector
+                Container(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: _modes.map((mode) {
+                      bool isSelected = _selectedMode == mode;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedMode = mode),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: isSelected ? Colors.blue : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            mode,
+                            style: TextStyle(
+                              color: isSelected ? Colors.blue : (isDark ? Colors.grey : Colors.grey.shade600),
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    child: Text(
-                      _getLocalizedDifficulty(diff),
-                      style: TextStyle(
-                        color: isSelected ? Colors.blue : (isDark ? Colors.grey : Colors.grey.shade600),
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
+                      );
+                    }).toList(),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
+                ),
 
           // Istatistik listesi
           Expanded(
@@ -197,108 +148,46 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // OYUNLAR BOLUMU
-                  _buildSectionTitle(tr('games'), isDark),
+                  _buildSectionTitle('Oyunlar', isDark),
                   const SizedBox(height: 12),
                   _buildStatCard(
                     icon: Icons.grid_on,
                     iconColor: Colors.blue,
-                    title: tr('gamesStarted'),
-                    value: '${generalStats['gamesStarted'] ?? currentStats['gamesStarted'] ?? 0}',
+                    title: 'Başlatılan Oyunlar',
+                    value: '${currentStats['gamesPlayed'] ?? 0}',
                     isDark: isDark,
                   ),
                   _buildStatCard(
                     icon: Icons.emoji_events_outlined,
                     iconColor: Colors.green,
-                    title: tr('gamesWon'),
-                    value: '${generalStats['gamesWon'] ?? currentStats['gamesWon'] ?? 0}',
+                    title: 'Kazanılan Oyunlar',
+                    value: '${currentStats['wins'] ?? 0}',
                     isDark: isDark,
                   ),
                   _buildStatCard(
                     icon: Icons.flag_outlined,
                     iconColor: Colors.orange,
-                    title: tr('winRate'),
-                    value: '${_getWinRate('Genel').toStringAsFixed(1)}%',
+                    title: 'Kazanma Oranı',
+                    value: '${_getWinRate(_selectedMode).toStringAsFixed(1)}%',
                     isDark: isDark,
                   ),
                   _buildStatCard(
-                    icon: Icons.workspace_premium_outlined,
+                    icon: Icons.star_outlined,
                     iconColor: Colors.purple,
-                    title: tr('perfectWins'),
-                    value: '${generalStats['perfectWins'] ?? currentStats['perfectWins'] ?? 0}',
+                    title: 'Toplam Skor',
+                    value: '${currentStats['totalScore'] ?? 0}',
                     isDark: isDark,
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // EN IYI PUAN BOLUMU
-                  _buildSectionTitle(tr('bestScore'), isDark),
-                  const SizedBox(height: 12),
-                  _buildStatCard(
-                    icon: Icons.star_outline,
-                    iconColor: Colors.amber,
-                    title: tr('today'),
-                    value: '${currentStats['bestScoreToday'] ?? '-'}',
-                    isDark: isDark,
-                  ),
-                  _buildStatCard(
-                    icon: Icons.star_outline,
-                    iconColor: Colors.amber,
-                    title: tr('thisWeek'),
-                    value: '${currentStats['bestScoreWeek'] ?? '-'}',
-                    isDark: isDark,
-                  ),
-                  _buildStatCard(
-                    icon: Icons.star_outline,
-                    iconColor: Colors.amber,
-                    title: tr('thisMonth'),
-                    value: '${currentStats['bestScoreMonth'] ?? '-'}',
-                    isDark: isDark,
-                  ),
-                  _buildStatCard(
-                    icon: Icons.star,
-                    iconColor: Colors.amber,
-                    title: tr('allTime'),
-                    value: '${currentStats['bestScore'] ?? '-'}',
-                    isDark: isDark,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // SERILER BOLUMU
-                  _buildSectionTitle(tr('streaks'), isDark),
-                  const SizedBox(height: 12),
-                  _buildStatCard(
-                    icon: Icons.arrow_forward,
-                    iconColor: Colors.teal,
-                    title: tr('currentStreak'),
-                    value: '${generalStats['currentWinStreak'] ?? 0}',
-                    isDark: isDark,
-                  ),
-                  _buildStatCard(
-                    icon: Icons.double_arrow,
-                    iconColor: Colors.teal,
-                    title: tr('bestStreak'),
-                    value: '${generalStats['bestWinStreak'] ?? 0}',
-                    isDark: isDark,
-                  ),
+                  if (_selectedMode == 'Race' && currentStats['fastestWin'] != null)
+                    _buildStatCard(
+                      icon: Icons.speed,
+                      iconColor: Colors.red,
+                      title: 'En Hızlı Kazanma',
+                      value: _formatTime(currentStats['fastestWin']),
+                      isDark: isDark,
+                    ),
 
                   const SizedBox(height: 32),
-
-                  // Sifirla butonu
-                  Center(
-                    child: TextButton(
-                      onPressed: _resetStatistics,
-                      child: Text(
-                        tr('resetStats'),
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
                 ],
               ),
             ),
