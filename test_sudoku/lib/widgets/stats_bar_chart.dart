@@ -20,7 +20,7 @@ class StatsBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxValue = [wins, losses, draws].reduce((a, b) => a > b ? a : b).toDouble();
-    final maxY = maxValue > 0 ? (maxValue * 1.2).ceil().toDouble() : 10;
+    final maxY = maxValue > 0 ? (maxValue * 1.2).ceil().toDouble() : 10.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
