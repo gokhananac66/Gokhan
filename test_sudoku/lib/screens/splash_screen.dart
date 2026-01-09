@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
+import '../widgets/sudoku_clash_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -89,26 +90,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
             );
           },
-          child: Container(
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.white.withOpacity(0.1),
-                  blurRadius: 30,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'assets/images/ga_studios_logo.jpeg',
-                fit: BoxFit.cover,
-              ),
-            ),
+          child: const SudokuClashLogo(
+            size: 180,
+            animate: true,
           ),
         ),
       ),
