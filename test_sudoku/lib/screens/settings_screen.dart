@@ -21,39 +21,202 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAboutDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.info, color: Colors.blue),
-            SizedBox(width: 10),
-            Text('Sudoku Clash'),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
+                : [Colors.white, Colors.grey.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.blue.withOpacity(0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.3),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(22),
+                      topRight: Radius.circular(22),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.info, color: Colors.white, size: 40),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Sudoku Clash',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${tr('version')}: 1.0.0',
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tr('aboutDesc'),
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        '${tr('features')}:',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildFeatureItem('🎮', tr('singlePlayer'), isDark),
+                      _buildFeatureItem('🌍', tr('onlineMultiplayer'), isDark),
+                      _buildFeatureItem('⚡', tr('fourDifficulties'), isDark),
+                      _buildFeatureItem('📝', tr('notesSystem'), isDark),
+                      _buildFeatureItem('💡', tr('hintSystem'), isDark),
+                      _buildFeatureItem('🎯', tr('comboScoring'), isDark),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: Text(
+                          '© 2024 Sudoku Clash',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Button
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade400, Colors.blue.shade600],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.3),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        tr('ok'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${tr('version')}: 1.0.0'),
-            const SizedBox(height: 10),
-            Text(tr('aboutDesc')),
-            const SizedBox(height: 10),
-            Text('${tr('features')}:', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text('• ${tr('singlePlayer')}'),
-            Text('• ${tr('onlineMultiplayer')}'),
-            Text('• ${tr('fourDifficulties')}'),
-            Text('• ${tr('notesSystem')}'),
-            Text('• ${tr('hintSystem')}'),
-            Text('• ${tr('comboScoring')}'),
-            const SizedBox(height: 10),
-            const Text('© 2024 Sudoku Clash'),
-          ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(String emoji, String text, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+            ? [Color(0xFF2D2D2D).withOpacity(0.5), Color(0xFF1E1E1E).withOpacity(0.5)]
+            : [Colors.blue.shade50, Colors.blue.shade50.withOpacity(0.3)],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(tr('ok')),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: Colors.blue.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 15,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
           ),
         ],
       ),

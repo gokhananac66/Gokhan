@@ -107,17 +107,40 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         centerTitle: true,
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.blue,
-          unselectedLabelColor: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-          indicatorColor: Colors.blue,
-          indicatorWeight: 3,
-          tabs: const [
-            Tab(icon: Icon(Icons.sports_esports, size: 20), text: '⚔️ Klasik'),
-            Tab(icon: Icon(Icons.speed, size: 20), text: '🏁 Race'),
-            Tab(icon: Icon(Icons.emoji_events, size: 20), text: '🌍 Genel'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)] : [Colors.white, Colors.grey.shade50],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: Colors.blue.withOpacity(0.1), blurRadius: 8, spreadRadius: 1),
+              ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Colors.white,
+              unselectedLabelColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              indicator: BoxDecoration(
+                gradient: LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1976D2)]),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 8, spreadRadius: 1),
+                ],
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(icon: Icon(Icons.sports_esports, size: 18), text: '⚔️ Klasik'),
+                Tab(icon: Icon(Icons.speed, size: 18), text: '🏁 Race'),
+                Tab(icon: Icon(Icons.emoji_events, size: 18), text: '🌍 Genel'),
+              ],
+            ),
+          ),
         ),
       ),
       body: Column(children: [
@@ -176,13 +199,24 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
     return Expanded(
       child: GestureDetector(
         onTap: () { setState(() => _selectedTimeFilter = key); _loadLeaderboard(); },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(color: isSelected ? (isDark ? Colors.blue.shade700 : Colors.blue) : (isDark ? Colors.grey.shade800 : Colors.grey.shade200), borderRadius: BorderRadius.circular(10)),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            gradient: isSelected
+              ? LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600])
+              : null,
+            color: isSelected ? null : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected ? Border.all(color: Colors.blue.withOpacity(0.5), width: 1.5) : null,
+            boxShadow: isSelected ? [
+              BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
+            ] : [],
+          ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 16, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
-            const SizedBox(width: 4),
-            Flexible(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)), overflow: TextOverflow.ellipsis)),
+            Icon(icon, size: 18, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+            const SizedBox(width: 6),
+            Flexible(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)), overflow: TextOverflow.ellipsis)),
           ]),
         ),
       ),

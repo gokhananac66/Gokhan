@@ -109,29 +109,60 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 // Mode selector
                 Container(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                        ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
+                        : [Colors.white, Colors.grey.shade50],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Color(0xFF9C27B0).withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFF9C27B0).withOpacity(0.15),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: _modes.map((mode) {
                       bool isSelected = _selectedMode == mode;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedMode = mode),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: isSelected ? Colors.blue : Colors.transparent,
-                                width: 2,
-                              ),
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedMode = mode),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                ? LinearGradient(
+                                    colors: [Color(0xFF9C27B0), Color(0xFFE91E63)],
+                                  )
+                                : null,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: Color(0xFF9C27B0).withOpacity(0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                              ] : [],
                             ),
-                          ),
-                          child: Text(
-                            mode,
-                            style: TextStyle(
-                              color: isSelected ? Colors.blue : (isDark ? Colors.grey : Colors.grey.shade600),
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            child: Text(
+                              mode,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                         ),
@@ -216,28 +247,48 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     required bool isDark,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: isDark
+            ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
+            : [Colors.white, Colors.grey.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: iconColor.withOpacity(0.3),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black12 : Colors.grey.shade200,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: iconColor.withOpacity(0.15),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              gradient: LinearGradient(
+                colors: [iconColor.withOpacity(0.8), iconColor],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withOpacity(0.4),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(icon, color: Colors.white, size: 26),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -245,16 +296,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               title,
               style: TextStyle(
                 fontSize: 16,
-                color: isDark ? Colors.white70 : Colors.black87,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
           ),
-          Text(
-            value == '0' || value == '-' ? '-' : value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [iconColor.withOpacity(0.2), iconColor.withOpacity(0.1)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              value == '0' || value == '-' ? '-' : value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: iconColor,
+              ),
             ),
           ),
         ],

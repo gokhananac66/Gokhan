@@ -780,21 +780,135 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           IconButton(
             icon: const Icon(Icons.arrow_back, size: 22),
             onPressed: () {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               showDialog(
                 context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Oyundan Çık'),
-                  content: const Text('Çıkarsan oyunu kaybedersin. Emin misin?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _leaveGame();
-                      },
-                      child: const Text('Çık', style: TextStyle(color: Colors.red)),
+                barrierDismissible: false,
+                builder: (context) => Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                          ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
+                          : [Colors.white, Colors.grey.shade50],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.red.withOpacity(0.5),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                  ],
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Icon
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Colors.red.shade400, Colors.red.shade700],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.5),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.exit_to_app, color: Colors.white, size: 36),
+                        ),
+                        const SizedBox(height: 20),
+                        // Title
+                        const Text(
+                          'Oyundan Çık',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Message
+                        Text(
+                          'Çıkarsan oyunu kaybedersin. Emin misin?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                                  foregroundColor: isDark ? Colors.white : Colors.black87,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text('İptal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.red.shade400, Colors.red.shade700],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.red.withOpacity(0.4),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _leaveGame();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    foregroundColor: Colors.white,
+                                    shadowColor: Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text('Çık', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },

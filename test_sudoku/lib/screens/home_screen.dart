@@ -512,23 +512,79 @@ class _HomeScreenState extends State<HomeScreen> {
             final unlockInfo = ProgressionService.getUnlockInfo(diff['key']);
 
             return Opacity(
-              opacity: isLocked ? 0.5 : 1.0,
+              opacity: isLocked ? 0.6 : 1.0,
               child: InkWell(
                 onTap: isLocked ? null : () => onSelect(diff['key']),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                  margin: const EdgeInsets.symmetric(vertical: 4),
+                borderRadius: BorderRadius.circular(16),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue.shade50 : (isDark ? Colors.grey.shade800 : Colors.transparent),
-                    borderRadius: BorderRadius.circular(12),
-                    border: isSelected
-                        ? Border.all(color: Colors.blue.shade200, width: 2)
-                        : Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200, width: 1),
+                    gradient: isSelected
+                      ? LinearGradient(
+                          colors: [
+                            Color(0xFF2196F3).withOpacity(isDark ? 0.3 : 0.15),
+                            Color(0xFF1976D2).withOpacity(isDark ? 0.2 : 0.1),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : LinearGradient(
+                          colors: isDark
+                            ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
+                            : [Colors.white, Colors.grey.shade50],
+                        ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected
+                        ? Color(0xFF2196F3).withOpacity(0.6)
+                        : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected ? [
+                      BoxShadow(
+                        color: Color(0xFF2196F3).withOpacity(0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ] : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
-                      Text(diff['emoji'], style: const TextStyle(fontSize: 28)),
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isSelected
+                              ? [Color(0xFF2196F3), Color(0xFF1976D2)]
+                              : isDark
+                                ? [Colors.grey.shade700, Colors.grey.shade800]
+                                : [Colors.grey.shade100, Colors.grey.shade200],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: isSelected ? [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.4),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ] : [],
+                        ),
+                        child: Center(
+                          child: Text(
+                            diff['emoji'],
+                            style: const TextStyle(fontSize: 26),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -536,24 +592,74 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Row(
                               children: [
-                                Text(diff['name'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isSelected ? Colors.blue.shade700 : null)),
+                                Text(
+                                  diff['name'],
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? Color(0xFF2196F3) : (isDark ? Colors.white : Colors.black87),
+                                  ),
+                                ),
                                 if (isLocked) ...[
                                   const SizedBox(width: 8),
-                                  Icon(Icons.lock, size: 16, color: Colors.grey.shade600),
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Icon(Icons.lock, size: 14, color: Colors.orange.shade700),
+                                  ),
                                 ],
                               ],
                             ),
+                            const SizedBox(height: 4),
                             if (isLocked && unlockInfo != null)
-                              Text(
-                                '${_getLocalizedDifficulty(unlockInfo['previousLevel'])} ${tr('win')} $remaining ${tr('more')}',
-                                style: TextStyle(fontSize: 12, color: Colors.orange.shade700, fontWeight: FontWeight.w500),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
+                                ),
+                                child: Text(
+                                  '${_getLocalizedDifficulty(unlockInfo['previousLevel'])} ${tr('win')} $remaining ${tr('more')}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               )
                             else
-                              Text(diff['description'], style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                              Text(
+                                diff['description'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                ),
+                              ),
                           ],
                         ),
                       ),
-                      if (isSelected && !isLocked) Icon(Icons.check_circle, color: Colors.blue.shade600),
+                      if (isSelected && !isLocked)
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.green.shade400, Colors.green.shade600],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.withOpacity(0.4),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.check, color: Colors.white, size: 20),
+                        ),
                     ],
                   ),
                 ),
