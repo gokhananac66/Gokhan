@@ -84,12 +84,14 @@ class LeaderboardService {
     int currentTotalScore = 0;
     int currentWins = 0;
     int currentLosses = 0;
+    int currentGamesPlayed = 0;
 
     if (snapshot.exists) {
       final data = Map<String, dynamic>.from(snapshot.value as Map);
       currentTotalScore = data['totalScore'] ?? 0;
       currentWins = data['wins'] ?? 0;
       currentLosses = data['losses'] ?? 0;
+      currentGamesPlayed = data['gamesPlayed'] ?? 0;
     }
 
     // Tüm zamanlara kaydet
@@ -99,6 +101,7 @@ class LeaderboardService {
       'totalScore': currentTotalScore + scoreEarned,
       'wins': won ? currentWins + 1 : currentWins,
       'losses': won ? currentLosses : currentLosses + 1,
+      'gamesPlayed': currentGamesPlayed + 1,
       'winRate': rank.winRate,
       'level': rank.level,
       'league': rank.league.name,
