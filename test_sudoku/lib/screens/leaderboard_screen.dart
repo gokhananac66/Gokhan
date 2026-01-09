@@ -100,6 +100,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           const Text('🏆 ', style: TextStyle(fontSize: 24)),
           Text(AppLocalizations.get('leaderboard'), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -340,22 +344,104 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildUserRankBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        border: Border.all(color: Colors.purple, width: 3),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5))],
-      ),
-      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.person, color: Colors.blue),
-        const SizedBox(width: 8),
-        Text('${AppLocalizations.get('yourRank')}: ', style: const TextStyle(fontSize: 16)),
-        Text('#$_userRank', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
-        if (_userRankInfo != null && _currentMode == 'overall') ...[
-          const SizedBox(width: 16),
-          Text('${_userRankInfo!.leagueEmoji} ${_userRankInfo!.leagueName}', style: TextStyle(fontSize: 14, color: Color(_userRankInfo!.leagueColor))),
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF2D2D2D), const Color(0xFF1E1E1E)]
+              : [Colors.blue.shade50, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          top: BorderSide(color: Colors.blue.withOpacity(0.3), width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.1),
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, -3),
+          ),
         ],
-      ]),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade400, Colors.blue.shade600],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.4),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: const Icon(Icons.person, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '${AppLocalizations.get('yourRank')}: ',
+            style: TextStyle(
+              fontSize: 16,
+              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade400, Colors.blue.shade600],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Text(
+              '#$_userRank',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          if (_userRankInfo != null && _currentMode == 'overall') ...[
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Color(_userRankInfo!.leagueColor).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Color(_userRankInfo!.leagueColor).withOpacity(0.5),
+                  width: 1.5,
+                ),
+              ),
+              child: Text(
+                '${_userRankInfo!.leagueEmoji} ${_userRankInfo!.leagueName}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(_userRankInfo!.leagueColor),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
