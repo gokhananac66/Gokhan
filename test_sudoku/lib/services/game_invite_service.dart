@@ -56,8 +56,12 @@ class GlobalInviteNotifier {
   }
 }
 
-/// Oyun davet servisi
+/// Oyun davet servisi (Singleton)
 class GameInviteService {
+  static final GameInviteService _instance = GameInviteService._internal();
+  factory GameInviteService() => _instance;
+  GameInviteService._internal();
+
   final FirebaseDatabase _database = FirebaseDatabase.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FriendService _friendService = FriendService();

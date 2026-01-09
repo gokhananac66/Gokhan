@@ -136,10 +136,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   void _setupInviteListeners() {
-    _inviteService.listenToIncomingInvites((invite) {
-      _showIncomingInviteDialog(invite);
-    });
-
+    // Global listener artık main.dart'ta, sadece status değişikliklerini dinle
     _inviteService.onInviteStatusChanged = (inviteId, status) {
       if (_pendingInviteId == inviteId) {
         _countdownTimer?.cancel();
@@ -276,65 +273,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     );
   }
 
-  void _showIncomingInviteDialog(GameInvite invite) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.green.shade100, shape: BoxShape.circle),
-              child: Icon(Icons.sports_esports, color: Colors.green.shade700),
-            ),
-            const SizedBox(width: 12),
-            Text(tr('gameInvite')),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('${invite.fromNickname} ${tr('invitesYouToPlay')}', style: const TextStyle(fontSize: 16), textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(20)),
-              child: Text('${tr('difficulty')}: ${invite.difficulty}', style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _inviteService.rejectInvite(invite.id);
-              Navigator.pop(context);
-            },
-            child: Text(tr('reject'), style: const TextStyle(color: Colors.red)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final gameId = await _inviteService.getGameIdFromInvite(invite.id);
-              if (gameId == null) {
-                _showSnackBar(tr('inviteExpired'), Colors.orange);
-                return;
-              }
-              final success = await _inviteService.acceptInvite(invite.id);
-              if (success) {
-                await _navigateToGame(gameId, isPlayer1: false);
-              } else {
-                _showSnackBar(tr('inviteExpired'), Colors.orange);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: Text(tr('accept'), style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _sendGameInvite(FriendData friend) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;

@@ -56,12 +56,29 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final GameInviteService _inviteService = GameInviteService();
+
   @override
   void initState() {
     super.initState();
     themeNotifier.addListener(() {
       setState(() {});
     });
+
+    // Global davet dinleyicisi - kullanıcı login olduğunda otomatik başlar
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        print('🌍 [MAIN] User logged in, starting global invite listener');
+        // GlobalInviteNotifier içeride zaten notify ediyor, callback'e gerek yok
+        _inviteService.listenToIncomingInvites((_) {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _inviteService.dispose();
+    super.dispose();
   }
 
   @override
