@@ -8,22 +8,25 @@
 
 ## 🐛 ACİL DÜZELTİLMESİ GEREKENLER
 
-### 1. **Leaderboard Back Arrow Sorunu**
+### 1. **Leaderboard Back Arrow Sorunu** ⚠️ BİLİNEN BUG
 - **Sorun:** Sol üst köşedeki back arrow görünmüyor
-- **Commit:** `c616a80` - Fix: Leaderboard back arrow + modernize rank bar design
-- **Durum:** Kod yazıldı, commit edildi, ama kullanıcıda görünmüyor
-- **Olası Sebep:** Git pull yapılmadı veya build cache sorunu
-- **Çözüm:**
-  ```bash
-  git pull origin claude/sudoku-clash-continuation-8VIyI
-  flutter clean
-  flutter run
-  ```
+- **Commit:** `c616a80` & `25af7a2` - Fix: Leaderboard back arrow + modernize rank bar design
+- **Durum:** Kod kesinlikle var (verified), ama build cache nedeniyle görünmüyor
+- **Olası Sebep:** Android Studio build cache ipneliği, Invalidate Caches bile çözmedi
+- **Çözüm (denenmedi):**
+  - Android Studio tamamen kapat
+  - Uygulamayı uninstall et
+  - `build/` klasörünü manuel sil
+  - Invalidate Caches / Restart
+  - Yeniden build
+- **Not:** Şimdilik ertelendi, sonra bakılacak
 
-### 2. **Leaderboard Title Görünmüyor**
-- **Sorun:** "🏆 Liderlik Tablosu" yazısı tam görünmüyor
-- **Konum:** `lib/screens/leaderboard_screen.dart:103-106`
-- **Çözüm:** AppBar title'ı kısaltmak veya font size düşürmek gerekebilir
+### 2. **Leaderboard Title Görünmüyor** ✅ ÇÖZÜLDÜ (Ama test edilmedi)
+- **Sorun:** "🏆 Liderlik Tablosu" yazısı çok uzun, ekrana sığmıyordu
+- **Commit:** `25af7a2` - Fix: Shorten leaderboard title to fit screen
+- **Çözüm:** "🏆 Liderlik" olarak kısaltıldı (22px + 18px font)
+- **Durum:** Kod yazıldı ama build cache yüzünden test edilemedi
+- **Not:** Back arrow ile beraber çözülecek
 
 ### 3. **gamesPlayed Field Sorunu (Çözüldü ama test edilmedi)**
 - **Sorun:** Leaderboard'da "15 galibiyet, 0 oyun" görünüyordu
