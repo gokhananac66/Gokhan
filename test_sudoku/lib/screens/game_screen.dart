@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
+import '../services/user_status_service.dart';
 
 enum GameMode { single, multiplayer, race }
 
@@ -74,6 +75,9 @@ class _GameScreenState extends State<GameScreen> {
     _loadSettings();
     _loadPlayerNames();
     _initializeGame();
+
+    // Set status to in_offline_game
+    UserStatusService().updateStatus(UserStatus.inOfflineGame);
   }
 
   Future<void> _initializeGame() async {
@@ -91,6 +95,10 @@ class _GameScreenState extends State<GameScreen> {
     if (widget.gameMode == GameMode.single && _initialized && !_checkWin() && errors < maxErrors) {
       _saveGame();
     }
+
+    // Set status back to idle
+    UserStatusService().updateStatus(UserStatus.idle);
+
     super.dispose();
   }
 

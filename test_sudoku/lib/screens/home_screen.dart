@@ -7,6 +7,7 @@ import 'lobby_screen.dart';
 import 'friends_screen.dart';
 import '../app_localizations.dart';
 import '../services/progression_service.dart';
+import '../services/user_status_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,6 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _user = FirebaseAuth.instance.currentUser;
     _checkSavedGame();
+
+    // Set status to idle when on home screen
+    UserStatusService().updateStatus(UserStatus.idle);
   }
 
   Future<void> _checkSavedGame() async {

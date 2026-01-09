@@ -7,6 +7,7 @@ import '../services/friend_service.dart';
 import '../services/game_invite_service.dart';
 import '../services/difficulty_calculator.dart';
 import '../services/invite_cooldown_service.dart';
+import '../services/user_status_service.dart';
 import '../app_localizations.dart';
 import 'online_game_screen.dart';
 
@@ -335,7 +336,15 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    // 0. Check cooldown - 2 red = 1 minute ban
+    // 0. Check if friend is in an online game
+    final statusService = UserStatusService();
+    final isInOnlineGame = await statusService.isUserInOnlineGame(friend.uid);
+    if (isInOnlineGame) {
+      _showSnackBar('${friend.nickname} şu anda bir oyunda! Oyunu bitirmesini bekleyin.', Colors.orange);
+      return;
+    }
+
+    // 1. Check cooldown - 2 red = 1 minute ban
     final canSend = await _cooldownService.canSendInvite(uid, friend.uid);
     if (!canSend) {
       final remainingSeconds = await _cooldownService.getRemainingCooldownSeconds(uid, friend.uid);

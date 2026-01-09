@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../services/leaderboard_service.dart';
 import '../services/progression_service.dart';
+import '../services/user_status_service.dart';
 import '../widgets/game_result_dialog.dart';
 
 class OnlineGameScreen extends StatefulWidget {
@@ -91,6 +92,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _loadSettings();
     _loadGame();
     _startTimer();
+
+    // Set status to in_online_game
+    UserStatusService().updateStatus(UserStatus.inOnlineGame);
   }
 
   void _setMaxErrors() {
@@ -721,6 +725,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   void dispose() {
     _gameSubscription?.cancel();
     _turnTimer?.cancel();
+
+    // Set status back to idle
+    UserStatusService().updateStatus(UserStatus.idle);
+
     super.dispose();
   }
 
