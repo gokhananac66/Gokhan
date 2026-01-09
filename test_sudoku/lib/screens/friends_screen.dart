@@ -44,11 +44,15 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
+
+    // Set online status FIRST, before setting up listeners
+    // This prevents race condition where friends read our status before we set it
+    _friendService.setOnlineStatus(true);
+
     _initAnimations();
     _loadData();
     _setupInviteListeners();
     _setupRealtimeListeners();
-    _friendService.setOnlineStatus(true);
   }
 
   void _initAnimations() {

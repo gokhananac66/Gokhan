@@ -8,6 +8,7 @@ import 'friends_screen.dart';
 import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
+import '../services/friend_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,6 +36,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _user = FirebaseAuth.instance.currentUser;
+
+    // Set online status immediately on app start
+    FriendService().setOnlineStatus(true);
+
     _checkSavedGame();
 
     // Set status to idle when on home screen
