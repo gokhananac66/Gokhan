@@ -104,10 +104,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Text('🏆 ', style: TextStyle(fontSize: 24)),
-          Text(AppLocalizations.get('leaderboard'), style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🏆', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 8),
+            Text('Liderlik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
         centerTitle: true,
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
