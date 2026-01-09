@@ -588,8 +588,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
 
-                  const Divider(height: 24),
-
                   // Dogum Tarihi
                   _buildInfoRow(
                     icon: Icons.cake_outlined,
@@ -598,8 +596,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: _selectBirthDate,
                   ),
 
-                  const Divider(height: 24),
-
                   // Yas
                   _buildInfoRow(
                     icon: Icons.calendar_today_outlined,
@@ -607,8 +603,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     value: _birthDate == null ? '-' : '${_calculateAge()} ${tr('yearsOld')}',
                     onTap: null,
                   ),
-
-                  const Divider(height: 24),
 
                   // Ulke
                   _buildInfoRow(
@@ -779,32 +773,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Her bilgi türü için farklı gradient renk
+    LinearGradient gradient;
+    Color iconColor;
+
+    switch (label) {
+      case 'İsim Soyisim':
+      case 'Full Name':
+        gradient = const LinearGradient(
+          colors: [Color(0xFF9C27B0), Color(0xFFE91E63)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+        iconColor = Colors.white;
+        break;
+      case 'Doğum Tarihi':
+      case 'Birth Date':
+        gradient = const LinearGradient(
+          colors: [Color(0xFFFF6B35), Color(0xFFFF8C42)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+        iconColor = Colors.white;
+        break;
+      case 'Yaş':
+      case 'Age':
+        gradient = const LinearGradient(
+          colors: [Color(0xFF2196F3), Color(0xFF00BCD4)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+        iconColor = Colors.white;
+        break;
+      case 'Ülke':
+      case 'Country':
+        gradient = const LinearGradient(
+          colors: [Color(0xFF4CAF50), Color(0xFF8BC34A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+        iconColor = Colors.white;
+        break;
+      default:
+        gradient = const LinearGradient(
+          colors: [Color(0xFF757575), Color(0xFF9E9E9E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+        iconColor = Colors.white;
+    }
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800.withOpacity(0.3) : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
-          width: 1,
-        ),
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.colors.first.withOpacity(0.4),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             child: Row(
               children: [
+                // Icon Container
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Icon(icon, size: 22, color: Colors.blue),
+                  child: Icon(icon, size: 26, color: iconColor),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -814,28 +870,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(
                         label,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         value,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.w600,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ],
                   ),
                 ),
                 if (onTap != null)
-                  Icon(
-                    Icons.edit_outlined,
-                    color: Colors.blue,
-                    size: 20,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.edit_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
               ],
             ),
