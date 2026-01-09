@@ -654,8 +654,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           Navigator.pop(dialogContext); // Dialog'u kapat
           // Dialog animasyonu bitsin diye kısa delay
           Future.delayed(const Duration(milliseconds: 100), () {
-            if (mounted && Navigator.canPop(gameContext)) {
-              Navigator.pop(gameContext); // Game screen'i kapat - Friends/Home screen'e dön
+            if (mounted) {
+              // HomeScreen'e kadar tüm ekranları kapat (FriendsScreen, LobbyScreen, GameScreen)
+              Navigator.popUntil(gameContext, (route) {
+                // HomeScreen veya LoginScreen'e gelene kadar pop et
+                return route.isFirst || route.settings.name == '/home';
+              });
             }
           });
         },
