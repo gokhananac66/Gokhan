@@ -131,6 +131,11 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         },
       );
 
+      print('🎮 [FRIENDS] Recent players loaded: ${recentPlayers.length}');
+      for (var player in recentPlayers) {
+        print('  - ${player.nickname}: ${player.gameResult} (${player.gameMode})');
+      }
+
       if (mounted) {
         setState(() {
           _friends = friends;
@@ -401,6 +406,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       targetNickname: player.nickname,
       difficulty: player.difficulty,
       gameMode: player.gameMode,
+      isRevanche: true, // Friends screen'den revanche daveti
     );
 
     if (result.success) {

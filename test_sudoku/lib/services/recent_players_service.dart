@@ -19,7 +19,10 @@ class RecentPlayersService {
     required String difficulty,
   }) async {
     final currentUser = _auth.currentUser;
-    if (currentUser == null) return;
+    if (currentUser == null) {
+      print('❌ [RecentPlayersService] No current user');
+      return;
+    }
 
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -32,10 +35,18 @@ class RecentPlayersService {
         'timestamp': timestamp,
       };
 
+      print('📝 [RecentPlayersService] Adding recent player:');
+      print('   User: ${currentUser.uid}');
+      print('   Opponent: $opponentNickname ($opponentUid)');
+      print('   Result: $gameResult');
+      print('   Path: users/${currentUser.uid}/recent_players/$opponentUid');
+
       // Add to recent players list
       await _database
           .child('users/${currentUser.uid}/recent_players/$opponentUid')
           .set(playerData);
+
+      print('✅ [RecentPlayersService] Recent player added successfully');
 
       // Clean up if more than maxRecentPlayers
       await _cleanupOldPlayers(currentUser.uid);
@@ -47,28 +58,41 @@ class RecentPlayersService {
   /// Get list of recent players (last 10)
   Future<List<RecentPlayer>> getRecentPlayers() async {
     final currentUser = _auth.currentUser;
-    if (currentUser == null) return [];
+    if (currentUser == null) {
+      print('❌ [RecentPlayersService] No current user (getRecentPlayers)');
+      return [];
+    }
 
     try {
+      print('🔍 [RecentPlayersService] Fetching recent players for: ${currentUser.uid}');
+
       final snapshot = await _database
           .child('users/${currentUser.uid}/recent_players')
           .orderByChild('timestamp')
           .limitToLast(maxRecentPlayers)
           .get();
 
-      if (!snapshot.exists) return [];
+      if (!snapshot.exists) {
+        print('⚠️ [RecentPlayersService] No recent players found in Firebase');
+        return [];
+      }
 
       final List<RecentPlayer> players = [];
       final data = Map<String, dynamic>.from(snapshot.value as Map);
 
+      print('📦 [RecentPlayersService] Raw data keys: ${data.keys.toList()}');
+
       data.forEach((key, value) {
         final playerMap = Map<String, dynamic>.from(value);
-        players.add(RecentPlayer.fromMap(playerMap));
+        final player = RecentPlayer.fromMap(playerMap);
+        players.add(player);
+        print('   - ${player.nickname}: ${player.gameResult}');
       });
 
       // Sort by timestamp descending (most recent first)
       players.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
+      print('✅ [RecentPlayersService] Found ${players.length} recent players');
       return players;
     } catch (e) {
       print('❌ [RecentPlayersService] Error getting recent players: $e');
