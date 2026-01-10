@@ -137,7 +137,7 @@ class _DailyChallengeCardState extends State<DailyChallengeCard>
                                 ),
                                 child: Center(
                                   child: Text(
-                                    DateFormat('MMM', locale).format(DateTime.now()).toUpperCase(),
+                                    DateFormat.MMM().format(DateTime.now()).toUpperCase(),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -150,7 +150,7 @@ class _DailyChallengeCardState extends State<DailyChallengeCard>
                               Expanded(
                                 child: Center(
                                   child: Text(
-                                    DateFormat('d').format(DateTime.now()),
+                                    DateFormat.d().format(DateTime.now()),
                                     style: const TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.bold,
