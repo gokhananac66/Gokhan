@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -177,6 +178,8 @@ class LeaderboardService {
       String timeFilter, {
         String? leagueFilter, // null = tüm ligler, 'bronze', 'silver', etc.
       }) async {
+    print('🔍 [LEADERBOARD_SERVICE] getLeaderboard called with timeFilter: $timeFilter, leagueFilter: $leagueFilter');
+
     String path;
 
     switch (timeFilter) {
@@ -192,48 +195,69 @@ class LeaderboardService {
         break;
     }
 
-    final snapshot = await _database
-        .child(path)
-        .orderByChild('level')
-        .limitToLast(100)
-        .get();
+    print('🔍 [LEADERBOARD_SERVICE] Fetching from path: $path');
 
-    if (!snapshot.exists) return [];
+    try {
+      final snapshot = await _database
+          .child(path)
+          .orderByChild('level')
+          .limitToLast(100)
+          .get()
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              print('⏱️ [LEADERBOARD_SERVICE] TIMEOUT after 15 seconds!');
+              throw TimeoutException('Firebase leaderboard query timeout');
+            },
+          );
 
-    List<Map<String, dynamic>> scores = [];
-    final data = Map<String, dynamic>.from(snapshot.value as Map);
+      print('🔍 [LEADERBOARD_SERVICE] Snapshot exists: ${snapshot.exists}');
 
-    data.forEach((odaId, value) {
-      if (value is Map) {
-        final entry = {
-          'odaId': odaId,
-          ...Map<String, dynamic>.from(value),
-        };
-
-        // Lig filtresi uygula
-        if (leagueFilter == null || entry['league'] == leagueFilter) {
-          scores.add(entry);
-        }
+      if (!snapshot.exists) {
+        print('📭 [LEADERBOARD_SERVICE] No leaderboard data found');
+        return [];
       }
-    });
 
-    // Sıralama: TotalScore > WinRate > Wins
-    scores.sort((a, b) {
-      // 1. Önce PUAN'a bak (en önemli metrik)
-      int scoreCompare = (b['totalScore'] ?? 0).compareTo(a['totalScore'] ?? 0);
-      if (scoreCompare != 0) return scoreCompare;
+      List<Map<String, dynamic>> scores = [];
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
 
-      // 2. Eşitlik durumunda WinRate'e bak (kalite göstergesi)
-      double aWinRate = (a['winRate'] ?? 0.0).toDouble();
-      double bWinRate = (b['winRate'] ?? 0.0).toDouble();
-      int winRateCompare = bWinRate.compareTo(aWinRate);
-      if (winRateCompare != 0) return winRateCompare;
+      data.forEach((odaId, value) {
+        if (value is Map) {
+          final entry = {
+            'odaId': odaId,
+            ...Map<String, dynamic>.from(value),
+          };
 
-      // 3. Son olarak toplam kazanma sayısına bak
-      return (b['wins'] ?? 0).compareTo(a['wins'] ?? 0);
-    });
+          // Lig filtresi uygula
+          if (leagueFilter == null || entry['league'] == leagueFilter) {
+            scores.add(entry);
+          }
+        }
+      });
 
-    return scores;
+      // Sıralama: TotalScore > WinRate > Wins
+      scores.sort((a, b) {
+        // 1. Önce PUAN'a bak (en önemli metrik)
+        int scoreCompare = (b['totalScore'] ?? 0).compareTo(a['totalScore'] ?? 0);
+        if (scoreCompare != 0) return scoreCompare;
+
+        // 2. Eşitlik durumunda WinRate'e bak (kalite göstergesi)
+        double aWinRate = (a['winRate'] ?? 0.0).toDouble();
+        double bWinRate = (b['winRate'] ?? 0.0).toDouble();
+        int winRateCompare = bWinRate.compareTo(aWinRate);
+        if (winRateCompare != 0) return winRateCompare;
+
+        // 3. Son olarak toplam kazanma sayısına bak
+        return (b['wins'] ?? 0).compareTo(a['wins'] ?? 0);
+      });
+
+      print('✅ [LEADERBOARD_SERVICE] Returning ${scores.length} scores');
+      return scores;
+    } catch (e, stackTrace) {
+      print('❌ [LEADERBOARD_SERVICE] Error in getLeaderboard: $e');
+      print('❌ [LEADERBOARD_SERVICE] Stack trace: $stackTrace');
+      return [];
+    }
   }
 
   /// Kullanıcının sıralamasını getir
@@ -266,14 +290,45 @@ class LeaderboardService {
 
   /// Kullanıcının istatistiklerini getir
   static Future<Map<String, dynamic>?> getUserStats() async {
+    print('🔍 [LEADERBOARD_SERVICE] getUserStats called');
+
     final user = _auth.currentUser;
-    if (user == null) return null;
+    print('🔍 [LEADERBOARD_SERVICE] Current user: ${user?.uid}');
 
-    final snapshot = await _database.child('leaderboard/multiplayer/${user.uid}').get();
+    if (user == null) {
+      print('⚠️ [LEADERBOARD_SERVICE] No user logged in');
+      return null;
+    }
 
-    if (!snapshot.exists) return null;
+    try {
+      print('🔍 [LEADERBOARD_SERVICE] Fetching from path: leaderboard/multiplayer/${user.uid}');
 
-    return Map<String, dynamic>.from(snapshot.value as Map);
+      final snapshot = await _database
+          .child('leaderboard/multiplayer/${user.uid}')
+          .get()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              print('⏱️ [LEADERBOARD_SERVICE] TIMEOUT after 10 seconds!');
+              throw TimeoutException('Firebase query timeout');
+            },
+          );
+
+      print('🔍 [LEADERBOARD_SERVICE] Snapshot exists: ${snapshot.exists}');
+
+      if (!snapshot.exists) {
+        print('📭 [LEADERBOARD_SERVICE] No overall stats found');
+        return null;
+      }
+
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      print('✅ [LEADERBOARD_SERVICE] Got overall stats: $data');
+      return data;
+    } catch (e, stackTrace) {
+      print('❌ [LEADERBOARD_SERVICE] Error in getUserStats: $e');
+      print('❌ [LEADERBOARD_SERVICE] Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   /// Mode-based istatistikleri güncelle
@@ -337,88 +392,164 @@ class LeaderboardService {
 
   /// Kullanıcının mode-based istatistiklerini getir
   static Future<Map<String, dynamic>?> getUserModeStats(String gameMode) async {
+    print('🔍 [LEADERBOARD_SERVICE] getUserModeStats called for mode: $gameMode');
+
     final user = _auth.currentUser;
-    if (user == null) return null;
+    print('🔍 [LEADERBOARD_SERVICE] Current user: ${user?.uid}');
 
-    final snapshot = await _database.child('users/${user.uid}/stats/$gameMode').get();
+    if (user == null) {
+      print('⚠️ [LEADERBOARD_SERVICE] No user logged in');
+      return null;
+    }
 
-    if (!snapshot.exists) return null;
+    try {
+      print('🔍 [LEADERBOARD_SERVICE] Fetching from path: users/${user.uid}/stats/$gameMode');
 
-    return Map<String, dynamic>.from(snapshot.value as Map);
+      final snapshot = await _database
+          .child('users/${user.uid}/stats/$gameMode')
+          .get()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              print('⏱️ [LEADERBOARD_SERVICE] TIMEOUT after 10 seconds!');
+              throw TimeoutException('Firebase query timeout');
+            },
+          );
+
+      print('🔍 [LEADERBOARD_SERVICE] Snapshot exists: ${snapshot.exists}');
+
+      if (!snapshot.exists) {
+        print('📭 [LEADERBOARD_SERVICE] No data found for $gameMode');
+        return null;
+      }
+
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      print('✅ [LEADERBOARD_SERVICE] Got data: $data');
+      return data;
+    } catch (e, stackTrace) {
+      print('❌ [LEADERBOARD_SERVICE] Error in getUserModeStats: $e');
+      print('❌ [LEADERBOARD_SERVICE] Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   /// Mod bazlı leaderboard getir
   static Future<List<Map<String, dynamic>>> getModeLeaderboard(String gameMode, String timeFilter) async {
-    // User stats'leri çek - artık nickname de stats içinde!
-    final usersSnapshot = await _database.child('users').get();
-    if (!usersSnapshot.exists) return [];
+    print('🔍 [LEADERBOARD_SERVICE] getModeLeaderboard called for mode: $gameMode, timeFilter: $timeFilter');
 
-    List<Map<String, dynamic>> scores = [];
-    final usersData = Map<String, dynamic>.from(usersSnapshot.value as Map);
+    try {
+      // User stats'leri çek - artık nickname de stats içinde!
+      print('🔍 [LEADERBOARD_SERVICE] Fetching ALL users from Firebase...');
 
-    // Leaderboard verisi (league bilgisi için)
-    final leaderboardSnapshot = await _database.child('leaderboard/multiplayer').get();
-    Map<String, dynamic> allLeaderboardData = {};
-    if (leaderboardSnapshot.exists) {
-      allLeaderboardData = Map<String, dynamic>.from(leaderboardSnapshot.value as Map);
-    }
+      final usersSnapshot = await _database
+          .child('users')
+          .get()
+          .timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              print('⏱️ [LEADERBOARD_SERVICE] TIMEOUT fetching users after 20 seconds!');
+              throw TimeoutException('Firebase users query timeout');
+            },
+          );
 
-    // Her kullanıcı için stats'leri oku
-    for (var entry in usersData.entries) {
-      final uid = entry.key;
-      final userData = Map<String, dynamic>.from(entry.value as Map);
+      print('🔍 [LEADERBOARD_SERVICE] Users snapshot exists: ${usersSnapshot.exists}');
 
-      if (userData['stats'] != null) {
-        final stats = Map<String, dynamic>.from(userData['stats'] as Map);
+      if (!usersSnapshot.exists) {
+        print('📭 [LEADERBOARD_SERVICE] No users found');
+        return [];
+      }
 
-        if (stats[gameMode] != null) {
-          final modeStats = Map<String, dynamic>.from(stats[gameMode] as Map);
+      List<Map<String, dynamic>> scores = [];
+      final usersData = Map<String, dynamic>.from(usersSnapshot.value as Map);
+      print('🔍 [LEADERBOARD_SERVICE] Found ${usersData.length} users');
 
-          // Nickname artık modeStats içinde! (yeni kayıtlar için)
-          String nickname = modeStats['nickname'] ?? 'Anonim';
-          int avatar = modeStats['avatar'] ?? 0;
-          String country = modeStats['country'] ?? '🇹🇷';
+      // Leaderboard verisi (league bilgisi için)
+      print('🔍 [LEADERBOARD_SERVICE] Fetching ALL leaderboard data...');
 
-          // League bilgisi için leaderboard'a bak
-          String league = 'bronze';
-          if (allLeaderboardData.containsKey(uid)) {
-            final userLeaderboard = Map<String, dynamic>.from(allLeaderboardData[uid] as Map);
-            league = userLeaderboard['league'] ?? 'bronze';
+      final leaderboardSnapshot = await _database
+          .child('leaderboard/multiplayer')
+          .get()
+          .timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              print('⏱️ [LEADERBOARD_SERVICE] TIMEOUT fetching leaderboard after 20 seconds!');
+              throw TimeoutException('Firebase leaderboard query timeout');
+            },
+          );
+
+      Map<String, dynamic> allLeaderboardData = {};
+      if (leaderboardSnapshot.exists) {
+        allLeaderboardData = Map<String, dynamic>.from(leaderboardSnapshot.value as Map);
+        print('🔍 [LEADERBOARD_SERVICE] Found ${allLeaderboardData.length} leaderboard entries');
+      }
+
+      // Her kullanıcı için stats'leri oku
+      print('🔍 [LEADERBOARD_SERVICE] Processing user stats for mode: $gameMode');
+
+      for (var entry in usersData.entries) {
+        final uid = entry.key;
+        final userData = Map<String, dynamic>.from(entry.value as Map);
+
+        if (userData['stats'] != null) {
+          final stats = Map<String, dynamic>.from(userData['stats'] as Map);
+
+          if (stats[gameMode] != null) {
+            final modeStats = Map<String, dynamic>.from(stats[gameMode] as Map);
+
+            // Nickname artık modeStats içinde! (yeni kayıtlar için)
+            String nickname = modeStats['nickname'] ?? 'Anonim';
+            int avatar = modeStats['avatar'] ?? 0;
+            String country = modeStats['country'] ?? '🇹🇷';
+
+            // League bilgisi için leaderboard'a bak
+            String league = 'bronze';
+            if (allLeaderboardData.containsKey(uid)) {
+              final userLeaderboard = Map<String, dynamic>.from(allLeaderboardData[uid] as Map);
+              league = userLeaderboard['league'] ?? 'bronze';
+            }
+
+            scores.add({
+              'odaId': uid,
+              'nickname': nickname,
+              'avatar': avatar,
+              'country': country,
+              'league': league,
+              'gamesPlayed': modeStats['gamesPlayed'] ?? 0,
+              'wins': modeStats['wins'] ?? 0,
+              'winRate': modeStats['winRate'] ?? '0.0',
+              'totalScore': modeStats['totalScore'] ?? 0,
+              'fastestWin': modeStats['fastestWin'],
+            });
           }
-
-          scores.add({
-            'odaId': uid,
-            'nickname': nickname,
-            'avatar': avatar,
-            'country': country,
-            'league': league,
-            'gamesPlayed': modeStats['gamesPlayed'] ?? 0,
-            'wins': modeStats['wins'] ?? 0,
-            'winRate': modeStats['winRate'] ?? '0.0',
-            'totalScore': modeStats['totalScore'] ?? 0,
-            'fastestWin': modeStats['fastestWin'],
-          });
         }
       }
+
+      print('🔍 [LEADERBOARD_SERVICE] Found ${scores.length} players for $gameMode mode');
+
+      // Sıralama: TotalScore > WinRate > Wins
+      scores.sort((a, b) {
+        // 1. Önce PUAN'a bak (en önemli metrik)
+        int scoreCompare = (b['totalScore'] ?? 0).compareTo(a['totalScore'] ?? 0);
+        if (scoreCompare != 0) return scoreCompare;
+
+        // 2. Eşitlik durumunda WinRate'e bak (kalite göstergesi)
+        double aWinRate = double.tryParse(a['winRate']?.toString() ?? '0') ?? 0.0;
+        double bWinRate = double.tryParse(b['winRate']?.toString() ?? '0') ?? 0.0;
+        int winRateCompare = bWinRate.compareTo(aWinRate);
+        if (winRateCompare != 0) return winRateCompare;
+
+        // 3. Son olarak toplam kazanma sayısına bak
+        return (b['wins'] ?? 0).compareTo(a['wins'] ?? 0);
+      });
+
+      final result = scores.take(100).toList();
+      print('✅ [LEADERBOARD_SERVICE] Returning top ${result.length} scores for $gameMode');
+      return result;
+    } catch (e, stackTrace) {
+      print('❌ [LEADERBOARD_SERVICE] Error in getModeLeaderboard: $e');
+      print('❌ [LEADERBOARD_SERVICE] Stack trace: $stackTrace');
+      return [];
     }
-
-    // Sıralama: TotalScore > WinRate > Wins
-    scores.sort((a, b) {
-      // 1. Önce PUAN'a bak (en önemli metrik)
-      int scoreCompare = (b['totalScore'] ?? 0).compareTo(a['totalScore'] ?? 0);
-      if (scoreCompare != 0) return scoreCompare;
-
-      // 2. Eşitlik durumunda WinRate'e bak (kalite göstergesi)
-      double aWinRate = double.tryParse(a['winRate']?.toString() ?? '0') ?? 0.0;
-      double bWinRate = double.tryParse(b['winRate']?.toString() ?? '0') ?? 0.0;
-      int winRateCompare = bWinRate.compareTo(aWinRate);
-      if (winRateCompare != 0) return winRateCompare;
-
-      // 3. Son olarak toplam kazanma sayısına bak
-      return (b['wins'] ?? 0).compareTo(a['wins'] ?? 0);
-    });
-
-    return scores.take(100).toList();
   }
 
   static String _getTodayKey() {
