@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/daily_challenge_service.dart';
+import 'package:intl/intl.dart';
 
 /// Daily challenge card widget for home screen
 /// Shows today's challenge with difficulty and reward info
@@ -99,20 +100,67 @@ class _DailyChallengeCardState extends State<DailyChallengeCard>
               padding: const EdgeInsets.all(20.0),
               child: Row(
                 children: [
-                  // Icon section
+                  // Date section (calendar-style)
                   Container(
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Center(
-                      child: Text(
-                        widget.challenge.isCompleted ? '✅' : '📅',
-                        style: const TextStyle(fontSize: 40),
-                      ),
-                    ),
+                    child: widget.challenge.isCompleted
+                        ? const Center(
+                            child: Text(
+                              '✅',
+                              style: TextStyle(fontSize: 40),
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Month
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFF6B6B),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    topRight: Radius.circular(16),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    DateFormat('MMM', locale).format(DateTime.now()).toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Day
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    DateFormat('d').format(DateTime.now()),
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
 
                   const SizedBox(width: 16),

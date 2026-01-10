@@ -110,19 +110,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black87),
           onPressed: () => Navigator.pop(context),
-          tooltip: 'Geri', // Force rebuild fix for build cache issue
+          tooltip: 'Geri',
         ),
-        title: const Row(
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('🏆', style: TextStyle(fontSize: 22)),
-            SizedBox(width: 8),
-            Text('Liderlik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text('🏆', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 8),
+            Text('Liderlik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDark ? Colors.white : Colors.black87)),
           ],
         ),
         centerTitle: true,
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        elevation: 0.1, // Changed from 0 to force rebuild
+        foregroundColor: isDark ? Colors.white : Colors.black87,
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.1),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Container(
