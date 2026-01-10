@@ -6,6 +6,7 @@ import 'dart:math';
 import 'dart:convert';
 import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
+import '../widgets/hint_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 
@@ -61,6 +62,9 @@ class _GameScreenState extends State<GameScreen> {
   Set<int> completedRows = {};
   Set<int> completedCols = {};
   Set<int> completedBoxes = {};
+
+  // Animation: Track recently completed cells for pulse effect
+  Set<int> _animatingCells = {}; // Linear cell indices (row * 9 + col)
 
   List<Map<String, dynamic>> moveHistory = [];
   bool _initialized = false;
@@ -337,16 +341,72 @@ class _GameScreenState extends State<GameScreen> {
   void _checkCompletions(int row, int col) {
     int bonusPoints = 0;
     List<String> completedTypes = [];
+    final newlyCompleted = <int>{};
 
-    if (!completedRows.contains(row) && _isRowComplete(row)) { completedRows.add(row); bonusPoints += 50; completedTypes.add(tr('rowCompleted')); }
-    if (!completedCols.contains(col) && _isColComplete(col)) { completedCols.add(col); bonusPoints += 50; completedTypes.add(tr('colCompleted')); }
+    // Check row completion
+    if (!completedRows.contains(row) && _isRowComplete(row)) {
+      completedRows.add(row);
+      bonusPoints += 50;
+      completedTypes.add(tr('rowCompleted'));
+      // Add all cells in this row to animation set
+      for (int c = 0; c < 9; c++) {
+        newlyCompleted.add(row * 9 + c);
+      }
+    }
+
+    // Check column completion
+    if (!completedCols.contains(col) && _isColComplete(col)) {
+      completedCols.add(col);
+      bonusPoints += 50;
+      completedTypes.add(tr('colCompleted'));
+      // Add all cells in this column to animation set
+      for (int r = 0; r < 9; r++) {
+        newlyCompleted.add(r * 9 + col);
+      }
+    }
+
+    // Check box completion
     int boxIndex = (row ~/ 3) * 3 + (col ~/ 3);
-    if (!completedBoxes.contains(boxIndex) && _isBoxComplete(boxIndex)) { completedBoxes.add(boxIndex); bonusPoints += 50; completedTypes.add(tr('boxCompleted')); }
+    if (!completedBoxes.contains(boxIndex) && _isBoxComplete(boxIndex)) {
+      completedBoxes.add(boxIndex);
+      bonusPoints += 50;
+      completedTypes.add(tr('boxCompleted'));
+      // Add all cells in this box to animation set
+      int boxRow = (row ~/ 3) * 3;
+      int boxCol = (col ~/ 3) * 3;
+      for (int r = boxRow; r < boxRow + 3; r++) {
+        for (int c = boxCol; c < boxCol + 3; c++) {
+          newlyCompleted.add(r * 9 + c);
+        }
+      }
+    }
 
     if (bonusPoints > 0) {
-      score += bonusPoints; _vibrateHeavy();
+      score += bonusPoints;
+      _vibrateHeavy();
+
+      // Trigger animation for completed cells
+      setState(() {
+        _animatingCells.addAll(newlyCompleted);
+      });
+
+      // Clear animation after delay
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          setState(() {
+            _animatingCells.removeAll(newlyCompleted);
+          });
+        }
+      });
+
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✨ ${completedTypes.join(" + ")} ${tr('completed')} +$bonusPoints ${tr('bonus')}!'), duration: const Duration(seconds: 1), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✨ ${completedTypes.join(" + ")} ${tr('completed')} +$bonusPoints ${tr('bonus')}!'),
+          duration: const Duration(seconds: 1),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
@@ -451,15 +511,148 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _useHint() {
-    if (hints <= 0 || selectedRow == null || selectedCol == null) return;
-    if (isOriginal[selectedRow!][selectedCol!]) return;
-    if (board[selectedRow!][selectedCol!] == solution[selectedRow!][selectedCol!]) return;
-    _playClickSound(); _vibrate();
+    if (hints <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr('noHintsLeft')), backgroundColor: Colors.red),
+      );
+      return;
+    }
 
-    int row = selectedRow!, col = selectedCol!;
-    setState(() { board[row][col] = solution[row][col]; hints--; combo = 0; });
-    _checkCompletions(row, col);
-    if (_checkWin()) { _playWinSound(); _clearSavedGame(); _saveStats(won: true); _showWinDialog(); }
+    _playClickSound();
+    _vibrate();
+
+    // Find a good hint using "last remaining cell" logic
+    final hintInfo = _findSmartHint();
+
+    if (hintInfo == null) {
+      // Fallback: no smart hint found
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr('noHintAvailable')), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    // Show hint dialog
+    showDialog(
+      context: context,
+      builder: (ctx) => HintDialog(
+        hintInfo: hintInfo,
+        onConfirm: () {
+          // Apply hint
+          setState(() {
+            board[hintInfo.row][hintInfo.col] = hintInfo.correctValue;
+            hints--;
+            combo = 0;
+            selectedRow = hintInfo.row;
+            selectedCol = hintInfo.col;
+          });
+          _checkCompletions(hintInfo.row, hintInfo.col);
+          if (_checkWin()) {
+            _playWinSound();
+            _clearSavedGame();
+            _saveStats(won: true);
+            _showWinDialog();
+          }
+        },
+      ),
+    );
+  }
+
+  /// Find a smart hint using "last remaining cell" logic
+  HintInfo? _findSmartHint() {
+    // Strategy: Find a cell where only one number is possible
+
+    for (int row = 0; row < 9; row++) {
+      for (int col = 0; col < 9; col++) {
+        // Skip filled cells
+        if (board[row][col] != 0) continue;
+
+        // Get possible numbers for this cell
+        final possible = _getPossibleNumbers(row, col);
+
+        // If only one possibility, this is a good hint!
+        if (possible.length == 1) {
+          final correctValue = possible.first;
+          final highlightedCells = <int>{};
+
+          // Highlight row
+          for (int c = 0; c < 9; c++) {
+            if (board[row][c] == correctValue) {
+              highlightedCells.add(row * 9 + c);
+            }
+          }
+
+          // Highlight column
+          for (int r = 0; r < 9; r++) {
+            if (board[r][col] == correctValue) {
+              highlightedCells.add(r * 9 + col);
+            }
+          }
+
+          // Highlight 3x3 box
+          int boxRow = (row ~/ 3) * 3;
+          int boxCol = (col ~/ 3) * 3;
+          for (int r = boxRow; r < boxRow + 3; r++) {
+            for (int c = boxCol; c < boxCol + 3; c++) {
+              if (board[r][c] == correctValue) {
+                highlightedCells.add(r * 9 + c);
+              }
+            }
+          }
+
+          return HintInfo(
+            row: row,
+            col: col,
+            correctValue: correctValue,
+            highlightedCells: highlightedCells,
+            reason: 'last_remaining',
+          );
+        }
+      }
+    }
+
+    // Fallback: just find any empty cell
+    for (int row = 0; row < 9; row++) {
+      for (int col = 0; col < 9; col++) {
+        if (board[row][col] == 0 && solution[row][col] != 0) {
+          return HintInfo(
+            row: row,
+            col: col,
+            correctValue: solution[row][col],
+            highlightedCells: {},
+            reason: 'direct',
+          );
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Get possible numbers for a cell
+  Set<int> _getPossibleNumbers(int row, int col) {
+    final possible = <int>{1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    // Remove numbers in same row
+    for (int c = 0; c < 9; c++) {
+      possible.remove(board[row][c]);
+    }
+
+    // Remove numbers in same column
+    for (int r = 0; r < 9; r++) {
+      possible.remove(board[r][col]);
+    }
+
+    // Remove numbers in same 3x3 box
+    int boxRow = (row ~/ 3) * 3;
+    int boxCol = (col ~/ 3) * 3;
+    for (int r = boxRow; r < boxRow + 3; r++) {
+      for (int c = boxCol; c < boxCol + 3; c++) {
+        possible.remove(board[r][c]);
+      }
+    }
+
+    return possible;
   }
 
   bool _checkWin() {
@@ -830,26 +1023,47 @@ class _GameScreenState extends State<GameScreen> {
     bool isHighlighted = (isSameRow || isSameCol || isSameBox) && !isSelected;
     bool isSameNumber = selectedRow != null && selectedCol != null && board[selectedRow!][selectedCol!] != 0 && board[row][col] == board[selectedRow!][selectedCol!] && !isSelected;
 
+    // Check if this cell is currently animating
+    final cellIndex = row * 9 + col;
+    final isAnimating = _animatingCells.contains(cellIndex);
+
     // Border widths for 3x3 blocks
     double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
     double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
 
+    // Soft color palette
     Color bgColor;
-    if (isSelected) bgColor = isDark ? const Color(0xFF1E3A5F) : Colors.blue.shade100;
-    else if (isWrong) bgColor = isDark ? Colors.red.shade900.withOpacity(0.4) : Colors.red.shade100;
-    else if (isInCompletedGroup) bgColor = isDark ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade50;
-    else if (isSameNumber) bgColor = isDark ? Colors.blue.shade900.withOpacity(0.3) : const Color(0xFFE3F2FD);
-    else if (isHighlighted) bgColor = isDark ? const Color(0xFF1A2733) : const Color(0xFFE8F4FD);
-    else bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    if (isSelected) {
+      bgColor = isDark ? const Color(0xFF2D4A6F) : const Color(0xFFBBDEFB); // Soft blue
+    } else if (isWrong) {
+      bgColor = isDark ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFCDD2); // Soft red
+    } else if (isInCompletedGroup) {
+      bgColor = isDark ? Colors.green.shade900.withOpacity(0.2) : const Color(0xFFC8E6C9); // Soft green
+    } else if (isSameNumber) {
+      bgColor = isDark ? Colors.blue.shade900.withOpacity(0.2) : const Color(0xFFE3F2FD); // Very soft blue
+    } else if (isHighlighted) {
+      bgColor = isDark ? const Color(0xFF1F2933) : const Color(0xFFF5F5F5); // Soft grey
+    } else {
+      bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    }
 
     Color textColor;
-    if (isOriginalCell) textColor = isDark ? Colors.white : Colors.black87;
-    else if (isWrong) textColor = Colors.red.shade700;
-    else textColor = isDark ? Colors.blue.shade300 : Colors.blue.shade600;
+    if (isOriginalCell) {
+      textColor = isDark ? Colors.grey[200]! : Colors.grey[900]!; // Soft black/white
+    } else if (isWrong) {
+      textColor = const Color(0xFFD32F2F); // Soft red for wrong numbers
+    } else {
+      textColor = isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2); // Soft blue
+    }
 
-    return GestureDetector(
-      onTap: () => _selectCell(row, col),
-      child: Container(
+    // Wrap in AnimatedScale for completion animation
+    return AnimatedScale(
+      scale: isAnimating ? 1.15 : 1.0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.elasticOut,
+      child: GestureDetector(
+        onTap: () => _selectCell(row, col),
+        child: Container(
         margin: const EdgeInsets.all(0.5),
         decoration: BoxDecoration(
           color: bgColor,
