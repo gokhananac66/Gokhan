@@ -775,26 +775,62 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (_dailyChallenge != null && _user != null) ...[
                   DailyChallengeCard(
                     challenge: _dailyChallenge!,
-                    onTap: () {
-                      // TODO: Implement daily challenge game screen
-                      // For now, just show a placeholder dialog
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('🎯 Günlük Meydan Okuma'),
-                          content: Text(
-                            'Günlük challenge özelliği yakında aktif olacak!\n\n'
-                            'Zorluk: ${_dailyChallenge!.getDifficultyName("tr")}\n'
-                            'Ödül: +${_dailyChallenge!.rewardPoints} 💎'
+                    onTap: () async {
+                      // Map challenge difficulty to Turkish difficulty names
+                      String difficulty;
+                      switch (_dailyChallenge!.difficulty) {
+                        case 'easy':
+                          difficulty = 'Kolay';
+                          break;
+                        case 'medium':
+                          difficulty = 'Orta';
+                          break;
+                        case 'hard':
+                          difficulty = 'Zor';
+                          break;
+                        case 'expert':
+                          difficulty = 'Uzman';
+                          break;
+                        default:
+                          difficulty = 'Orta';
+                      }
+
+                      // Navigate to game screen
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GameScreen(
+                            gameMode: GameMode.single,
+                            difficulty: difficulty,
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Tamam'),
-                            ),
-                          ],
                         ),
                       );
+
+                      // If game was completed, mark challenge as complete
+                      if (result == true) {
+                        final completionResult = await DailyChallengeService().completeChallenge(
+                          timeTaken: 0, // TODO: Get actual time from game
+                          movesCount: 0, // TODO: Get actual moves from game
+                        );
+
+                        if (completionResult.success) {
+                          // Reload challenge to update UI
+                          await _loadDailyChallenge();
+
+                          // Show success message
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '🎉 Günlük meydan okuma tamamlandı! +${completionResult.rewardPoints} 💎'
+                                ),
+                                backgroundColor: Colors.green,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        }
+                      }
                     },
                   ),
                   const SizedBox(height: 20),
