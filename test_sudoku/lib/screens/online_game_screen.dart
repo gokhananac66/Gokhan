@@ -15,6 +15,7 @@ import '../widgets/game_result_dialog.dart';
 import '../widgets/post_game_stats_dialog.dart';
 import '../widgets/win_streak_badge.dart';
 import '../widgets/achievement_unlock_dialog.dart';
+import '../widgets/hint_dialog.dart';
 
 class OnlineGameScreen extends StatefulWidget {
   final String gameId;
@@ -91,6 +92,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   // Yanlış girilen hücreyi takip et
   int? _lastWrongRow;
   int? _lastWrongCol;
+
+  // Animation: Track recently completed cells for pulse effect
+  Set<int> _animatingCells = {}; // Linear cell indices (row * 9 + col)
+  Set<int> completedRows = {};
+  Set<int> completedCols = {};
+  Set<int> completedBoxes = {};
 
   @override
   void initState() {
@@ -1603,25 +1610,48 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     int value = board[row][col];
     Set<int> cellNotes = notes[row][col];
 
+    // Check animation state
+    final cellIndex = row * 9 + col;
+    final isAnimating = _animatingCells.contains(cellIndex);
+
+    // Check if in completed group
+    int boxIndex = (row ~/ 3) * 3 + (col ~/ 3);
+    bool isInCompletedGroup = completedRows.contains(row) || completedCols.contains(col) || completedBoxes.contains(boxIndex);
+
     // Border widths for 3x3 blocks
     double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
     double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
 
-    // Colors
+    // Soft colors
     Color bgColor;
     if (isWrong) {
-      bgColor = Colors.red.shade100;
+      bgColor = isDark ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFCDD2);
     } else if (isSelected) {
       bgColor = isMyTurn
-        ? Colors.blue.shade100
-        : Colors.grey.shade300;
+        ? (isDark ? const Color(0xFF2D4A6F) : const Color(0xFFBBDEFB))
+        : (isDark ? const Color(0xFF3D3D3D) : const Color(0xFFE0E0E0));
+    } else if (isInCompletedGroup) {
+      bgColor = isDark ? Colors.green.shade900.withOpacity(0.2) : const Color(0xFFC8E6C9);
     } else {
-      bgColor = isDark ? Color(0xFF2D2D2D) : Colors.white;
+      bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
     }
 
-    return GestureDetector(
-      onTap: () => _selectCell(row, col),
-      child: Container(
+    Color textColor;
+    if (isOriginalCell) {
+      textColor = isDark ? Colors.grey[200]! : Colors.grey[900]!;
+    } else if (isWrong) {
+      textColor = const Color(0xFFD32F2F);
+    } else {
+      textColor = isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2);
+    }
+
+    return AnimatedScale(
+      scale: isAnimating ? 1.15 : 1.0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.elasticOut,
+      child: GestureDetector(
+        onTap: () => _selectCell(row, col),
+        child: Container(
         margin: const EdgeInsets.all(0.5),
         decoration: BoxDecoration(
           color: bgColor,
@@ -1655,11 +1685,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: isOriginalCell ? FontWeight.w700 : FontWeight.w500,
-                    color: isOriginalCell
-                        ? (isDark ? Colors.white : Colors.black87)
-                        : isWrong
-                            ? Colors.red.shade700
-                            : Colors.blue.shade600,
+                    color: textColor,
                   ),
                 )
               : cellNotes.isNotEmpty
@@ -1681,6 +1707,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                     )
                   : null,
         ),
+      ),
       ),
     );
   }
