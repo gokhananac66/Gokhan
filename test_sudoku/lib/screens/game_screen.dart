@@ -6,9 +6,9 @@ import 'dart:math';
 import 'dart:convert';
 import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
-import '../widgets/hint_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
+import 'settings_screen.dart';
 
 enum GameMode { single, multiplayer, race }
 
@@ -521,40 +521,33 @@ class _GameScreenState extends State<GameScreen> {
     _playClickSound();
     _vibrate();
 
-    // Find a good hint using "last remaining cell" logic
-    final hintInfo = _findSmartHint();
-
-    if (hintInfo == null) {
-      // Fallback: no smart hint found
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr('noHintAvailable')), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-
-    // Show hint dialog
-    showDialog(
-      context: context,
-      builder: (ctx) => HintDialog(
-        hintInfo: hintInfo,
-        onConfirm: () {
-          // Apply hint
+    // Find first empty cell and fill with correct answer
+    for (int row = 0; row < 9; row++) {
+      for (int col = 0; col < 9; col++) {
+        if (board[row][col] == 0) {
           setState(() {
-            board[hintInfo.row][hintInfo.col] = hintInfo.correctValue;
+            board[row][col] = solution[row][col];
             hints--;
             combo = 0;
-            selectedRow = hintInfo.row;
-            selectedCol = hintInfo.col;
+            selectedRow = row;
+            selectedCol = col;
           });
-          _checkCompletions(hintInfo.row, hintInfo.col);
+
+          _checkCompletions(row, col);
           if (_checkWin()) {
             _playWinSound();
             _clearSavedGame();
             _saveStats(won: true);
             _showWinDialog();
           }
-        },
-      ),
+          return;
+        }
+      }
+    }
+
+    // No empty cells found
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(tr('noHintAvailable')), backgroundColor: Colors.orange),
     );
   }
 
@@ -774,112 +767,17 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // New: Game settings dialog
-  void _showGameSettings() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Pause/Resume Button
-              _buildSettingsButton(
-                icon: isPaused ? Icons.play_arrow : Icons.pause,
-                label: isPaused ? tr('resume') : tr('pause'),
-                color: Colors.blue,
-                onTap: () {
-                  setState(() => isPaused = !isPaused);
-                  Navigator.pop(ctx);
-                },
-              ),
-              const SizedBox(height: 12),
+  // Navigate to main settings screen
+  void _showGameSettings() async {
+    // Pause game when going to settings
+    if (!isPaused) {
+      setState(() => isPaused = true);
+    }
 
-              // Reset Button
-              _buildSettingsButton(
-                icon: Icons.refresh,
-                label: tr('resetGame'),
-                color: Colors.orange,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  showDialog(
-                    context: context,
-                    builder: (confirmCtx) => AlertDialog(
-                      title: Text(tr('resetGame')),
-                      content: Text(tr('resetGameConfirm')),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(confirmCtx),
-                          child: Text(tr('cancel')),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(confirmCtx);
-                            _clearSavedGame();
-                            setState(() => _initGame());
-                          },
-                          child: Text(tr('reset'), style: const TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-
-              // Main Menu Button
-              _buildSettingsButton(
-                icon: Icons.home,
-                label: tr('mainMenu'),
-                color: Colors.grey,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  if (widget.gameMode == GameMode.single) _saveGame();
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
+    // Navigate to settings screen
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SettingsScreen()),
     );
   }
 
@@ -980,22 +878,8 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   String _getShortDifficulty(String difficulty) {
-    switch (difficulty) {
-      case 'Kolay':
-        return tr('easy').substring(0, 3).toUpperCase();
-      case 'Orta':
-        return tr('medium').substring(0, 3).toUpperCase();
-      case 'Zor':
-        return tr('hard').substring(0, 3).toUpperCase();
-      case 'Uzman':
-        return tr('expert').substring(0, 3).toUpperCase();
-      case 'Usta':
-        return tr('master').substring(0, 3).toUpperCase();
-      case 'Ekstrem':
-        return 'EXT';
-      default:
-        return difficulty.substring(0, 3).toUpperCase();
-    }
+    // Return full difficulty name instead of truncated version
+    return difficulty;
   }
 
   Widget _buildMultiplayerScore() {
@@ -1074,29 +958,29 @@ class _GameScreenState extends State<GameScreen> {
     double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
     double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
 
-    // Soft color palette
+    // Ultra soft, gentle color palette
     Color bgColor;
     if (isSelected) {
-      bgColor = isDark ? const Color(0xFF2D4A6F) : const Color(0xFFBBDEFB); // Soft blue
+      bgColor = isDark ? const Color(0xFF2D4A6F) : const Color(0xFFE3F2FD); // Much softer blue
     } else if (isWrong) {
-      bgColor = isDark ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFCDD2); // Soft red
+      bgColor = isDark ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFEBEE); // Softer red
     } else if (isInCompletedGroup) {
-      bgColor = isDark ? Colors.green.shade900.withOpacity(0.2) : const Color(0xFFC8E6C9); // Soft green
+      bgColor = isDark ? Colors.green.shade900.withOpacity(0.2) : const Color(0xFFE8F5E9); // Softer green
     } else if (isSameNumber) {
       bgColor = isDark ? Colors.blue.shade900.withOpacity(0.2) : const Color(0xFFE3F2FD); // Very soft blue
     } else if (isHighlighted) {
-      bgColor = isDark ? const Color(0xFF1F2933) : const Color(0xFFF5F5F5); // Soft grey
+      bgColor = isDark ? const Color(0xFF1F2933) : const Color(0xFFFAFAFA); // Barely visible grey
     } else {
       bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
     }
 
     Color textColor;
     if (isOriginalCell) {
-      textColor = isDark ? Colors.grey[200]! : Colors.grey[900]!; // Soft black/white
+      textColor = isDark ? Colors.grey[200]! : const Color(0xFF212121); // Darker for better contrast
     } else if (isWrong) {
       textColor = const Color(0xFFD32F2F); // Soft red for wrong numbers
     } else {
-      textColor = isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2); // Soft blue
+      textColor = isDark ? const Color(0xFF64B5F6) : const Color(0xFF1565C0); // Deeper blue for better readability
     }
 
     // Wrap in AnimatedScale for completion animation

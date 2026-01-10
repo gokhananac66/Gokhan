@@ -425,7 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // Avatar ve Temel Bilgiler
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -458,8 +458,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         // Gradient Ring
                         Container(
-                          width: 108,
-                          height: 108,
+                          width: 90,
+                          height: 90,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
@@ -470,8 +470,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             boxShadow: [
                               BoxShadow(
                                 color: Color(0xFF9C27B0).withOpacity(0.5),
-                                blurRadius: 15,
-                                spreadRadius: 2,
+                                blurRadius: 12,
+                                spreadRadius: 1,
                               ),
                             ],
                           ),
@@ -483,11 +483,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                               ),
                               child: hasGooglePhoto
-                                  ? CircleAvatar(radius: 50, backgroundImage: NetworkImage(_user!.photoURL!))
+                                  ? CircleAvatar(radius: 40, backgroundImage: NetworkImage(_user!.photoURL!))
                                   : CircleAvatar(
-                                      radius: 50,
+                                      radius: 40,
                                       backgroundColor: Color(currentAvatar['color']).withOpacity(0.2),
-                                      child: Icon(currentAvatar['icon'], size: 50, color: Color(currentAvatar['color'])),
+                                      child: Icon(currentAvatar['icon'], size: 40, color: Color(currentAvatar['color'])),
                                     ),
                             ),
                           ),
@@ -509,24 +509,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                        if (!hasGooglePhoto)
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300, shape: BoxShape.circle),
-                              child: Icon(Icons.edit, size: 14, color: isDark ? Colors.white : Colors.black54),
-                            ),
-                          ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
                   // Email
-                  Text(_user?.email ?? tr('guestUser'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
-                  const SizedBox(height: 8),
+                  Text(_user?.email ?? tr('guestUser'), style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                  const SizedBox(height: 4),
 
                   // Nickname
                   if (_isEditingNickname)
