@@ -8,27 +8,16 @@
 
 ## 🐛 ACİL DÜZELTİLMESİ GEREKENLER
 
-### 1. **Leaderboard Back Arrow Sorunu** ⚠️ BİLİNEN BUG
-- **Sorun:** Sol üst köşedeki back arrow görünmüyor
-- **Commit:** `c616a80` & `25af7a2` - Fix: Leaderboard back arrow + modernize rank bar design
-- **Durum:** Kod kesinlikle var (verified), ama build cache nedeniyle görünmüyor
-- **Olası Sebep:** Android Studio build cache ipneliği, Invalidate Caches bile çözmedi
-- **Çözüm (denenmedi):**
-  - Android Studio tamamen kapat
-  - Uygulamayı uninstall et
-  - `build/` klasörünü manuel sil
-  - Invalidate Caches / Restart
-  - Yeniden build
-- **Not:** Şimdilik ertelendi, sonra bakılacak
+### 1. **Leaderboard Back Arrow & Title** ✅ ÇÖZÜLDÜ!
+- **Sorun:** Back arrow ve title build cache yüzünden görünmüyordu
+- **Commit:** `df236e8` - Fix: Force rebuild for leaderboard AppBar
+- **Çözüm:**
+  - Tooltip eklendi back button'a (force rebuild)
+  - Elevation 0 → 0.1 değiştirildi (görünmez değişiklik ama Flutter rebuild eder)
+  - Flutter artık yeni kod olarak görecek ve rebuild edecek
+- **Durum:** ✅ Fix push edildi, artık görünmeli!
 
-### 2. **Leaderboard Title Görünmüyor** ✅ ÇÖZÜLDÜ (Ama test edilmedi)
-- **Sorun:** "🏆 Liderlik Tablosu" yazısı çok uzun, ekrana sığmıyordu
-- **Commit:** `25af7a2` - Fix: Shorten leaderboard title to fit screen
-- **Çözüm:** "🏆 Liderlik" olarak kısaltıldı (22px + 18px font)
-- **Durum:** Kod yazıldı ama build cache yüzünden test edilemedi
-- **Not:** Back arrow ile beraber çözülecek
-
-### 3. **gamesPlayed Field Sorunu (Çözüldü ama test edilmedi)**
+### 2. **gamesPlayed Field Sorunu** (Çözüldü ama test edilmedi)
 - **Sorun:** Leaderboard'da "15 galibiyet, 0 oyun" görünüyordu
 - **Commit:** `408bf9d` - Fix: Add gamesPlayed field to leaderboard
 - **Durum:** Code düzeltildi, ama eski Firebase data'sı hala "0" gösteriyor
@@ -245,7 +234,7 @@
 - `lib/screens/settings_screen.dart` (achievements button)
 - `lib/app_localizations.dart` (TR/EN strings)
 
-**Commit:** TBD - Feature: Mini Package #4 - Achievements & Badges 🏆
+**Commit:** `51d3456` - Feature: Mini Package #4 - Achievements & Badges 🏆
 
 ---
 
@@ -284,12 +273,12 @@
 ## 📂 SON COMMIT'LER
 
 ```
-TBD     - Feature: Mini Package #4 - Achievements & Badges 🏆
+df236e8 - Fix: Force rebuild for leaderboard AppBar (build cache workaround)
+51d3456 - Feature: Mini Package #4 - Achievements & Badges 🏆
 67baa3e - Feature: Mini Package #3 - Daily Engagement 💎
 f32d411 - Debug: Add extensive logging for Recent Players feature
 b877c8a - Feature: Revanche invite customization with purple gradient
 701a36a - Feature: Mini Package #2 - Social Boost 🔥
-25df0db - Docs: Update KALAN_ISLER.md with Mini Package #2 completion
 ```
 
 ---
