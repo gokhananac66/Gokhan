@@ -10,7 +10,11 @@ import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/friend_service.dart';
 import '../services/haptic_service.dart';
+import '../services/daily_reward_service.dart';
+import '../services/daily_challenge_service.dart';
 import '../widgets/sudoku_clash_logo.dart';
+import '../widgets/daily_reward_dialog.dart';
+import '../widgets/daily_challenge_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +28,10 @@ class _HomeScreenState extends State<HomeScreen> {
   User? _user;
   bool _hasSavedGame = false;
   String _savedGameDifficulty = '';
+  DailyChallenge? _dailyChallenge;
+
+  final DailyRewardService _rewardService = DailyRewardService();
+  final DailyChallengeService _challengeService = DailyChallengeService();
 
   List<Map<String, dynamic>> get difficulties => [
     {'name': tr('easy'), 'key': 'Kolay', 'emoji': '😊', 'description': tr('easyDesc')},
@@ -43,9 +51,50 @@ class _HomeScreenState extends State<HomeScreen> {
     FriendService().setOnlineStatus(true);
 
     _checkSavedGame();
+    _checkDailyReward();
+    _loadDailyChallenge();
 
     // Set status to idle when on home screen
     UserStatusService().updateStatus(UserStatus.idle);
+  }
+
+  Future<void> _checkDailyReward() async {
+    if (_user == null) return;
+
+    // Wait a bit for better UX (let home screen appear first)
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    final status = await _rewardService.checkDailyReward();
+
+    if (!mounted) return;
+
+    if (status.canClaim) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => DailyRewardDialog(
+          status: status,
+          onClaim: () async {
+            final result = await _rewardService.claimDailyReward();
+            if (result.success) {
+              // Could show a success snackbar here
+              print('✅ Daily reward claimed: ${result.rewardAmount} points!');
+            }
+          },
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadDailyChallenge() async {
+    if (_user == null) return;
+
+    final challenge = await _challengeService.getTodaysChallenge();
+    if (mounted) {
+      setState(() {
+        _dailyChallenge = challenge;
+      });
+    }
   }
 
   Future<void> _checkSavedGame() async {
@@ -720,7 +769,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   tr('tagline'),
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade600, letterSpacing: 1),
                 ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
+
+                // DAILY CHALLENGE (if available and user is logged in)
+                if (_dailyChallenge != null && _user != null) ...[
+                  DailyChallengeCard(
+                    challenge: _dailyChallenge!,
+                    onTap: () {
+                      // TODO: Implement daily challenge game screen
+                      // For now, just show a placeholder dialog
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('🎯 Günlük Meydan Okuma'),
+                          content: Text(
+                            'Günlük challenge özelliği yakında aktif olacak!\n\n'
+                            'Zorluk: ${_dailyChallenge!.getDifficultyName("tr")}\n'
+                            'Ödül: +${_dailyChallenge!.rewardPoints} 💎'
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Tamam'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
                 // TEK OYUNCU
                 _buildMenuCard(

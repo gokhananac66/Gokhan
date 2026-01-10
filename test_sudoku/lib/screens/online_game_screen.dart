@@ -9,8 +9,10 @@ import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/recent_players_service.dart';
 import '../services/game_invite_service.dart';
+import '../services/win_streak_service.dart';
 import '../widgets/game_result_dialog.dart';
 import '../widgets/post_game_stats_dialog.dart';
+import '../widgets/win_streak_badge.dart';
 
 class OnlineGameScreen extends StatefulWidget {
   final String gameId;
@@ -599,6 +601,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     print('======================');
 
     // LEADERBOARD'A KAYDET (Kazanan ve Kaybeden için)
+    WinStreakResult? streakResult;
     if (!isDraw) {
       print('📊 Submitting to leaderboard - Won: $iWon, Score: $myScore, Mode: ${widget.gameMode}');
       try {
@@ -615,6 +618,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           await ProgressionService.incrementWins(widget.difficulty);
           print('📈 Progression updated for difficulty: ${widget.difficulty}');
         }
+
+        // Track win streak
+        streakResult = await WinStreakService().recordGameResult(iWon);
+        if (streakResult.milestoneReached && streakResult.milestoneStreak != null) {
+          print('🎉 Milestone reached: ${streakResult.milestoneStreak} wins!');
+        }
       } catch (e) {
         print('❌ Leaderboard submission ERROR: $e');
       }
@@ -625,7 +634,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     // Record recent player
     await _recordRecentPlayer(iWon, isDraw);
 
-    _showWinDialog(winner, reason, iWon, isDraw);
+    _showWinDialog(winner, reason, iWon, isDraw, streakResult);
   }
 
   Future<void> _recordRecentPlayer(bool iWon, bool isDraw) async {
@@ -666,7 +675,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     }
   }
 
-  void _showWinDialog(String? winner, String reason, bool iWon, bool isDraw) {
+  void _showWinDialog(String? winner, String reason, bool iWon, bool isDraw, [WinStreakResult? streakResult]) {
     final gameContext = context; // Game screen context'ini yakala
 
     // Calculate move counts (approximate from score)
@@ -676,6 +685,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     final opponentErrors = widget.isPlayer1 ? player2Errors : player1Errors;
     final opponentName = widget.isPlayer1 ? player2Name : player1Name;
 
+    // Show post-game stats first
     showDialog(
       context: gameContext,
       barrierDismissible: false,
@@ -731,9 +741,28 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
           }
         },
         onClose: () {
-          // Navigate back to home
-          if (mounted && Navigator.canPop(gameContext)) {
-            Navigator.popUntil(gameContext, (route) => route.isFirst || route.settings.name == '/home');
+          // Show milestone dialog if reached
+          if (streakResult != null &&
+              streakResult.milestoneReached &&
+              streakResult.milestoneStreak != null &&
+              streakResult.milestoneReward != null) {
+            showDialog(
+              context: gameContext,
+              builder: (context) => MilestoneReachedDialog(
+                milestoneStreak: streakResult.milestoneStreak!,
+                rewardPoints: streakResult.milestoneReward!,
+              ),
+            ).then((_) {
+              // Navigate back to home after milestone dialog
+              if (mounted && Navigator.canPop(gameContext)) {
+                Navigator.popUntil(gameContext, (route) => route.isFirst || route.settings.name == '/home');
+              }
+            });
+          } else {
+            // Navigate back to home
+            if (mounted && Navigator.canPop(gameContext)) {
+              Navigator.popUntil(gameContext, (route) => route.isFirst || route.settings.name == '/home');
+            }
           }
         },
       ),
