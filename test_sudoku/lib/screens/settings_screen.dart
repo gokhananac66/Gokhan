@@ -5,6 +5,7 @@ import 'statistics_screen.dart';
 import 'profile_screen.dart';
 import 'leaderboard_screen.dart';
 import 'system_settings_screen.dart';
+import 'achievements_screen.dart';
 import '../app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -324,6 +325,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+              );
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          // BAŞARIMLAR
+          _buildBigColorfulButton(
+            icon: Icons.emoji_events,
+            title: tr('achievements'),
+            subtitle: tr('achievementsDesc'),
+            colors: [Colors.purple.shade500, Colors.purple.shade700],
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AchievementsScreen()),
               );
             },
           ),

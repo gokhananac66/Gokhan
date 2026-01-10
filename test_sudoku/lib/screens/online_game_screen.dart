@@ -10,9 +10,11 @@ import '../services/user_status_service.dart';
 import '../services/recent_players_service.dart';
 import '../services/game_invite_service.dart';
 import '../services/win_streak_service.dart';
+import '../services/achievement_service.dart';
 import '../widgets/game_result_dialog.dart';
 import '../widgets/post_game_stats_dialog.dart';
 import '../widgets/win_streak_badge.dart';
+import '../widgets/achievement_unlock_dialog.dart';
 
 class OnlineGameScreen extends StatefulWidget {
   final String gameId;
@@ -623,6 +625,18 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         streakResult = await WinStreakService().recordGameResult(iWon);
         if (streakResult.milestoneReached && streakResult.milestoneStreak != null) {
           print('🎉 Milestone reached: ${streakResult.milestoneStreak} wins!');
+        }
+
+        // Check achievements
+        final newAchievements = await AchievementService().checkGameAchievements(
+          isWin: iWon,
+          gameTimeSeconds: seconds,
+          errorCount: widget.isPlayer1 ? player1Errors : player2Errors,
+          currentWinStreak: streakResult.currentStreak,
+        );
+
+        if (newAchievements.isNotEmpty) {
+          print('🏆 Achievements unlocked: ${newAchievements.map((a) => a.id).join(', ')}');
         }
       } catch (e) {
         print('❌ Leaderboard submission ERROR: $e');
