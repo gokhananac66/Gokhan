@@ -540,40 +540,226 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildTopBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[50],
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
+      ),
       child: Row(children: [
-        IconButton(icon: const Icon(Icons.arrow_back, size: 22), onPressed: () { if (widget.gameMode == GameMode.single) _saveGame(); Navigator.pop(context); }, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+        // Back button
+        IconButton(
+          icon: Icon(Icons.arrow_back, size: 24, color: isDark ? Colors.white : Colors.grey[800]),
+          onPressed: () {
+            if (widget.gameMode == GameMode.single) _saveGame();
+            Navigator.pop(context);
+          },
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
         const Spacer(),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), decoration: BoxDecoration(color: isDark ? Colors.blue.shade900 : Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
-            child: Text(widget.gameMode == GameMode.single ? '${tr('score')}: $score' : '$player1Name: $player1Score | $player2Name: $player2Score', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+        // Score display
+        Text(
+          widget.gameMode == GameMode.single ? '$score' : '$player1Score',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.grey[900],
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.refresh, size: 22), onPressed: () {
-          showDialog(context: context, builder: (ctx) => AlertDialog(title: Text(tr('resetGame')), content: Text(tr('resetGameConfirm')), actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('cancel'))),
-            TextButton(onPressed: () { Navigator.pop(ctx); _clearSavedGame(); setState(() => _initGame()); }, child: Text(tr('reset'))),
-          ]));
-        }, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+        // Settings button (top-right)
+        IconButton(
+          icon: Icon(Icons.settings_outlined, size: 24, color: isDark ? Colors.white : Colors.grey[800]),
+          onPressed: () {
+            _showGameSettings();
+          },
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
       ]),
+    );
+  }
+
+  // New: Game settings dialog
+  void _showGameSettings() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tr('settings')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.pause),
+              title: Text(isPaused ? tr('resume') : tr('pause')),
+              onTap: () {
+                setState(() => isPaused = !isPaused);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: Text(tr('resetGame')),
+              onTap: () {
+                Navigator.pop(ctx);
+                showDialog(
+                  context: context,
+                  builder: (confirmCtx) => AlertDialog(
+                    title: Text(tr('resetGame')),
+                    content: Text(tr('resetGameConfirm')),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(confirmCtx),
+                        child: Text(tr('cancel')),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(confirmCtx);
+                          _clearSavedGame();
+                          setState(() => _initGame());
+                        },
+                        child: Text(tr('reset')),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: Text(tr('mainMenu')),
+              onTap: () {
+                Navigator.pop(ctx);
+                if (widget.gameMode == GameMode.single) _saveGame();
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(tr('close')),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildInfoBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        _buildInfoItem(tr('difficulty'), _getLocalizedDifficulty(widget.difficulty)),
-        _buildInfoItem(tr('errors'), '$errors/$maxErrors'),
-        if (timerEnabled) _buildInfoItem(tr('time'), _formatTime(seconds)),
-        InkWell(onTap: () { _playClickSound(); setState(() => isPaused = !isPaused); }, child: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 22)),
-      ]),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey[100]!, width: 1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // All Levels: Always show these 4 stats
+          _buildModernInfoItem(
+            label: widget.gameMode == GameMode.single ? tr('score') : tr('score'),
+            value: widget.gameMode == GameMode.single ? '$score' : '$player1Score',
+            icon: Icons.star_rounded,
+            color: Colors.amber[700]!,
+          ),
+          _buildModernInfoItem(
+            label: tr('difficulty'),
+            value: _getShortDifficulty(widget.difficulty),
+            icon: Icons.speed_rounded,
+            color: Colors.blue[600]!,
+          ),
+          _buildModernInfoItem(
+            label: tr('errors'),
+            value: '$errors/$maxErrors',
+            icon: Icons.warning_rounded,
+            color: errors >= maxErrors - 1 ? Colors.red[600]! : Colors.orange[600]!,
+          ),
+          if (timerEnabled)
+            _buildModernInfoItem(
+              label: tr('time'),
+              value: _formatTime(seconds),
+              icon: Icons.timer_outlined,
+              color: Colors.teal[600]!,
+            ),
+          // Pause button
+          InkWell(
+            onTap: () {
+              _playClickSound();
+              setState(() => isPaused = !isPaused);
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Icon(
+                isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                size: 26,
+                color: isDark ? Colors.white70 : Colors.grey[700],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildInfoItem(String label, String value) {
-    return Column(children: [Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)), Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold))]);
+  Widget _buildModernInfoItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: color,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getShortDifficulty(String difficulty) {
+    switch (difficulty) {
+      case 'Kolay':
+        return tr('easy').substring(0, 3).toUpperCase();
+      case 'Orta':
+        return tr('medium').substring(0, 3).toUpperCase();
+      case 'Zor':
+        return tr('hard').substring(0, 3).toUpperCase();
+      case 'Uzman':
+        return tr('expert').substring(0, 3).toUpperCase();
+      case 'Usta':
+        return tr('master').substring(0, 3).toUpperCase();
+      case 'Ekstrem':
+        return 'EXT';
+      default:
+        return difficulty.substring(0, 3).toUpperCase();
+    }
   }
 
   Widget _buildMultiplayerScore() {
