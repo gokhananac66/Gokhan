@@ -776,66 +776,109 @@ class _GameScreenState extends State<GameScreen> {
 
   // New: Game settings dialog
   void _showGameSettings() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(tr('settings')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Pause/Resume Button
+              _buildSettingsButton(
+                icon: isPaused ? Icons.play_arrow : Icons.pause,
+                label: isPaused ? tr('resume') : tr('pause'),
+                color: Colors.blue,
+                onTap: () {
+                  setState(() => isPaused = !isPaused);
+                  Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Reset Button
+              _buildSettingsButton(
+                icon: Icons.refresh,
+                label: tr('resetGame'),
+                color: Colors.orange,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog(
+                    context: context,
+                    builder: (confirmCtx) => AlertDialog(
+                      title: Text(tr('resetGame')),
+                      content: Text(tr('resetGameConfirm')),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(confirmCtx),
+                          child: Text(tr('cancel')),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(confirmCtx);
+                            _clearSavedGame();
+                            setState(() => _initGame());
+                          },
+                          child: Text(tr('reset'), style: const TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Main Menu Button
+              _buildSettingsButton(
+                icon: Icons.home,
+                label: tr('mainMenu'),
+                color: Colors.grey,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (widget.gameMode == GameMode.single) _saveGame();
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3), width: 1),
+        ),
+        child: Row(
           children: [
-            ListTile(
-              leading: const Icon(Icons.pause),
-              title: Text(isPaused ? tr('resume') : tr('pause')),
-              onTap: () {
-                setState(() => isPaused = !isPaused);
-                Navigator.pop(ctx);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.refresh),
-              title: Text(tr('resetGame')),
-              onTap: () {
-                Navigator.pop(ctx);
-                showDialog(
-                  context: context,
-                  builder: (confirmCtx) => AlertDialog(
-                    title: Text(tr('resetGame')),
-                    content: Text(tr('resetGameConfirm')),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(confirmCtx),
-                        child: Text(tr('cancel')),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(confirmCtx);
-                          _clearSavedGame();
-                          setState(() => _initGame());
-                        },
-                        child: Text(tr('reset')),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: Text(tr('mainMenu')),
-              onTap: () {
-                Navigator.pop(ctx);
-                if (widget.gameMode == GameMode.single) _saveGame();
-                Navigator.pop(context);
-              },
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(tr('close')),
-          ),
-        ],
       ),
     );
   }

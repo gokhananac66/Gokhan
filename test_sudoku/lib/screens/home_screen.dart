@@ -14,7 +14,7 @@ import '../services/daily_reward_service.dart';
 import '../services/daily_challenge_service.dart';
 import '../widgets/sudoku_clash_logo.dart';
 import '../widgets/daily_reward_dialog.dart';
-import '../widgets/calendar_challenge_card.dart';
+import '../widgets/daily_challenge_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -773,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // DAILY CHALLENGE (if available and user is logged in)
                 if (_dailyChallenge != null && _user != null) ...[
-                  CalendarChallengeCard(
+                  DailyChallengeCard(
                     challenge: _dailyChallenge!,
                     onTap: () async {
                       // Map challenge difficulty to Turkish difficulty names
