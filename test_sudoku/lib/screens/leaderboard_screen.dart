@@ -103,6 +103,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black87),
           onPressed: () => Navigator.pop(context),
+          tooltip: 'Geri', // Force rebuild fix for build cache issue
         ),
         title: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -114,7 +115,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         ),
         centerTitle: true,
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        elevation: 0,
+        elevation: 0.1, // Changed from 0 to force rebuild
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Container(
