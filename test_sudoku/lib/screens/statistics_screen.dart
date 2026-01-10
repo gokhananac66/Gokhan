@@ -33,12 +33,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Future<void> _loadAllStats() async {
     setState(() => _isLoading = true);
+    print('📊 [STATISTICS] Loading stats...');
 
     try {
       // Multiplayer stats from LeaderboardService
+      print('📊 [STATISTICS] Fetching classic stats...');
       final classicStats = await LeaderboardService.getUserModeStats('classic');
+      print('📊 [STATISTICS] Classic stats: $classicStats');
+
+      print('📊 [STATISTICS] Fetching race stats...');
       final raceStats = await LeaderboardService.getUserModeStats('race');
+      print('📊 [STATISTICS] Race stats: $raceStats');
+
+      print('📊 [STATISTICS] Fetching overall stats...');
       final overallStats = await LeaderboardService.getUserStats();
+      print('📊 [STATISTICS] Overall stats: $overallStats');
 
       Map<String, Map<String, dynamic>> stats = {};
 
@@ -64,12 +73,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         'winRate': 0.0,
       };
 
+      print('✅ [STATISTICS] Stats loaded successfully');
       setState(() {
         _stats = stats;
         _isLoading = false;
       });
-    } catch (e) {
-      print('Error loading stats: $e');
+    } catch (e, stackTrace) {
+      print('❌ [STATISTICS] Error loading stats: $e');
+      print('❌ [STATISTICS] Stack trace: $stackTrace');
       setState(() => _isLoading = false);
     }
   }

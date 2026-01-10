@@ -61,14 +61,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Future<void> _loadLeaderboard() async {
     setState(() => _isLoading = true);
+    print('🔍 [LEADERBOARD] Loading... Mode: $_currentMode, Filter: $_selectedTimeFilter');
     try {
       List<Map<String, dynamic>> scores;
 
       if (_currentMode == 'overall') {
         // Overall mode - kullan mevcut sistemi
+        print('🔍 [LEADERBOARD] Fetching overall leaderboard...');
         scores = await LeaderboardService.getLeaderboard(_selectedTimeFilter, leagueFilter: _selectedLeagueFilter);
       } else {
         // Classic veya Race mode - mod bazlı leaderboard
+        print('🔍 [LEADERBOARD] Fetching mode leaderboard: $_currentMode');
         scores = await LeaderboardService.getModeLeaderboard(_currentMode, _selectedTimeFilter);
 
         // League filter uygula
@@ -76,6 +79,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           scores = scores.where((s) => s['league'] == _selectedLeagueFilter).toList();
         }
       }
+
+      print('✅ [LEADERBOARD] Got ${scores.length} scores');
 
       // User rank hesapla
       int? userRank;
@@ -90,6 +95,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
       setState(() { _scores = scores; _userRank = userRank; _isLoading = false; });
     } catch (e) {
+      print('❌ [LEADERBOARD] Error: $e');
+      print('❌ [LEADERBOARD] Stack trace: ${StackTrace.current}');
       setState(() => _isLoading = false);
     }
   }
