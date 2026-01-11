@@ -117,19 +117,19 @@ class DailyChallengeService {
       final totalReward = challengeReward + bonusPoints;
 
       // Calculate coin reward based on difficulty
-      int coinReward = 20; // Default for easy
+      int coinReward = 10; // Default for easy
       switch (challenge.difficulty) {
         case 'easy':
-          coinReward = 20;
+          coinReward = 10;
           break;
         case 'medium':
-          coinReward = 30;
+          coinReward = 20;
           break;
         case 'hard':
-          coinReward = 40;
+          coinReward = 35;
           break;
         case 'expert':
-          coinReward = 50;
+          coinReward = 40;
           break;
       }
 
