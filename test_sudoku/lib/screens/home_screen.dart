@@ -928,29 +928,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
-                // DAILY CHALLENGE (if available and user is logged in)
-                if (_dailyChallenge != null && _user != null) ...[
-                  DailyChallengeCard(
-                    challenge: _dailyChallenge!,
-                    onTap: () async {
-                      // Navigate to daily challenge screen with calendar
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DailyChallengeScreen(
-                            challenge: _dailyChallenge!,
-                          ),
+              // DAILY CHALLENGE (if available and user is logged in)
+              if (_dailyChallenge != null && _user != null) ...[
+                DailyChallengeCard(
+                  challenge: _dailyChallenge!,
+                  onTap: () async {
+                    // Navigate to daily challenge screen with calendar
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DailyChallengeScreen(
+                          challenge: _dailyChallenge!,
                         ),
-                      );
+                      ),
+                    );
 
-                      // If challenge was completed, reload
-                      if (result == true) {
-                        await _loadDailyChallenge();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                    // If challenge was completed, reload
+                    if (result == true) {
+                      await _loadDailyChallenge();
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // Menu buttons - spaced evenly
               Expanded(
