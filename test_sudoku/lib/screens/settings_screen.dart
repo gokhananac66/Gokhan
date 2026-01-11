@@ -7,6 +7,7 @@ import 'leaderboard_screen.dart';
 import 'system_settings_screen.dart';
 import 'achievements_screen.dart';
 import 'theme_selector_screen.dart';
+import 'badge_selector_screen.dart';
 import '../app_localizations.dart';
 import '../services/currency_service.dart';
 
@@ -359,6 +360,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ThemeSelectorScreen()),
+              );
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          // ROZETLER
+          _buildBigColorfulButton(
+            icon: Icons.military_tech,
+            title: AppLocalizations.currentLanguage == 'tr' ? 'Rozetler' : 'Badges',
+            subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Rozet seç ve göster' : 'Select and display badges',
+            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BadgeSelectorScreen()),
               );
             },
           ),
