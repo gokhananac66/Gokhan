@@ -130,25 +130,29 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
       shadowColor = Colors.red;
     }
 
+    final screenSize = MediaQuery.of(context).size;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          // Konfeti
+          // Konfeti - Full screen
           if (widget.isWin || widget.isDraw)
-            AnimatedBuilder(
-              animation: _confettiController,
-              builder: (context, child) {
-                return CustomPaint(
-                  size: const Size(300, 400),
-                  painter: ConfettiPainter(
-                    confetti: _confettiPieces,
-                    progress: _confettiController.value,
-                  ),
-                );
-              },
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _confettiController,
+                builder: (context, child) {
+                  return CustomPaint(
+                    size: screenSize,
+                    painter: ConfettiPainter(
+                      confetti: _confettiPieces,
+                      progress: _confettiController.value,
+                    ),
+                  );
+                },
+              ),
             ),
 
           // Ana kart

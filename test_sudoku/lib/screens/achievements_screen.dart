@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/achievement_service.dart';
+import '../app_localizations.dart';
 
 /// Full-screen achievements display with categories and progress
 class AchievementsScreen extends StatefulWidget {
@@ -36,7 +37,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).languageCode;
+    final locale = AppLocalizations.currentLanguage; // Use app setting instead of system locale
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
