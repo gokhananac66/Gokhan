@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'currency_service.dart';
 
 /// Service for tracking and managing player achievements
 /// Includes various achievement categories and automatic tracking
@@ -283,7 +284,10 @@ class AchievementService {
           .child('users/${currentUser.uid}/achievement_points')
           .set(ServerValue.increment(achievement.points));
 
-      print('🏆 [AchievementService] Achievement unlocked: $achievementId (+${achievement.points} points)');
+      // Award coins for unlocking achievement
+      await CurrencyService().addCoins(achievement.points);
+
+      print('🏆 [AchievementService] Achievement unlocked: $achievementId (+${achievement.points} points, +${achievement.points} coins)');
     } catch (e) {
       print('❌ [AchievementService] Error unlocking achievement: $e');
     }

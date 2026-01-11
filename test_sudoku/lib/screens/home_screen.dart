@@ -5,6 +5,7 @@ import 'game_screen.dart';
 import 'settings_screen.dart';
 import 'lobby_screen.dart';
 import 'friends_screen.dart';
+import 'shop_screen.dart';
 import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
@@ -960,6 +961,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   colors: [Colors.orange.shade500, Colors.orange.shade700],
                   heroTag: 'online_icon',
                   onTap: _showOnlineDialog,
+                ),
+                const SizedBox(height: 16),
+
+                // MAĞAZA
+                _buildMenuCard(
+                  icon: Icons.storefront_rounded,
+                  title: AppLocalizations.currentLanguage == 'tr' ? 'Mağaza' : 'Shop',
+                  subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Premium avatarlar ve tema paketleri' : 'Premium avatars and theme packs',
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                  heroTag: 'shop_icon',
+                  badge: '💰',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => const ShopScreen(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          const begin = Offset(1.0, 0.0);
+                          const end = Offset.zero;
+                          const curve = Curves.easeInOutCubic;
+                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                          return SlideTransition(position: animation.drive(tween), child: child);
+                        },
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
 

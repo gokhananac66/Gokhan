@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'currency_service.dart';
 
 /// Service for managing daily puzzle challenges
 /// Provides one special puzzle per day with bonus rewards
@@ -115,6 +116,23 @@ class DailyChallengeService {
 
       final totalReward = challengeReward + bonusPoints;
 
+      // Calculate coin reward based on difficulty
+      int coinReward = 20; // Default for easy
+      switch (challenge.difficulty) {
+        case 'easy':
+          coinReward = 20;
+          break;
+        case 'medium':
+          coinReward = 30;
+          break;
+        case 'hard':
+          coinReward = 40;
+          break;
+        case 'expert':
+          coinReward = 50;
+          break;
+      }
+
       // Record completion
       await _database
           .child('users/${currentUser.uid}/daily_challenges/${challenge.id}')
@@ -123,6 +141,7 @@ class DailyChallengeService {
         'timeTaken': timeTaken,
         'movesCount': movesCount,
         'rewardPoints': totalReward,
+        'coinReward': coinReward,
         'difficulty': challenge.difficulty,
       });
 
@@ -131,12 +150,15 @@ class DailyChallengeService {
           .child('users/${currentUser.uid}/points')
           .set(ServerValue.increment(totalReward));
 
+      // Award coins
+      await CurrencyService().addCoins(coinReward);
+
       // Update total challenges completed
       await _database
           .child('users/${currentUser.uid}/stats/daily_challenges_completed')
           .set(ServerValue.increment(1));
 
-      print('✅ [DailyChallengeService] Challenge completed! Reward: $totalReward points');
+      print('✅ [DailyChallengeService] Challenge completed! Reward: $totalReward points, $coinReward coins');
 
       return ChallengeCompletionResult(
         success: true,

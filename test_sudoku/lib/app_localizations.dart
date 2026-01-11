@@ -251,6 +251,18 @@ class AppLocalizations {
       'nicknameTaken': 'This nickname is already taken',
       'googlePhoto': 'Using Google profile photo',
       'guestUser': 'Guest User',
+
+      // Shop
+      'shop': 'Shop',
+      'balance': 'Balance',
+      'coins': 'Coins',
+      'buy': 'Buy',
+      'owned': 'Owned',
+      'confirmPurchase': 'Confirm Purchase',
+      'purchaseSuccess': 'Purchased successfully:',
+      'purchaseFailed': 'Purchase failed',
+      'notEnoughCoins': 'Not enough coins',
+      'alreadyPurchased': 'You already own this item',
     },
     'tr': {
       // Genel
@@ -454,6 +466,18 @@ class AppLocalizations {
       'nicknameTaken': 'Bu kullanıcı adı zaten kullanılıyor',
       'googlePhoto': 'Google profil fotoğrafı kullanılıyor',
       'guestUser': 'Misafir Kullanıcı',
+
+      // Shop
+      'shop': 'Mağaza',
+      'balance': 'Bakiye',
+      'coins': 'Jeton',
+      'buy': 'Satın Al',
+      'owned': 'Sahip',
+      'confirmPurchase': 'Satın Alma Onayı',
+      'purchaseSuccess': 'Başarıyla satın alındı:',
+      'purchaseFailed': 'Satın alma başarısız',
+      'notEnoughCoins': 'Yeterli jeton yok',
+      'alreadyPurchased': 'Bu ürüne zaten sahipsiniz',
     },
   };
 
