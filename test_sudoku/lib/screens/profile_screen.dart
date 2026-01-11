@@ -425,7 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // Avatar ve Temel Bilgiler
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -458,8 +458,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         // Gradient Ring
                         Container(
-                          width: 90,
-                          height: 90,
+                          width: 70,
+                          height: 70,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
@@ -469,54 +469,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Color(0xFF9C27B0).withOpacity(0.5),
-                                blurRadius: 12,
+                                color: Color(0xFF9C27B0).withOpacity(0.4),
+                                blurRadius: 8,
                                 spreadRadius: 1,
                               ),
                             ],
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.all(3),
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                               ),
                               child: hasGooglePhoto
-                                  ? CircleAvatar(radius: 40, backgroundImage: NetworkImage(_user!.photoURL!))
+                                  ? CircleAvatar(radius: 30, backgroundImage: NetworkImage(_user!.photoURL!))
                                   : CircleAvatar(
-                                      radius: 40,
+                                      radius: 30,
                                       backgroundColor: Color(currentAvatar['color']).withOpacity(0.2),
-                                      child: Icon(currentAvatar['icon'], size: 40, color: Color(currentAvatar['color'])),
+                                      child: Icon(currentAvatar['icon'], size: 30, color: Color(currentAvatar['color'])),
                                     ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: _getAccountType() == 'Google' ? Colors.blue : _getAccountType() == 'Email' ? Colors.green : Colors.grey,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, width: 2),
-                            ),
-                            child: Icon(
-                              _getAccountType() == 'Google' ? Icons.g_mobiledata : _getAccountType() == 'Email' ? Icons.email : Icons.person,
-                              color: Colors.white,
-                              size: 16,
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
 
                   // Email
-                  Text(_user?.email ?? tr('guestUser'), style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                  const SizedBox(height: 4),
+                  Text(_user?.email ?? tr('guestUser'), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  const SizedBox(height: 2),
 
                   // Nickname
                   if (_isEditingNickname)
