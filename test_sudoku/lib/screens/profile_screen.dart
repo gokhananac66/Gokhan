@@ -83,20 +83,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nickname = prefs.getString('nickname') ?? '';
-      _nicknameController.text = _nickname;
-      _fullName = prefs.getString('fullName') ?? '';
-      _nameController.text = _fullName;
-      _selectedAvatar = prefs.getInt('selectedAvatar') ?? 0;
-      _country = prefs.getString('country') ?? '';
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
 
-      final birthDateStr = prefs.getString('birthDate');
-      if (birthDateStr != null) {
-        _birthDate = DateTime.tryParse(birthDateStr);
+    try {
+      // Firebase'den oku
+      final snapshot = await _database.child('users/$userId/profile').get();
+
+      if (snapshot.exists) {
+        final data = Map<String, dynamic>.from(snapshot.value as Map);
+        setState(() {
+          _nickname = data['nickname'] ?? '';
+          _nicknameController.text = _nickname;
+          _fullName = data['fullName'] ?? '';
+          _nameController.text = _fullName;
+          _selectedAvatar = data['selectedAvatar'] ?? 0;
+          _country = data['country'] ?? '';
+
+          if (data['birthDate'] != null) {
+            _birthDate = DateTime.tryParse(data['birthDate']);
+          }
+        });
+      } else {
+        // Firebase'de yoksa SharedPreferences'ten yükle (eski kullanıcılar için)
+        final prefs = await SharedPreferences.getInstance();
+        setState(() {
+          _nickname = prefs.getString('nickname') ?? '';
+          _nicknameController.text = _nickname;
+          _fullName = prefs.getString('fullName') ?? '';
+          _nameController.text = _fullName;
+          _selectedAvatar = prefs.getInt('selectedAvatar') ?? 0;
+          _country = prefs.getString('country') ?? '';
+
+          final birthDateStr = prefs.getString('birthDate');
+          if (birthDateStr != null) {
+            _birthDate = DateTime.tryParse(birthDateStr);
+          }
+        });
+
+        // İlk kez Firebase'e kaydet
+        if (_fullName.isNotEmpty || _country.isNotEmpty || _birthDate != null) {
+          await _syncToFirebase();
+        }
       }
-    });
+    } catch (e) {
+      print('Error loading user data: $e');
+      // Hata varsa SharedPreferences'ten yükle
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _nickname = prefs.getString('nickname') ?? '';
+        _nicknameController.text = _nickname;
+        _fullName = prefs.getString('fullName') ?? '';
+        _nameController.text = _fullName;
+        _selectedAvatar = prefs.getInt('selectedAvatar') ?? 0;
+        _country = prefs.getString('country') ?? '';
+
+        final birthDateStr = prefs.getString('birthDate');
+        if (birthDateStr != null) {
+          _birthDate = DateTime.tryParse(birthDateStr);
+        }
+      });
+    }
+  }
+
+  Future<void> _syncToFirebase() async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
+
+    try {
+      await _database.child('users/$userId/profile').set({
+        'nickname': _nickname,
+        'fullName': _fullName,
+        'birthDate': _birthDate?.toIso8601String(),
+        'country': _country,
+        'selectedAvatar': _selectedAvatar,
+        'lastUpdated': DateTime.now().millisecondsSinceEpoch,
+      });
+    } catch (e) {
+      print('Error syncing to Firebase: $e');
+    }
   }
 
   Future<void> _loadModeStats() async {
@@ -238,9 +303,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveName() async {
+    final newName = _nameController.text.trim();
+    setState(() => _fullName = newName);
+
+    // Firebase'e kaydet
+    await _syncToFirebase();
+
+    // SharedPreferences'e de kaydet (fallback)
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('fullName', _nameController.text.trim());
-    setState(() => _fullName = _nameController.text.trim());
+    await prefs.setString('fullName', newName);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(tr('nameSaved')), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
     );
@@ -258,9 +330,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (picked != null) {
+      setState(() => _birthDate = picked);
+
+      // Firebase'e kaydet
+      await _syncToFirebase();
+
+      // SharedPreferences'e de kaydet (fallback)
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('birthDate', picked.toIso8601String());
-      setState(() => _birthDate = picked);
     }
   }
 
@@ -298,9 +375,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: Text(country),
                       trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.blue) : null,
                       onTap: () async {
+                        setState(() => _country = country);
+
+                        // Firebase'e kaydet
+                        await _syncToFirebase();
+
+                        // SharedPreferences'e de kaydet (fallback)
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setString('country', country);
-                        setState(() => _country = country);
+
                         Navigator.pop(context);
                       },
                     );
@@ -350,9 +433,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final isSelected = _selectedAvatar == index;
                   return GestureDetector(
                     onTap: () async {
+                      setState(() => _selectedAvatar = index);
+
+                      // Firebase'e kaydet
+                      await _syncToFirebase();
+
+                      // SharedPreferences'e de kaydet (fallback)
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.setInt('selectedAvatar', index);
-                      setState(() => _selectedAvatar = index);
+
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(tr('avatarChanged')), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
