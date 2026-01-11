@@ -6,6 +6,7 @@ import 'settings_screen.dart';
 import 'lobby_screen.dart';
 import 'friends_screen.dart';
 import 'shop_screen.dart';
+import 'daily_challenge_screen.dart';
 import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
@@ -932,60 +933,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   DailyChallengeCard(
                     challenge: _dailyChallenge!,
                     onTap: () async {
-                      // Map challenge difficulty to Turkish difficulty names
-                      String difficulty;
-                      switch (_dailyChallenge!.difficulty) {
-                        case 'easy':
-                          difficulty = 'Kolay';
-                          break;
-                        case 'medium':
-                          difficulty = 'Orta';
-                          break;
-                        case 'hard':
-                          difficulty = 'Zor';
-                          break;
-                        case 'expert':
-                          difficulty = 'Uzman';
-                          break;
-                        default:
-                          difficulty = 'Orta';
-                      }
-
-                      // Navigate to game screen
+                      // Navigate to daily challenge screen with calendar
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => GameScreen(
-                            gameMode: GameMode.single,
-                            difficulty: difficulty,
+                          builder: (context) => DailyChallengeScreen(
+                            challenge: _dailyChallenge!,
                           ),
                         ),
                       );
 
-                      // If game was completed, mark challenge as complete
+                      // If challenge was completed, reload
                       if (result == true) {
-                        final completionResult = await DailyChallengeService().completeChallenge(
-                          timeTaken: 0, // TODO: Get actual time from game
-                          movesCount: 0, // TODO: Get actual moves from game
-                        );
-
-                        if (completionResult.success) {
-                          // Reload challenge to update UI
-                          await _loadDailyChallenge();
-
-                          // Show success message
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '🎉 Günlük meydan okuma tamamlandı! +${completionResult.rewardPoints} 💎'
-                                ),
-                                backgroundColor: Colors.green,
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          }
-                        }
+                        await _loadDailyChallenge();
                       }
                     },
                   ),

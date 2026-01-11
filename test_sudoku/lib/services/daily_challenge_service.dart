@@ -259,6 +259,26 @@ class DailyChallengeService {
 
     return streak;
   }
+
+  /// Get challenge history as a map for calendar (DateTime -> completed)
+  /// Returns Map<DateTime, bool> for ActivityCalendar widget
+  Future<Map<DateTime, bool>> getChallengeHistoryMap() async {
+    final history = await getChallengeHistory(limit: 60);
+    final Map<DateTime, bool> historyMap = {};
+
+    for (final entry in history) {
+      // Normalize to date only (no time)
+      final date = DateTime(entry.date.year, entry.date.month, entry.date.day);
+      historyMap[date] = true;
+    }
+
+    return historyMap;
+  }
+
+  /// Get current streak (alias for getChallengeStreak)
+  Future<int> getCurrentStreak() async {
+    return getChallengeStreak();
+  }
 }
 
 /// Daily challenge model
