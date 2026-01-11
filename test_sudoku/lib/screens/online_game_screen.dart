@@ -596,18 +596,6 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       iWon = winner == myName;
     }
 
-    // DEBUG LOG
-    print('=== GAME END DEBUG ===');
-    print('Winner from Firebase: $winner');
-    print('Reason: $reason');
-    print('My Name: $myName');
-    print('Am I Player1: ${widget.isPlayer1}');
-    print('Player1 Name: $player1Name, Score: $player1Score, Errors: $player1Errors');
-    print('Player2 Name: $player2Name, Score: $player2Score, Errors: $player2Errors');
-    print('My Score: $myScore, Opponent Score: $opponentScore');
-    print('Is Draw: $isDraw');
-    print('I Won: $iWon');
-    print('======================');
 
     // LEADERBOARD'A KAYDET (Kazanan ve Kaybeden için)
     WinStreakResult? streakResult;

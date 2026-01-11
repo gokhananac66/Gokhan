@@ -32,42 +32,45 @@ class SoundService {
   /// Play button click sound
   Future<void> playButtonClick() async {
     if (!_soundEnabled) return;
-    // TODO: Add sound file to assets/sounds/button_click.mp3
-    // await _player.play(AssetSource('sounds/button_click.mp3'));
+    // Sound files not added yet. To enable:
+    // 1. Create assets/sounds/ folder
+    // 2. Add button_click.mp3
+    // 3. Update pubspec.yaml: assets: - assets/sounds/
+    // 4. Uncomment: await _player.play(AssetSource('sounds/button_click.mp3'));
   }
 
   /// Play win sound
   Future<void> playWin() async {
     if (!_soundEnabled) return;
-    // TODO: Add sound file to assets/sounds/win.mp3
+    // Add win.mp3 to assets/sounds/ and uncomment:
     // await _player.play(AssetSource('sounds/win.mp3'));
   }
 
   /// Play lose sound
   Future<void> playLose() async {
     if (!_soundEnabled) return;
-    // TODO: Add sound file to assets/sounds/lose.mp3
+    // Add lose.mp3 to assets/sounds/ and uncomment:
     // await _player.play(AssetSource('sounds/lose.mp3'));
   }
 
   /// Play move/place number sound
   Future<void> playMove() async {
     if (!_soundEnabled) return;
-    // TODO: Add sound file to assets/sounds/move.mp3
+    // Add move.mp3 to assets/sounds/ and uncomment:
     // await _player.play(AssetSource('sounds/move.mp3'));
   }
 
   /// Play error/wrong move sound
   Future<void> playError() async {
     if (!_soundEnabled) return;
-    // TODO: Add sound file to assets/sounds/error.mp3
+    // Add error.mp3 to assets/sounds/ and uncomment:
     // await _player.play(AssetSource('sounds/error.mp3'));
   }
 
   /// Play match found sound
   Future<void> playMatchFound() async {
     if (!_soundEnabled) return;
-    // TODO: Add sound file to assets/sounds/match_found.mp3
+    // Add match_found.mp3 to assets/sounds/ and uncomment:
     // await _player.play(AssetSource('sounds/match_found.mp3'));
   }
 
