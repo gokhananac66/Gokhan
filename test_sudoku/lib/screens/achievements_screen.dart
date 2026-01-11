@@ -25,17 +25,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Future<void> _loadAchievements() async {
     setState(() => _loading = true);
 
-    // DEBUG: Unlock some achievements for testing
-    try {
-      await _service.unlockAchievementById('first_win');
-      await _service.unlockAchievementById('speedster');
-      await _service.unlockAchievementById('hot_streak');
-      await _service.unlockAchievementById('friendly');
-      await _service.unlockAchievementById('century');
-    } catch (e) {
-      print('Debug unlock error: $e');
-    }
-
     final unlocked = await _service.getUnlockedAchievements();
     final points = await _service.getTotalAchievementPoints();
 
