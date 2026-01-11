@@ -100,11 +100,14 @@ class IAPService {
     print('✅ [IAP] In-app purchases available');
 
     // Platform-specific setup
+    // NOTE: iOS delegate setup commented out (optional feature)
+    /*
     if (Platform.isIOS) {
       final InAppPurchaseStoreKitPlatformAddition iosAddition = _iap
           .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
       await iosAddition.setDelegate(ExamplePaymentQueueDelegate());
     }
+    */
 
     // Listen to purchase updates
     _subscription = _iap.purchaseStream.listen(
@@ -277,6 +280,9 @@ class IAPService {
 }
 
 /// iOS payment queue delegate
+/// NOTE: Commented out because wrapper types are not exported from in_app_purchase_storekit
+/// This is an optional iOS feature for payment queue management
+/*
 class ExamplePaymentQueueDelegate implements SKPaymentQueueDelegateWrapper {
   @override
   bool shouldContinueTransaction(SKPaymentTransactionWrapper transaction, SKStorefrontWrapper storefront) {
@@ -288,3 +294,4 @@ class ExamplePaymentQueueDelegate implements SKPaymentQueueDelegateWrapper {
     return false;
   }
 }
+*/

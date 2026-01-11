@@ -66,7 +66,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> with Single
 
   Future<void> _loadChallengeHistory() async {
     try {
-      final history = await DailyChallengeService().getChallengeHistory();
+      final history = await DailyChallengeService().getChallengeHistoryMap();
       final streak = await DailyChallengeService().getCurrentStreak();
 
       setState(() {
