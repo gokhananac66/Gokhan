@@ -408,77 +408,181 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
+                        // KLASIK MODE
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'classic'),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: tempGameMode == 'classic'
-                                    ? [Color(0xFF2196F3), Color(0xFF1976D2)]
-                                    : [Color(0xFF64B5F6), Color(0xFF42A5F5)],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: tempGameMode == 'classic' ? Colors.white : Colors.transparent,
-                                  width: 3,
-                                ),
-                                boxShadow: tempGameMode == 'classic' ? [
-                                  BoxShadow(
-                                    color: Colors.blue.withOpacity(0.5),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
+                            child: AnimatedScale(
+                              scale: tempGameMode == 'classic' ? 1.05 : 1.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: tempGameMode == 'classic'
+                                      ? [Color(0xFF2196F3), Color(0xFF1565C0)]
+                                      : [Color(0xFF64B5F6), Color(0xFF42A5F5)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                   ),
-                                ] : [],
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(Icons.sports_esports, color: Colors.white, size: 32),
-                                  const SizedBox(height: 8),
-                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('Sırayla', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                  Text('30s turlar', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                ],
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: tempGameMode == 'classic'
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.2),
+                                    width: tempGameMode == 'classic' ? 3 : 1,
+                                  ),
+                                  boxShadow: tempGameMode == 'classic' ? [
+                                    BoxShadow(
+                                      color: Color(0xFF2196F3).withOpacity(0.6),
+                                      blurRadius: 20,
+                                      spreadRadius: 3,
+                                      offset: Offset(0, 4),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.blue.shade700.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ] : [
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    // Icon with background
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                                      ),
+                                      child: Icon(Icons.sports_esports, color: Colors.white, size: 28),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      '⚔️ Klasik',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Sırayla',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      '30s turlar',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 14),
+                        // RACE MODE
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'race'),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: tempGameMode == 'race'
-                                    ? [Color(0xFF9C27B0), Color(0xFF7B1FA2)]
-                                    : [Color(0xFFBA68C8), Color(0xFFAB47BC)],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: tempGameMode == 'race' ? Colors.white : Colors.transparent,
-                                  width: 3,
-                                ),
-                                boxShadow: tempGameMode == 'race' ? [
-                                  BoxShadow(
-                                    color: Colors.purple.withOpacity(0.5),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
+                            child: AnimatedScale(
+                              scale: tempGameMode == 'race' ? 1.05 : 1.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: tempGameMode == 'race'
+                                      ? [Color(0xFF9C27B0), Color(0xFF6A1B9A)]
+                                      : [Color(0xFFBA68C8), Color(0xFFAB47BC)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                   ),
-                                ] : [],
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(Icons.speed, color: Colors.white, size: 32),
-                                  const SizedBox(height: 8),
-                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('Aynı anda', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                ],
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: tempGameMode == 'race'
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.2),
+                                    width: tempGameMode == 'race' ? 3 : 1,
+                                  ),
+                                  boxShadow: tempGameMode == 'race' ? [
+                                    BoxShadow(
+                                      color: Color(0xFF9C27B0).withOpacity(0.6),
+                                      blurRadius: 20,
+                                      spreadRadius: 3,
+                                      offset: Offset(0, 4),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.purple.shade700.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ] : [
+                                    BoxShadow(
+                                      color: Colors.purple.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    // Icon with background
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                                      ),
+                                      child: Icon(Icons.speed, color: Colors.white, size: 28),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      '🏁 Race',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Aynı anda',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      'İlk bitiren kazanır',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
