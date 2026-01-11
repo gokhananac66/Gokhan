@@ -305,6 +305,11 @@ class AchievementService {
     }
   }
 
+  /// Manually unlock an achievement (for testing/debugging)
+  Future<void> unlockAchievementById(String achievementId) async {
+    await _unlockAchievement(achievementId);
+  }
+
   /// Get all unlocked achievements
   Future<Map<String, UnlockedAchievement>> getUnlockedAchievements() async {
     final currentUser = _auth.currentUser;

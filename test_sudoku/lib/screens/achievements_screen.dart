@@ -25,6 +25,17 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Future<void> _loadAchievements() async {
     setState(() => _loading = true);
 
+    // DEBUG: Unlock some achievements for testing
+    try {
+      await _service.unlockAchievementById('first_win');
+      await _service.unlockAchievementById('speedster');
+      await _service.unlockAchievementById('hot_streak');
+      await _service.unlockAchievementById('friendly');
+      await _service.unlockAchievementById('century');
+    } catch (e) {
+      print('Debug unlock error: $e');
+    }
+
     final unlocked = await _service.getUnlockedAchievements();
     final points = await _service.getTotalAchievementPoints();
 
@@ -268,9 +279,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 children: [
                   // Name
                   Text(
-                    isUnlocked
-                        ? achievement.getName(locale)
-                        : '???',
+                    achievement.getName(locale), // Always show name
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -283,11 +292,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
                   // Description
                   Text(
-                    isUnlocked
-                        ? achievement.getDescription(locale)
-                        : (locale == 'tr'
-                            ? 'Gizli başarım - Kilidi aç ve keşfet!'
-                            : 'Hidden achievement - Unlock to discover!'),
+                    achievement.getDescription(locale), // Always show description
                     style: TextStyle(
                       fontSize: 13,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
