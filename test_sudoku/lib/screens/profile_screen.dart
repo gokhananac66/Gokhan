@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app_localizations.dart';
 import '../services/friend_service.dart';
 import '../services/leaderboard_service.dart';
+import '../services/currency_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -34,22 +35,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _raceStats;
 
   static const List<Map<String, dynamic>> _avatars = [
-    {'icon': Icons.person, 'color': 0xFF9C27B0},
-    {'icon': Icons.face, 'color': 0xFF2196F3},
-    {'icon': Icons.sentiment_very_satisfied, 'color': 0xFF4CAF50},
-    {'icon': Icons.psychology, 'color': 0xFFFF9800},
-    {'icon': Icons.rocket_launch, 'color': 0xFFE91E63},
-    {'icon': Icons.sports_esports, 'color': 0xFF00BCD4},
-    {'icon': Icons.local_fire_department, 'color': 0xFFF44336},
-    {'icon': Icons.bolt, 'color': 0xFFFFEB3B},
-    {'icon': Icons.star, 'color': 0xFF673AB7},
-    {'icon': Icons.diamond, 'color': 0xFF3F51B5},
-    {'icon': Icons.pets, 'color': 0xFF795548},
-    {'icon': Icons.cruelty_free, 'color': 0xFFE91E63},
-    {'icon': Icons.catching_pokemon, 'color': 0xFFFF5722},
-    {'icon': Icons.nightlife, 'color': 0xFF9C27B0},
-    {'icon': Icons.music_note, 'color': 0xFF00BCD4},
-    {'icon': Icons.emoji_nature, 'color': 0xFF8BC34A},
+    // Free avatars (0-15)
+    {'icon': Icons.person, 'color': 0xFF9C27B0, 'premium': false},
+    {'icon': Icons.face, 'color': 0xFF2196F3, 'premium': false},
+    {'icon': Icons.sentiment_very_satisfied, 'color': 0xFF4CAF50, 'premium': false},
+    {'icon': Icons.psychology, 'color': 0xFFFF9800, 'premium': false},
+    {'icon': Icons.rocket_launch, 'color': 0xFFE91E63, 'premium': false},
+    {'icon': Icons.sports_esports, 'color': 0xFF00BCD4, 'premium': false},
+    {'icon': Icons.local_fire_department, 'color': 0xFFF44336, 'premium': false},
+    {'icon': Icons.bolt, 'color': 0xFFFFEB3B, 'premium': false},
+    {'icon': Icons.star, 'color': 0xFF673AB7, 'premium': false},
+    {'icon': Icons.diamond, 'color': 0xFF3F51B5, 'premium': false},
+    {'icon': Icons.pets, 'color': 0xFF795548, 'premium': false},
+    {'icon': Icons.cruelty_free, 'color': 0xFFE91E63, 'premium': false},
+    {'icon': Icons.catching_pokemon, 'color': 0xFFFF5722, 'premium': false},
+    {'icon': Icons.nightlife, 'color': 0xFF9C27B0, 'premium': false},
+    {'icon': Icons.music_note, 'color': 0xFF00BCD4, 'premium': false},
+    {'icon': Icons.emoji_nature, 'color': 0xFF8BC34A, 'premium': false},
+
+    // Premium avatars (16-20) - require shop purchase
+    {'icon': Icons.auto_fix_high, 'color': 0xFF9C27B0, 'premium': true, 'shopId': 'avatar_wizard'}, // Wizard
+    {'icon': Icons.smart_toy, 'color': 0xFF607D8B, 'premium': true, 'shopId': 'avatar_robot'}, // Robot
+    {'icon': Icons.sensors, 'color': 0xFF4CAF50, 'premium': true, 'shopId': 'avatar_alien'}, // Alien
+    {'icon': Icons.visibility_off, 'color': 0xFF212121, 'premium': true, 'shopId': 'avatar_ninja'}, // Ninja
+    {'icon': Icons.workspace_premium, 'color': 0xFFFFD700, 'premium': true, 'shopId': 'avatar_crown'}, // Crown
   ];
 
   static const List<String> _countries = [
@@ -416,47 +425,100 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 20),
-              Text(tr('selectAvatar'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-              const SizedBox(height: 20),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, crossAxisSpacing: 12, mainAxisSpacing: 12),
-                itemCount: _avatars.length,
-                itemBuilder: (context, index) {
-                  final avatar = _avatars[index];
-                  final isSelected = _selectedAvatar == index;
-                  return GestureDetector(
-                    onTap: () async {
-                      setState(() => _selectedAvatar = index);
+          child: FutureBuilder<List<String>>(
+            future: CurrencyService().getPurchasedItems(),
+            builder: (context, snapshot) {
+              final purchasedItems = snapshot.data ?? [];
 
-                      // Firebase'e kaydet
-                      await _syncToFirebase();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(height: 20),
+                  Text(tr('selectAvatar'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                  const SizedBox(height: 20),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, crossAxisSpacing: 12, mainAxisSpacing: 12),
+                    itemCount: _avatars.length,
+                    itemBuilder: (context, index) {
+                      final avatar = _avatars[index];
+                      final isSelected = _selectedAvatar == index;
+                      final isPremium = avatar['premium'] == true;
+                      final isUnlocked = !isPremium || purchasedItems.contains(avatar['shopId']);
 
-                      // SharedPreferences'e de kaydet (fallback)
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setInt('selectedAvatar', index);
+                      return GestureDetector(
+                        onTap: !isUnlocked
+                            ? () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(AppLocalizations.currentLanguage == 'tr'
+                                        ? 'Bu avatarı kullanmak için mağazadan satın almalısınız'
+                                        : 'Purchase this avatar from the shop to use it'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                              }
+                            : () async {
+                                setState(() => _selectedAvatar = index);
 
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(tr('avatarChanged')), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
+                                // Firebase'e kaydet
+                                await _syncToFirebase();
+
+                                // SharedPreferences'e de kaydet (fallback)
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setInt('selectedAvatar', index);
+
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(tr('avatarChanged')), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
+                                );
+                              },
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Color(avatar['color']).withOpacity(isUnlocked ? 0.2 : 0.1),
+                                shape: BoxShape.circle,
+                                border: isSelected
+                                    ? Border.all(color: Color(avatar['color']), width: 3)
+                                    : (isPremium && !isUnlocked
+                                        ? Border.all(color: Colors.grey.shade600, width: 2)
+                                        : null),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  avatar['icon'],
+                                  size: 32,
+                                  color: isUnlocked
+                                      ? Color(avatar['color'])
+                                      : Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                            // Lock icon for premium locked avatars
+                            if (isPremium && !isUnlocked)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.orange,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.lock,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       );
                     },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Color(avatar['color']).withOpacity(0.2),
-                        shape: BoxShape.circle,
-                        border: isSelected ? Border.all(color: Color(avatar['color']), width: 3) : null,
-                      ),
-                      child: Center(child: Icon(avatar['icon'], size: 32, color: Color(avatar['color']))),
-                    ),
-                  );
-                },
               ),
               const SizedBox(height: 20),
             ],

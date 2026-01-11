@@ -263,6 +263,7 @@ class AppLocalizations {
       'purchaseFailed': 'Purchase failed',
       'notEnoughCoins': 'Not enough coins',
       'alreadyPurchased': 'You already own this item',
+      'themeChanged': 'Theme changed successfully!',
     },
     'tr': {
       // Genel
@@ -478,6 +479,7 @@ class AppLocalizations {
       'purchaseFailed': 'Satın alma başarısız',
       'notEnoughCoins': 'Yeterli jeton yok',
       'alreadyPurchased': 'Bu ürüne zaten sahipsiniz',
+      'themeChanged': 'Tema başarıyla değiştirildi!',
     },
   };
 

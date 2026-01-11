@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/shop_item.dart';
 import '../services/currency_service.dart';
+import '../services/hint_service.dart';
 import '../app_localizations.dart';
 
 class ShopScreen extends StatefulWidget {
@@ -124,7 +125,9 @@ class _ShopScreenState extends State<ShopScreen> {
     switch (item.category) {
       case ShopCategory.hints:
         // Add hints to user's account
-        // This will be implemented in game_screen
+        final amount = item.data['amount'] as int;
+        await HintService().addHints(amount);
+        print('✅ Added $amount hints to user inventory');
         break;
       case ShopCategory.avatars:
       case ShopCategory.themes:

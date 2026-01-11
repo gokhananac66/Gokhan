@@ -6,6 +6,7 @@ import 'profile_screen.dart';
 import 'leaderboard_screen.dart';
 import 'system_settings_screen.dart';
 import 'achievements_screen.dart';
+import 'theme_selector_screen.dart';
 import '../app_localizations.dart';
 import '../services/currency_service.dart';
 
@@ -342,6 +343,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+              );
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          // OYUN TEMALARI
+          _buildBigColorfulButton(
+            icon: Icons.palette_rounded,
+            title: AppLocalizations.currentLanguage == 'tr' ? 'Oyun Temaları' : 'Game Themes',
+            subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Tahta renk temasını değiştir' : 'Change board color theme',
+            colors: [Colors.pink.shade500, Colors.pink.shade700],
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ThemeSelectorScreen()),
               );
             },
           ),

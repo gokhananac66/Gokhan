@@ -8,6 +8,7 @@ import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
+import '../services/theme_service.dart';
 import 'settings_screen.dart';
 
 enum GameMode { single, multiplayer, race }
@@ -73,15 +74,27 @@ class _GameScreenState extends State<GameScreen> {
   int? _lastWrongRow;
   int? _lastWrongCol;
 
+  // Game theme
+  GameTheme? _gameTheme;
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _loadPlayerNames();
+    _loadTheme();
     _initializeGame();
 
     // Set status to in_offline_game
     UserStatusService().updateStatus(UserStatus.inOfflineGame);
+  }
+
+  Future<void> _loadTheme() async {
+    final themeId = await ThemeService().getSelectedTheme();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    setState(() {
+      _gameTheme = GameTheme.getTheme(themeId, isDark);
+    });
   }
 
   Future<void> _initializeGame() async {
@@ -848,6 +861,10 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildCell(int row, int col) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Use theme colors, fallback to default if not loaded yet
+    final theme = _gameTheme ?? GameTheme.getTheme('default', isDark);
+
     bool isSelected = row == selectedRow && col == selectedCol;
     bool isOriginalCell = isOriginal[row][col];
     bool isWrong = board[row][col] != 0 && board[row][col] != solution[row][col] && !isOriginalCell;
@@ -870,29 +887,29 @@ class _GameScreenState extends State<GameScreen> {
     double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
     double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
 
-    // Ultra soft, gentle color palette
+    // Use theme colors
     Color bgColor;
     if (isSelected) {
-      bgColor = isDark ? const Color(0xFF2D4A6F) : const Color(0xFFE3F2FD); // Much softer blue
+      bgColor = theme.selectedCell;
     } else if (isWrong) {
-      bgColor = isDark ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFEBEE); // Softer red
+      bgColor = theme.wrongCell;
     } else if (isInCompletedGroup) {
-      bgColor = isDark ? Colors.green.shade900.withOpacity(0.2) : const Color(0xFFE8F5E9); // Softer green
+      bgColor = theme.completedCell;
     } else if (isSameNumber) {
-      bgColor = isDark ? Colors.blue.shade900.withOpacity(0.2) : const Color(0xFFE3F2FD); // Very soft blue
+      bgColor = theme.selectedCell.withOpacity(0.4);
     } else if (isHighlighted) {
-      bgColor = isDark ? const Color(0xFF2D4A6F).withOpacity(0.5) : const Color(0xFFE3F2FD).withOpacity(0.6); // Soft blue like selected
+      bgColor = theme.highlightedCell;
     } else {
       bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
     }
 
     Color textColor;
     if (isOriginalCell) {
-      textColor = isDark ? Colors.grey[200]! : const Color(0xFF212121); // Darker for better contrast
+      textColor = theme.textColor;
     } else if (isWrong) {
-      textColor = const Color(0xFFD32F2F); // Soft red for wrong numbers
+      textColor = theme.wrongCell.withOpacity(1.0); // Full opacity for text
     } else {
-      textColor = isDark ? const Color(0xFF64B5F6) : const Color(0xFF1565C0); // Deeper blue for better readability
+      textColor = theme.textColor.withOpacity(0.8);
     }
 
     // Wrap in AnimatedScale for completion animation
@@ -908,23 +925,23 @@ class _GameScreenState extends State<GameScreen> {
           color: bgColor,
           border: Border(
             top: BorderSide(
-              color: row == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              color: row == 0 ? Colors.transparent : theme.gridLineColor,
               width: 0,
             ),
             left: BorderSide(
-              color: col == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              color: col == 0 ? Colors.transparent : theme.gridLineColor,
               width: 0,
             ),
             right: BorderSide(
               color: (col == 2 || col == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+                ? theme.thickGridLineColor
+                : theme.gridLineColor,
               width: rightBorder,
             ),
             bottom: BorderSide(
               color: (row == 2 || row == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+                ? theme.thickGridLineColor
+                : theme.gridLineColor,
               width: bottomBorder,
             ),
           ),
