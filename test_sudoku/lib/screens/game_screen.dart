@@ -9,7 +9,9 @@ import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/theme_service.dart';
+import '../services/powerup_service.dart';
 import 'settings_screen.dart';
+import 'dart:async';
 
 enum GameMode { single, multiplayer, race }
 
@@ -77,16 +79,142 @@ class _GameScreenState extends State<GameScreen> {
   // Game theme
   GameTheme? _gameTheme;
 
+  // Power-ups
+  bool _doubleScoreActive = false;
+  bool _autoCheckActive = false;
+  bool _timeFreezeActive = false;
+  bool _timeFrozen = false;
+  int _timeFreezeSecondsLeft = 0;
+  Timer? _autoCheckTimer;
+  Timer? _timeFreezeTimer;
+  Set<int> _errorCells = {}; // Linear cell indices (row * 9 + col) for error highlighting
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _loadPlayerNames();
     _loadTheme();
+    _loadPowerUps();
     _initializeGame();
 
     // Set status to in_offline_game
     UserStatusService().updateStatus(UserStatus.inOfflineGame);
+  }
+
+  Future<void> _loadPowerUps() async {
+    final powerUpService = PowerUpService();
+    final doubleScore = await powerUpService.hasPowerUp(PowerUpType.doubleScore);
+    final autoCheck = await powerUpService.hasPowerUp(PowerUpType.autoCheck);
+    final timeFreeze = await powerUpService.hasPowerUp(PowerUpType.timeFreeze);
+
+    setState(() {
+      _doubleScoreActive = doubleScore;
+      _autoCheckActive = autoCheck;
+      _timeFreezeActive = timeFreeze && widget.gameMode == GameMode.race;
+    });
+
+    // Start auto-check timer if active
+    if (_autoCheckActive) {
+      _startAutoCheckTimer();
+    }
+  }
+
+  void _startAutoCheckTimer() {
+    _autoCheckTimer?.cancel();
+    _autoCheckTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!mounted || isPaused) return;
+      _performAutoCheck();
+    });
+  }
+
+  void _performAutoCheck() {
+    final newErrorCells = <int>{};
+
+    for (int row = 0; row < 9; row++) {
+      for (int col = 0; col < 9; col++) {
+        // Skip original cells and empty cells
+        if (isOriginal[row][col] || board[row][col] == 0) continue;
+
+        // Check if the value is wrong
+        if (board[row][col] != solution[row][col]) {
+          newErrorCells.add(row * 9 + col);
+        }
+      }
+    }
+
+    if (newErrorCells.isNotEmpty && mounted) {
+      setState(() {
+        _errorCells = newErrorCells;
+      });
+
+      // Clear error highlights after 3 seconds
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _errorCells.clear();
+          });
+        }
+      });
+
+      // Show notification
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🔍 ${tr('autoCheckFound')} ${newErrorCells.length} ${tr('errors')}!'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  void _activateTimeFreeze() {
+    if (!_timeFreezeActive || _timeFrozen) return;
+
+    setState(() {
+      _timeFrozen = true;
+      _timeFreezeSecondsLeft = 60; // 1 minute freeze
+    });
+
+    // Show notification
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('❄️ ${tr('timeFrozen')} 60 ${tr('seconds')}!'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.blue,
+      ),
+    );
+
+    // Start countdown timer
+    _timeFreezeTimer?.cancel();
+    _timeFreezeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _timeFreezeSecondsLeft--;
+      });
+
+      if (_timeFreezeSecondsLeft <= 0) {
+        timer.cancel();
+        setState(() {
+          _timeFrozen = false;
+        });
+
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⏰ ${tr('timeFreezeEnded')}'),
+            duration: const Duration(seconds: 1),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _loadTheme() async {
@@ -112,6 +240,10 @@ class _GameScreenState extends State<GameScreen> {
     if (widget.gameMode == GameMode.single && _initialized && !_checkWin() && errors < maxErrors) {
       _saveGame();
     }
+
+    // Cancel timers
+    _autoCheckTimer?.cancel();
+    _timeFreezeTimer?.cancel();
 
     // Set status back to idle
     UserStatusService().updateStatus(UserStatus.idle);
@@ -245,7 +377,7 @@ class _GameScreenState extends State<GameScreen> {
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return false;
-      if (!isPaused && _initialized) setState(() => seconds++);
+      if (!isPaused && _initialized && !_timeFrozen) setState(() => seconds++);
       return true;
     });
   }
@@ -398,7 +530,7 @@ class _GameScreenState extends State<GameScreen> {
     }
 
     if (bonusPoints > 0) {
-      score += bonusPoints;
+      score += _doubleScoreActive ? bonusPoints * 2 : bonusPoints;
       _vibrateHeavy();
 
       // Temporarily add to completed sets for animation
@@ -466,10 +598,16 @@ class _GameScreenState extends State<GameScreen> {
           _playCorrectSound(); combo++;
           if (combo > maxCombo) maxCombo = combo;
           if (widget.gameMode == GameMode.multiplayer) {
-            if (currentPlayer == 1) { player1Combo++; player1Score += 10 * player1Combo; }
-            else { player2Combo++; player2Score += 10 * player2Combo; }
+            final comboScore = 10;
+            if (currentPlayer == 1) {
+              player1Combo++;
+              player1Score += _doubleScoreActive ? comboScore * player1Combo * 2 : comboScore * player1Combo;
+            } else {
+              player2Combo++;
+              player2Score += _doubleScoreActive ? comboScore * player2Combo * 2 : comboScore * player2Combo;
+            }
           } else {
-            score += 10 * combo;
+            score += _doubleScoreActive ? (10 * combo * 2) : (10 * combo);
           }
         } else {
           _vibrateHeavy(); errors++; combo = 0;
@@ -632,6 +770,7 @@ class _GameScreenState extends State<GameScreen> {
       body: SafeArea(child: Column(children: [
         _buildTopBar(),
         _buildInfoBar(),
+        if (_doubleScoreActive || _autoCheckActive) _buildPowerUpIndicators(),
         if (widget.gameMode == GameMode.multiplayer) _buildMultiplayerScore(),
         if (widget.gameMode == GameMode.single && combo >= 2)
           Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 6), color: Colors.orange.withOpacity(0.2),
@@ -764,6 +903,69 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  Widget _buildPowerUpIndicators() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      color: Colors.purple.withOpacity(0.1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (_doubleScoreActive) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.purple, width: 1.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.flash_on, color: Colors.purple, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    '2x ${tr('score')}',
+                    style: const TextStyle(
+                      color: Colors.purple,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_autoCheckActive) const SizedBox(width: 12),
+          ],
+          if (_autoCheckActive)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange, width: 1.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.search, color: Colors.orange, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    tr('autoCheck'),
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildModernInfoItem({
     required String label,
     required String value,
@@ -883,6 +1085,9 @@ class _GameScreenState extends State<GameScreen> {
     final cellIndex = row * 9 + col;
     final isAnimating = _animatingCells.contains(cellIndex);
 
+    // Check if auto-check detected an error in this cell
+    final isAutoCheckError = _errorCells.contains(cellIndex);
+
     // Border widths for 3x3 blocks
     double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
     double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
@@ -891,6 +1096,9 @@ class _GameScreenState extends State<GameScreen> {
     Color bgColor;
     if (isSelected) {
       bgColor = theme.selectedCell;
+    } else if (isAutoCheckError) {
+      // Auto-check detected error - show orange highlight
+      bgColor = Colors.orange.withOpacity(0.5);
     } else if (isWrong) {
       bgColor = theme.wrongCell;
     } else if (isInCompletedGroup) {
@@ -983,12 +1191,28 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildActionButtons() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+    final buttons = <Widget>[
       _buildActionButton(Icons.undo_rounded, tr('undo'), _undo, isDark),
       _buildActionButton(Icons.backspace_outlined, tr('delete'), _clearCell, isDark),
       _buildActionButton(notesMode ? Icons.edit : Icons.edit_outlined, AppLocalizations.currentLanguage == 'en' ? 'Notes' : 'Notlar', () { _playClickSound(); _vibrate(); setState(() => notesMode = !notesMode); }, isDark, isActive: notesMode, badge: notesMode ? 'ON' : 'OFF'),
       _buildActionButton(Icons.lightbulb_outline_rounded, tr('hint'), _useHint, isDark, badge: '$hints'),
-    ]));
+    ];
+
+    // Add time freeze button for race mode
+    if (_timeFreezeActive && widget.gameMode == GameMode.race) {
+      buttons.add(
+        _buildActionButton(
+          Icons.ac_unit,
+          tr('freeze'),
+          _timeFrozen ? () {} : _activateTimeFreeze,
+          isDark,
+          isActive: _timeFrozen,
+          badge: _timeFrozen ? '${_timeFreezeSecondsLeft}s' : null,
+        ),
+      );
+    }
+
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: buttons));
   }
 
   Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, bool isDark, {bool isActive = false, String? badge}) {

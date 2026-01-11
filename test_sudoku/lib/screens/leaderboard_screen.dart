@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../services/leaderboard_service.dart';
+import '../services/badge_service.dart';
 import '../models/player_rank.dart';
 import '../app_localizations.dart';
 
@@ -98,6 +100,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
       print('❌ [LEADERBOARD] Error: $e');
       print('❌ [LEADERBOARD] Stack trace: ${StackTrace.current}');
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<String?> _getUserBadge(String? userId) async {
+    if (userId == null) return null;
+
+    try {
+      final snapshot = await FirebaseDatabase.instance.ref('users/$userId/selectedBadge').get();
+      if (!snapshot.exists) return null;
+
+      final badgeId = snapshot.value as String;
+      final badge = BadgeType.getById(badgeId);
+      return badge?.icon;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -321,7 +338,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Flexible(child: Text(nickname, style: TextStyle(fontWeight: FontWeight.bold, color: isCurrentUser ? Colors.blue : null), overflow: TextOverflow.ellipsis)),
+            Flexible(
+              child: FutureBuilder<String?>(
+                future: _getUserBadge(score['odaId']),
+                builder: (context, snapshot) {
+                  final badgeIcon = snapshot.data;
+                  return Text(
+                    badgeIcon != null ? '$badgeIcon $nickname' : nickname,
+                    style: TextStyle(fontWeight: FontWeight.bold, color: isCurrentUser ? Colors.blue : null),
+                    overflow: TextOverflow.ellipsis,
+                  );
+                },
+              ),
+            ),
             if (isCurrentUser) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(4)), child: const Text('SEN', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))),
           ]),
           Row(children: [
