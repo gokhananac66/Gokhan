@@ -463,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         shape: BoxShape.circle,
                                         border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                                       ),
-                                      child: Icon(Icons.sports_esports, color: Colors.white, size: 28),
+                                      child: Icon(Icons.extension, color: Colors.white, size: 28),
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
@@ -553,7 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         shape: BoxShape.circle,
                                         border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                                       ),
-                                      child: Icon(Icons.speed, color: Colors.white, size: 28),
+                                      child: Icon(Icons.flash_on, color: Colors.white, size: 28),
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
