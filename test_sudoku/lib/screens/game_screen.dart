@@ -342,10 +342,13 @@ class _GameScreenState extends State<GameScreen> {
     int bonusPoints = 0;
     List<String> completedTypes = [];
     final newlyCompleted = <int>{};
+    final tempCompletedRows = <int>{};
+    final tempCompletedCols = <int>{};
+    final tempCompletedBoxes = <int>{};
 
     // Check row completion
     if (!completedRows.contains(row) && _isRowComplete(row)) {
-      completedRows.add(row);
+      tempCompletedRows.add(row);
       bonusPoints += 50;
       completedTypes.add(tr('rowCompleted'));
       // Add all cells in this row to animation set
@@ -356,7 +359,7 @@ class _GameScreenState extends State<GameScreen> {
 
     // Check column completion
     if (!completedCols.contains(col) && _isColComplete(col)) {
-      completedCols.add(col);
+      tempCompletedCols.add(col);
       bonusPoints += 50;
       completedTypes.add(tr('colCompleted'));
       // Add all cells in this column to animation set
@@ -368,7 +371,7 @@ class _GameScreenState extends State<GameScreen> {
     // Check box completion
     int boxIndex = (row ~/ 3) * 3 + (col ~/ 3);
     if (!completedBoxes.contains(boxIndex) && _isBoxComplete(boxIndex)) {
-      completedBoxes.add(boxIndex);
+      tempCompletedBoxes.add(boxIndex);
       bonusPoints += 50;
       completedTypes.add(tr('boxCompleted'));
       // Add all cells in this box to animation set
@@ -385,16 +388,22 @@ class _GameScreenState extends State<GameScreen> {
       score += bonusPoints;
       _vibrateHeavy();
 
-      // Trigger animation for completed cells
+      // Temporarily add to completed sets for animation
       setState(() {
+        completedRows.addAll(tempCompletedRows);
+        completedCols.addAll(tempCompletedCols);
+        completedBoxes.addAll(tempCompletedBoxes);
         _animatingCells.addAll(newlyCompleted);
       });
 
-      // Clear animation after delay
+      // Clear animation AND remove from completed sets after delay
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           setState(() {
             _animatingCells.removeAll(newlyCompleted);
+            completedRows.removeAll(tempCompletedRows);
+            completedCols.removeAll(tempCompletedCols);
+            completedBoxes.removeAll(tempCompletedBoxes);
           });
         }
       });
@@ -872,7 +881,7 @@ class _GameScreenState extends State<GameScreen> {
     } else if (isSameNumber) {
       bgColor = isDark ? Colors.blue.shade900.withOpacity(0.2) : const Color(0xFFE3F2FD); // Very soft blue
     } else if (isHighlighted) {
-      bgColor = isDark ? const Color(0xFF1F2933) : const Color(0xFFFAFAFA); // Barely visible grey
+      bgColor = isDark ? const Color(0xFF2D4A6F).withOpacity(0.5) : const Color(0xFFE3F2FD).withOpacity(0.6); // Soft blue like selected
     } else {
       bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
     }
