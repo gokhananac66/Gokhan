@@ -3,6 +3,7 @@ import '../models/shop_item.dart';
 import '../services/currency_service.dart';
 import '../services/hint_service.dart';
 import '../app_localizations.dart';
+import 'coin_purchase_screen.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -210,6 +211,37 @@ class _ShopScreenState extends State<ShopScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Buy Coins Button
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CoinPurchaseScreen(),
+                            ),
+                          );
+                          // Reload coins after returning
+                          _loadData();
+                        },
+                        icon: const Icon(Icons.add_shopping_cart, size: 20),
+                        label: Text(
+                          locale == 'tr' ? 'Jeton Satın Al' : 'Buy Coins',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFFFFA500),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          elevation: 4,
                         ),
                       ),
                     ],
