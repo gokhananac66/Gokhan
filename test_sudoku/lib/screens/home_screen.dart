@@ -833,48 +833,99 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 40),
-
-                // Logo
-                const SudokuClashLogo(
-                  size: 100,
-                  animate: false,
-                ),
-                const SizedBox(height: 30),
-
-                // Başlık
-                Text(
-                  tr('sudoku'),
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : Colors.black87,
-                    letterSpacing: 2,
-                    height: 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            children: [
+              // Logo + Title
+              Column(
+                children: [
+                  // Logo - smaller
+                  const SudokuClashLogo(
+                    size: 70,
+                    animate: true,
                   ),
-                ),
-                Text(
-                  tr('clash'),
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : Colors.black87,
-                    letterSpacing: 2,
-                    height: 1,
+                  const SizedBox(height: 16),
+
+                  // 3D Gradient Title - SUDOKU
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Color(0xFF2196F3),
+                        Color(0xFF1976D2),
+                        Color(0xFF0D47A1),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      tr('sudoku'),
+                      style: TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 3,
+                        height: 1,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(3, 3),
+                            blurRadius: 8,
+                            color: Colors.black.withOpacity(0.3),
+                          ),
+                          Shadow(
+                            offset: Offset(-1, -1),
+                            blurRadius: 4,
+                            color: Colors.blue.shade100.withOpacity(0.5),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  tr('tagline'),
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, letterSpacing: 1),
-                ),
-                const SizedBox(height: 30),
+
+                  // 3D Gradient Title - CLASH
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Color(0xFFFF6B35),
+                        Color(0xFFE91E63),
+                        Color(0xFF9C27B0),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      tr('clash'),
+                      style: TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 3,
+                        height: 1,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(3, 3),
+                            blurRadius: 8,
+                            color: Colors.black.withOpacity(0.3),
+                          ),
+                          Shadow(
+                            offset: Offset(-1, -1),
+                            blurRadius: 4,
+                            color: Colors.orange.shade100.withOpacity(0.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+                  Text(
+                    tr('tagline'),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, letterSpacing: 1),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
 
                 // DAILY CHALLENGE (if available and user is logged in)
                 if (_dailyChallenge != null && _user != null) ...[
@@ -938,84 +989,89 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                 ],
 
-                // TEK OYUNCU
-                _buildMenuCard(
-                  icon: Icons.person_rounded,
-                  title: tr('singlePlayer'),
-                  subtitle: tr('singlePlayerDesc'),
-                  colors: [Colors.blue.shade500, Colors.blue.shade700],
-                  badge: _hasSavedGame ? '⏸️' : null,
-                  heroTag: 'single_player_icon',
-                  onTap: _showSinglePlayerDialog,
-                ),
-                const SizedBox(height: 16),
+              // Menu buttons - spaced evenly
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // TEK OYUNCU
+                    _buildMenuCard(
+                      icon: Icons.person_rounded,
+                      title: tr('singlePlayer'),
+                      subtitle: tr('singlePlayerDesc'),
+                      colors: [Colors.blue.shade500, Colors.blue.shade700],
+                      badge: _hasSavedGame ? '⏸️' : null,
+                      heroTag: 'single_player_icon',
+                      onTap: _showSinglePlayerDialog,
+                    ),
 
-                // ONLINE MULTIPLAYER
-                _buildMenuCard(
-                  icon: Icons.public_rounded,
-                  title: tr('onlineMultiplayer'),
-                  subtitle: tr('onlineMultiplayerDesc'),
-                  colors: [Colors.orange.shade500, Colors.orange.shade700],
-                  heroTag: 'online_icon',
-                  onTap: _showOnlineDialog,
-                ),
-                const SizedBox(height: 16),
+                    // ONLINE MULTIPLAYER
+                    _buildMenuCard(
+                      icon: Icons.public_rounded,
+                      title: tr('onlineMultiplayer'),
+                      subtitle: tr('onlineMultiplayerDesc'),
+                      colors: [Colors.orange.shade500, Colors.orange.shade700],
+                      heroTag: 'online_icon',
+                      onTap: _showOnlineDialog,
+                    ),
 
-                // MAĞAZA
-                _buildMenuCard(
-                  icon: Icons.storefront_rounded,
-                  title: AppLocalizations.currentLanguage == 'tr' ? 'Mağaza' : 'Shop',
-                  subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Premium avatarlar ve tema paketleri' : 'Premium avatars and theme packs',
-                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                  heroTag: 'shop_icon',
-                  badge: '💰',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const ShopScreen(),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                          const begin = Offset(1.0, 0.0);
-                          const end = Offset.zero;
-                          const curve = Curves.easeInOutCubic;
-                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                          return SlideTransition(position: animation.drive(tween), child: child);
-                        },
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
+                    // MAĞAZA
+                    _buildMenuCard(
+                      icon: Icons.storefront_rounded,
+                      title: AppLocalizations.currentLanguage == 'tr' ? 'Mağaza' : 'Shop',
+                      subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Premium avatarlar ve tema paketleri' : 'Premium avatars and theme packs',
+                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      heroTag: 'shop_icon',
+                      badge: '💰',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => const ShopScreen(),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(1.0, 0.0);
+                              const end = Offset.zero;
+                              const curve = Curves.easeInOutCubic;
+                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                              return SlideTransition(position: animation.drive(tween), child: child);
+                            },
+                          ),
+                        );
+                      },
+                    ),
 
-                // AYARLAR
-                _buildMenuCard(
-                  icon: Icons.settings_rounded,
-                  title: tr('settings'),
-                  subtitle: tr('settingsDesc'),
-                  colors: [Colors.grey.shade600, Colors.grey.shade800],
-                  heroTag: 'settings_icon', // Hero tag for smooth transition
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                          const begin = Offset(1.0, 0.0);
-                          const end = Offset.zero;
-                          const curve = Curves.easeInOutCubic;
-                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                          return SlideTransition(position: animation.drive(tween), child: child);
-                        },
-                        transitionDuration: const Duration(milliseconds: 300),
-                      ),
-                    ).then((_) {
-                      setState(() {});
-                    });
-                  },
+                    // AYARLAR
+                    _buildMenuCard(
+                      icon: Icons.settings_rounded,
+                      title: tr('settings'),
+                      subtitle: tr('settingsDesc'),
+                      colors: [Colors.grey.shade600, Colors.grey.shade800],
+                      heroTag: 'settings_icon', // Hero tag for smooth transition
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(1.0, 0.0);
+                              const end = Offset.zero;
+                              const curve = Curves.easeInOutCubic;
+                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                              return SlideTransition(position: animation.drive(tween), child: child);
+                            },
+                            transitionDuration: const Duration(milliseconds: 300),
+                          ),
+                        ).then((_) {
+                          setState(() {});
+                        });
+                      },
+                    ),
+                  ],
                 ),
+              ),
 
                 const SizedBox(height: 40),
               ],
