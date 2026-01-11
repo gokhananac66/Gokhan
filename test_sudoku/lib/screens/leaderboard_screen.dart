@@ -128,9 +128,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('🏆', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 8),
-            Text('Liderlik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isDark ? Colors.white : Colors.black87)),
+            const Text('🏆', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 6),
+            Text('Liderlik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87)),
           ],
         ),
         centerTitle: true,
@@ -139,7 +139,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.1),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
+          preferredSize: const Size.fromHeight(48),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -166,9 +166,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               tabs: const [
-                Tab(icon: Icon(Icons.sports_esports, size: 18), text: '⚔️ Klasik'),
-                Tab(icon: Icon(Icons.speed, size: 18), text: '🏁 Race'),
-                Tab(icon: Icon(Icons.emoji_events, size: 18), text: '🌍 Genel'),
+                Tab(icon: Icon(Icons.extension, size: 16), text: '⚔️ Klasik'),
+                Tab(icon: Icon(Icons.flash_on, size: 16), text: '🏁 Race'),
+                Tab(icon: Icon(Icons.emoji_events, size: 16), text: '🌍 Genel'),
               ],
             ),
           ),
@@ -188,7 +188,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
     final rank = _userRankInfo!;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(gradient: LinearGradient(colors: [Color(rank.leagueColor).withOpacity(0.3), Color(rank.leagueColor).withOpacity(0.1)])),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         _buildInfoChip(rank.leagueEmoji, rank.leagueName, Color(rank.leagueColor)),
@@ -201,19 +201,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildInfoChip(String emoji, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.3))),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withOpacity(0.3))),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(emoji, style: const TextStyle(fontSize: 14)),
-        const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: color)),
+        Text(emoji, style: const TextStyle(fontSize: 12)),
+        const SizedBox(width: 3),
+        Text(text, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: color)),
       ]),
     );
   }
 
   Widget _buildTimeFilters(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       child: Row(children: [
         _buildTimeButton('today', AppLocalizations.get('lbToday'), Icons.today, isDark),
@@ -232,7 +232,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         onTap: () { setState(() => _selectedTimeFilter = key); _loadLeaderboard(); },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             gradient: isSelected
               ? LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600])
@@ -245,9 +245,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
             ] : [],
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 18, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
-            const SizedBox(width: 6),
-            Flexible(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)), overflow: TextOverflow.ellipsis)),
+            Icon(icon, size: 16, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+            const SizedBox(width: 4),
+            Flexible(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)), overflow: TextOverflow.ellipsis)),
           ]),
         ),
       ),
@@ -256,8 +256,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildLeagueFilters(bool isDark) {
     return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      height: 42,
+      padding: const EdgeInsets.symmetric(vertical: 6),
       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -271,11 +271,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
             child: Container(
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(color: isSelected ? (league['color'] as Color).withOpacity(0.2) : (isDark ? Colors.grey.shade800 : Colors.grey.shade100), borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? league['color'] as Color : Colors.transparent, width: 2)),
+              decoration: BoxDecoration(color: isSelected ? (league['color'] as Color).withOpacity(0.2) : (isDark ? Colors.grey.shade800 : Colors.grey.shade100), borderRadius: BorderRadius.circular(16), border: Border.all(color: isSelected ? league['color'] as Color : Colors.transparent, width: 1.5)),
               child: Row(children: [
-                Text(league['emoji'], style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 6),
-                Text(league['name'], style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? league['color'] as Color : (isDark ? Colors.grey.shade400 : Colors.grey.shade700))),
+                Text(league['emoji'], style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 4),
+                Text(league['name'], style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? league['color'] as Color : (isDark ? Colors.grey.shade400 : Colors.grey.shade700))),
               ]),
             ),
           );
@@ -383,7 +383,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildUserRankBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -408,7 +408,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.blue.shade400, Colors.blue.shade600],
@@ -416,25 +416,25 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.withOpacity(0.4),
-                  blurRadius: 8,
-                  spreadRadius: 1,
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 6,
+                  spreadRadius: 0.5,
                 ),
               ],
             ),
-            child: const Icon(Icons.person, color: Colors.white, size: 20),
+            child: const Icon(Icons.person, color: Colors.white, size: 16),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Text(
             '${AppLocalizations.get('yourRank')}: ',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
               fontWeight: FontWeight.w500,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.blue.shade400, Colors.blue.shade600],
@@ -451,7 +451,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
             child: Text(
               '#$_userRank',
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
