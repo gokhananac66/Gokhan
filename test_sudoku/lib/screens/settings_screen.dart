@@ -7,6 +7,7 @@ import 'leaderboard_screen.dart';
 import 'system_settings_screen.dart';
 import 'achievements_screen.dart';
 import '../app_localizations.dart';
+import '../services/currency_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -386,6 +387,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: tr('versionAndFeatures'),
             colors: [Colors.green.shade500, Colors.green.shade700],
             onTap: _showAboutDialog,
+          ),
+
+          const SizedBox(height: 10),
+
+          // TEST: 1000 JETON EKLE
+          _buildBigColorfulButton(
+            icon: Icons.monetization_on,
+            title: '🧪 Test: 1000 Jeton Ekle',
+            subtitle: 'Mağaza test için jeton ekle',
+            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+            onTap: () async {
+              await CurrencyService().addCoins(1000);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✅ 1000 jeton eklendi! Mağazayı test edebilirsin.'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
           ),
 
           const SizedBox(height: 10),
