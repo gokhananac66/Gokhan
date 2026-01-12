@@ -1,389 +1,143 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'dart:math';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'currency_service.dart';
 
-/// Service for managing daily puzzle challenges
-/// Provides one special puzzle per day with bonus rewards
 class DailyChallengeService {
-  final DatabaseReference _database = FirebaseDatabase.instance.ref();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  static const String _completedDaysKey = 'daily_challenge_completed_days';
+  static const String _currentStreakKey = 'daily_challenge_streak';
+  static const String _lastPlayedKey = 'daily_challenge_last_played';
 
-  static const int challengeReward = 50; // Bonus points for completing daily challenge
-
-  /// Get today's challenge
-  /// Returns a unique challenge based on the current date
-  Future<DailyChallenge?> getTodaysChallenge() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) return null;
-
-    try {
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final challengeId = _getChallengeIdForDate(today);
-
-      // Check if already completed today
-      final completionSnapshot = await _database
-          .child('users/${currentUser.uid}/daily_challenges/$challengeId')
-          .get();
-
-      final isCompleted = completionSnapshot.exists;
-
-      return DailyChallenge(
-        id: challengeId,
-        date: today,
-        difficulty: _getDifficultyForDate(today),
-        rewardPoints: challengeReward,
-        isCompleted: isCompleted,
-      );
-    } catch (e) {
-      print('❌ [DailyChallengeService] Error getting challenge: $e');
-      return null;
-    }
-  }
-
-  /// Generate a unique challenge ID based on date
-  /// Format: YYYYMMDD (e.g., "20260109")
-  String _getChallengeIdForDate(DateTime date) {
-    return '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
-  }
-
-  /// Get difficulty for a specific date
-  /// Cycles through difficulties based on day of week
-  String _getDifficultyForDate(DateTime date) {
-    final dayOfWeek = date.weekday;
-    switch (dayOfWeek) {
-      case DateTime.monday:
-      case DateTime.tuesday:
-        return 'easy';
-      case DateTime.wednesday:
-      case DateTime.thursday:
-        return 'medium';
-      case DateTime.friday:
-      case DateTime.saturday:
-        return 'hard';
-      case DateTime.sunday:
-        return 'expert'; // Sunday challenge!
-      default:
-        return 'medium';
-    }
-  }
-
-  /// Get seed for puzzle generation based on date
-  /// This ensures everyone gets the same puzzle for the same day
-  int getSeedForToday() {
+  /// Get today's date string (YYYY-MM-DD)
+  static String getTodayString() {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return today.millisecondsSinceEpoch ~/ 1000;
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
-  /// Complete today's challenge
-  Future<ChallengeCompletionResult> completeChallenge({
-    required int timeTaken,
-    required int movesCount,
-  }) async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) {
-      return ChallengeCompletionResult(
-        success: false,
-        message: 'Not logged in',
-        rewardPoints: 0,
-      );
-    }
+  /// Check if today's challenge is completed
+  static Future<bool> isTodayCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    final completedDays = prefs.getStringList(_completedDaysKey) ?? [];
+    return completedDays.contains(getTodayString());
+  }
 
-    try {
-      final challenge = await getTodaysChallenge();
-      if (challenge == null) {
-        return ChallengeCompletionResult(
-          success: false,
-          message: 'No challenge available',
-          rewardPoints: 0,
-        );
-      }
+  /// Mark today's challenge as completed
+  static Future<void> markTodayCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    final completedDays = prefs.getStringList(_completedDaysKey) ?? [];
+    final today = getTodayString();
 
-      if (challenge.isCompleted) {
-        return ChallengeCompletionResult(
-          success: false,
-          message: 'Already completed today',
-          rewardPoints: 0,
-        );
-      }
+    if (!completedDays.contains(today)) {
+      completedDays.add(today);
+      await prefs.setStringList(_completedDaysKey, completedDays);
 
-      // Calculate bonus based on performance
-      int bonusPoints = 0;
-      if (timeTaken < 300) bonusPoints += 20; // Under 5 minutes
-      if (movesCount < 100) bonusPoints += 10; // Efficient solving
-
-      final totalReward = challengeReward + bonusPoints;
-
-      // Calculate coin reward based on difficulty
-      int coinReward = 10; // Default for easy
-      switch (challenge.difficulty) {
-        case 'easy':
-          coinReward = 10;
-          break;
-        case 'medium':
-          coinReward = 20;
-          break;
-        case 'hard':
-          coinReward = 35;
-          break;
-        case 'expert':
-          coinReward = 40;
-          break;
-      }
-
-      // Record completion
-      await _database
-          .child('users/${currentUser.uid}/daily_challenges/${challenge.id}')
-          .set({
-        'completedAt': DateTime.now().millisecondsSinceEpoch,
-        'timeTaken': timeTaken,
-        'movesCount': movesCount,
-        'rewardPoints': totalReward,
-        'coinReward': coinReward,
-        'difficulty': challenge.difficulty,
-      });
-
-      // Award points
-      await _database
-          .child('users/${currentUser.uid}/points')
-          .set(ServerValue.increment(totalReward));
-
-      // Award coins
-      await CurrencyService().addCoins(coinReward);
-
-      // Update total challenges completed
-      await _database
-          .child('users/${currentUser.uid}/stats/daily_challenges_completed')
-          .set(ServerValue.increment(1));
-
-      print('✅ [DailyChallengeService] Challenge completed! Reward: $totalReward points, $coinReward coins');
-
-      return ChallengeCompletionResult(
-        success: true,
-        message: 'Challenge completed!',
-        rewardPoints: totalReward,
-        bonusPoints: bonusPoints,
-      );
-    } catch (e) {
-      print('❌ [DailyChallengeService] Error completing challenge: $e');
-      return ChallengeCompletionResult(
-        success: false,
-        message: 'Error completing challenge',
-        rewardPoints: 0,
-      );
+      // Update streak
+      await _updateStreak();
     }
   }
 
-  /// Get challenge completion history (last 30 days)
-  Future<List<ChallengeHistory>> getChallengeHistory({int limit = 30}) async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) return [];
+  /// Update streak count
+  static Future<void> _updateStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastPlayed = prefs.getString(_lastPlayedKey);
+    final today = getTodayString();
+    final yesterday = _getYesterdayString();
 
-    try {
-      final snapshot = await _database
-          .child('users/${currentUser.uid}/daily_challenges')
-          .limitToLast(limit)
-          .get();
+    int currentStreak = prefs.getInt(_currentStreakKey) ?? 0;
 
-      if (!snapshot.exists) return [];
-
-      final List<ChallengeHistory> history = [];
-      final data = Map<String, dynamic>.from(snapshot.value as Map);
-
-      data.forEach((challengeId, value) {
-        final entryData = Map<String, dynamic>.from(value);
-        history.add(ChallengeHistory.fromMap(challengeId, entryData));
-      });
-
-      // Sort by date descending
-      history.sort((a, b) => b.date.compareTo(a.date));
-
-      return history;
-    } catch (e) {
-      print('❌ [DailyChallengeService] Error getting history: $e');
-      return [];
+    if (lastPlayed == yesterday) {
+      // Consecutive day
+      currentStreak++;
+    } else if (lastPlayed != today) {
+      // Streak broken
+      currentStreak = 1;
     }
+
+    await prefs.setInt(_currentStreakKey, currentStreak);
+    await prefs.setString(_lastPlayedKey, today);
   }
 
-  /// Get total challenges completed
-  Future<int> getTotalChallengesCompleted() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) return 0;
-
-    try {
-      final snapshot = await _database
-          .child('users/${currentUser.uid}/stats/daily_challenges_completed')
-          .get();
-
-      if (!snapshot.exists) return 0;
-      return snapshot.value as int;
-    } catch (e) {
-      return 0;
-    }
+  static String _getYesterdayString() {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
   }
 
-  /// Get current streak (consecutive days)
-  Future<int> getChallengeStreak() async {
-    final history = await getChallengeHistory(limit: 60);
-    if (history.isEmpty) return 0;
+  /// Get current streak
+  static Future<int> getCurrentStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_currentStreakKey) ?? 0;
+  }
 
-    int streak = 0;
+  /// Get completed days for current month
+  static Future<List<int>> getCompletedDaysThisMonth() async {
+    final prefs = await SharedPreferences.getInstance();
+    final completedDays = prefs.getStringList(_completedDaysKey) ?? [];
     final now = DateTime.now();
-    DateTime checkDate = DateTime(now.year, now.month, now.day);
+    final currentMonthPrefix = '${now.year}-${now.month.toString().padLeft(2, '0')}';
 
-    // Check if today is completed
-    final todayCompleted = history.any((h) =>
-        h.date.year == checkDate.year &&
-        h.date.month == checkDate.month &&
-        h.date.day == checkDate.day);
-
-    if (!todayCompleted) {
-      // If today not completed, check yesterday
-      checkDate = checkDate.subtract(const Duration(days: 1));
-    }
-
-    // Count consecutive days backwards
-    for (int i = 0; i < 60; i++) {
-      final hasChallenge = history.any((h) =>
-          h.date.year == checkDate.year &&
-          h.date.month == checkDate.month &&
-          h.date.day == checkDate.day);
-
-      if (!hasChallenge) break;
-
-      streak++;
-      checkDate = checkDate.subtract(const Duration(days: 1));
-    }
-
-    return streak;
+    return completedDays
+        .where((day) => day.startsWith(currentMonthPrefix))
+        .map((day) => int.parse(day.split('-').last))
+        .toList();
   }
 
-  /// Get challenge history as a map for calendar (DateTime -> completed)
-  /// Returns Map<DateTime, bool> for ActivityCalendar widget
-  Future<Map<DateTime, bool>> getChallengeHistoryMap() async {
-    final history = await getChallengeHistory(limit: 60);
-    final Map<DateTime, bool> historyMap = {};
-
-    for (final entry in history) {
-      // Normalize to date only (no time)
-      final date = DateTime(entry.date.year, entry.date.month, entry.date.day);
-      historyMap[date] = true;
-    }
-
-    return historyMap;
+  /// Get total completed days this month
+  static Future<int> getCompletedCountThisMonth() async {
+    final days = await getCompletedDaysThisMonth();
+    return days.length;
   }
 
-  /// Get current streak (alias for getChallengeStreak)
-  Future<int> getCurrentStreak() async {
-    return getChallengeStreak();
+  /// Get days in current month
+  static int getDaysInCurrentMonth() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month + 1, 0).day;
   }
-}
 
-/// Daily challenge model
-class DailyChallenge {
-  final String id;
-  final DateTime date;
-  final String difficulty;
-  final int rewardPoints;
-  final bool isCompleted;
+  /// Generate a deterministic puzzle seed for today
+  /// This ensures everyone gets the same puzzle each day
+  static int getTodaySeed() {
+    final now = DateTime.now();
+    return now.year * 10000 + now.month * 100 + now.day;
+  }
 
-  DailyChallenge({
-    required this.id,
-    required this.date,
-    required this.difficulty,
-    required this.rewardPoints,
-    this.isCompleted = false,
-  });
+  /// Get today's difficulty (cycles through difficulties)
+  static String getTodayDifficulty() {
+    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+    final difficulties = ['Kolay', 'Orta', 'Zor', 'Uzman'];
+    return difficulties[dayOfYear % difficulties.length];
+  }
 
-  /// Get difficulty emoji
-  String getDifficultyEmoji() {
+  /// Get localized difficulty name
+  static String getLocalizedDifficulty(String difficulty) {
     switch (difficulty) {
-      case 'easy':
-        return '⭐';
-      case 'medium':
-        return '⭐⭐';
-      case 'hard':
-        return '⭐⭐⭐';
-      case 'expert':
-        return '⭐⭐⭐⭐';
-      default:
-        return '⭐⭐';
+      case 'Kolay': return 'KOLAY';
+      case 'Orta': return 'ORTA';
+      case 'Zor': return 'ZOR';
+      case 'Uzman': return 'UZMAN';
+      default: return difficulty.toUpperCase();
     }
   }
 
-  /// Get difficulty name
-  String getDifficultyName(String locale) {
-    if (locale == 'tr') {
-      switch (difficulty) {
-        case 'easy':
-          return 'Kolay';
-        case 'medium':
-          return 'Orta';
-        case 'hard':
-          return 'Zor';
-        case 'expert':
-          return 'Uzman';
-        default:
-          return 'Orta';
-      }
-    } else {
-      return difficulty[0].toUpperCase() + difficulty.substring(1);
-    }
+  /// Get reward for completing daily challenge
+  static int getDailyReward() => 50;
+
+  /// Get bonus tokens
+  static int getDailyTokens() => 10;
+
+  /// Get month name in Turkish
+  static String getMonthName(int month) {
+    const months = [
+      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    return months[month - 1];
   }
-}
 
-/// Challenge completion result
-class ChallengeCompletionResult {
-  final bool success;
-  final String message;
-  final int rewardPoints;
-  final int bonusPoints;
-
-  ChallengeCompletionResult({
-    required this.success,
-    required this.message,
-    required this.rewardPoints,
-    this.bonusPoints = 0,
-  });
-}
-
-/// Challenge history entry
-class ChallengeHistory {
-  final String id;
-  final DateTime date;
-  final DateTime completedAt;
-  final int timeTaken;
-  final int movesCount;
-  final int rewardPoints;
-  final String difficulty;
-
-  ChallengeHistory({
-    required this.id,
-    required this.date,
-    required this.completedAt,
-    required this.timeTaken,
-    required this.movesCount,
-    required this.rewardPoints,
-    required this.difficulty,
-  });
-
-  factory ChallengeHistory.fromMap(String id, Map<String, dynamic> map) {
-    // Parse date from ID (YYYYMMDD)
-    final year = int.parse(id.substring(0, 4));
-    final month = int.parse(id.substring(4, 6));
-    final day = int.parse(id.substring(6, 8));
-    final date = DateTime(year, month, day);
-
-    return ChallengeHistory(
-      id: id,
-      date: date,
-      completedAt: DateTime.fromMillisecondsSinceEpoch(map['completedAt'] ?? 0),
-      timeTaken: map['timeTaken'] ?? 0,
-      movesCount: map['movesCount'] ?? 0,
-      rewardPoints: map['rewardPoints'] ?? 0,
-      difficulty: map['difficulty'] ?? 'medium',
-    );
+  /// Get month name in English
+  static String getMonthNameEn(int month) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[month - 1];
   }
 }

@@ -1773,24 +1773,40 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   Widget _buildNumberButtons() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(9, (i) {
           int num = i + 1;
           bool canPress = isMyTurn;
 
-          return InkWell(
-            onTap: canPress ? () => _inputNumber(num) : null,
-            child: Container(
-              width: 34,
-              height: 46,
-              decoration: BoxDecoration(
-                color: canPress ? Colors.blue : Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(8),
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: AspectRatio(
+                aspectRatio: 0.85,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: canPress ? () => _inputNumber(num) : null,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Center(
+                      child: Text(
+                        '$num',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: canPress
+                              ? (isDark ? Colors.blue.shade300 : Colors.blue.shade600)
+                              : Colors.grey.shade400,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              child: Center(child: Text('$num', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white))),
             ),
           );
         }),

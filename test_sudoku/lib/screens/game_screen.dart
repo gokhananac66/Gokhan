@@ -8,10 +8,7 @@ import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
-import '../services/theme_service.dart';
-import '../services/powerup_service.dart';
-import 'settings_screen.dart';
-import 'dart:async';
+import '../services/daily_challenge_service.dart';
 
 enum GameMode { single, multiplayer, race }
 
@@ -19,12 +16,16 @@ class GameScreen extends StatefulWidget {
   final GameMode gameMode;
   final String difficulty;
   final bool continueGame;
+  final bool isDailyChallenge;
+  final int? dailySeed;
 
   const GameScreen({
     super.key,
     required this.gameMode,
     this.difficulty = 'Orta',
     this.continueGame = false,
+    this.isDailyChallenge = false,
+    this.dailySeed,
   });
 
   @override
@@ -66,163 +67,25 @@ class _GameScreenState extends State<GameScreen> {
   Set<int> completedCols = {};
   Set<int> completedBoxes = {};
 
-  // Animation: Track recently completed cells for pulse effect
-  Set<int> _animatingCells = {}; // Linear cell indices (row * 9 + col)
-
   List<Map<String, dynamic>> moveHistory = [];
   bool _initialized = false;
+
+  // Daily Challenge için sabit random generator
+  late Random _puzzleRandom;
 
   // Yanlış girilen hücreyi takip et
   int? _lastWrongRow;
   int? _lastWrongCol;
-
-  // Game theme
-  GameTheme? _gameTheme;
-
-  // Power-ups
-  bool _doubleScoreActive = false;
-  bool _autoCheckActive = false;
-  bool _timeFreezeActive = false;
-  bool _timeFrozen = false;
-  int _timeFreezeSecondsLeft = 0;
-  Timer? _autoCheckTimer;
-  Timer? _timeFreezeTimer;
-  Set<int> _errorCells = {}; // Linear cell indices (row * 9 + col) for error highlighting
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
     _loadPlayerNames();
-    _loadTheme();
-    _loadPowerUps();
     _initializeGame();
 
     // Set status to in_offline_game
     UserStatusService().updateStatus(UserStatus.inOfflineGame);
-  }
-
-  Future<void> _loadPowerUps() async {
-    final powerUpService = PowerUpService();
-    final doubleScore = await powerUpService.hasPowerUp(PowerUpType.doubleScore);
-    final autoCheck = await powerUpService.hasPowerUp(PowerUpType.autoCheck);
-    final timeFreeze = await powerUpService.hasPowerUp(PowerUpType.timeFreeze);
-
-    setState(() {
-      _doubleScoreActive = doubleScore;
-      _autoCheckActive = autoCheck;
-      _timeFreezeActive = timeFreeze && widget.gameMode == GameMode.race;
-    });
-
-    // Start auto-check timer if active
-    if (_autoCheckActive) {
-      _startAutoCheckTimer();
-    }
-  }
-
-  void _startAutoCheckTimer() {
-    _autoCheckTimer?.cancel();
-    _autoCheckTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (!mounted || isPaused) return;
-      _performAutoCheck();
-    });
-  }
-
-  void _performAutoCheck() {
-    final newErrorCells = <int>{};
-
-    for (int row = 0; row < 9; row++) {
-      for (int col = 0; col < 9; col++) {
-        // Skip original cells and empty cells
-        if (isOriginal[row][col] || board[row][col] == 0) continue;
-
-        // Check if the value is wrong
-        if (board[row][col] != solution[row][col]) {
-          newErrorCells.add(row * 9 + col);
-        }
-      }
-    }
-
-    if (newErrorCells.isNotEmpty && mounted) {
-      setState(() {
-        _errorCells = newErrorCells;
-      });
-
-      // Clear error highlights after 3 seconds
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) {
-          setState(() {
-            _errorCells.clear();
-          });
-        }
-      });
-
-      // Show notification
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('🔍 ${tr('autoCheckFound')} ${newErrorCells.length} ${tr('errors')}!'),
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
-  }
-
-  void _activateTimeFreeze() {
-    if (!_timeFreezeActive || _timeFrozen) return;
-
-    setState(() {
-      _timeFrozen = true;
-      _timeFreezeSecondsLeft = 60; // 1 minute freeze
-    });
-
-    // Show notification
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('❄️ ${tr('timeFrozen')} 60 ${tr('seconds')}!'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.blue,
-      ),
-    );
-
-    // Start countdown timer
-    _timeFreezeTimer?.cancel();
-    _timeFreezeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        _timeFreezeSecondsLeft--;
-      });
-
-      if (_timeFreezeSecondsLeft <= 0) {
-        timer.cancel();
-        setState(() {
-          _timeFrozen = false;
-        });
-
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('⏰ ${tr('timeFreezeEnded')}'),
-            duration: const Duration(seconds: 1),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    });
-  }
-
-  Future<void> _loadTheme() async {
-    final themeId = await ThemeService().getSelectedTheme();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    setState(() {
-      _gameTheme = GameTheme.getTheme(themeId, isDark);
-    });
   }
 
   Future<void> _initializeGame() async {
@@ -240,10 +103,6 @@ class _GameScreenState extends State<GameScreen> {
     if (widget.gameMode == GameMode.single && _initialized && !_checkWin() && errors < maxErrors) {
       _saveGame();
     }
-
-    // Cancel timers
-    _autoCheckTimer?.cancel();
-    _timeFreezeTimer?.cancel();
 
     // Set status back to idle
     UserStatusService().updateStatus(UserStatus.idle);
@@ -377,7 +236,7 @@ class _GameScreenState extends State<GameScreen> {
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return false;
-      if (!isPaused && _initialized && !_timeFrozen) setState(() => seconds++);
+      if (!isPaused && _initialized) setState(() => seconds++);
       return true;
     });
   }
@@ -411,6 +270,9 @@ class _GameScreenState extends State<GameScreen> {
         maxErrors = 5;
     }
 
+    // Daily Challenge için sabit seed kullan (herkes aynı bulmacayı çözsün)
+    _puzzleRandom = widget.dailySeed != null ? Random(widget.dailySeed) : Random();
+
     solution = List.generate(9, (_) => List.filled(9, 0));
     _generateSolution(0, 0);
     board = List.generate(9, (i) => List.from(solution[i]));
@@ -418,11 +280,10 @@ class _GameScreenState extends State<GameScreen> {
     notes = List.generate(9, (_) => List.generate(9, (_) => <int>{}));
 
     int cellsToRemove = _getEmptyCells();
-    final random = Random();
     int removed = 0;
     while (removed < cellsToRemove) {
-      int row = random.nextInt(9);
-      int col = random.nextInt(9);
+      int row = _puzzleRandom.nextInt(9);
+      int col = _puzzleRandom.nextInt(9);
       if (board[row][col] != 0) {
         board[row][col] = 0;
         isOriginal[row][col] = false;
@@ -438,7 +299,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _generateSolution(int row, int col) {
     if (row == 9) return true;
     if (col == 9) return _generateSolution(row + 1, 0);
-    List<int> numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]..shuffle();
+    List<int> numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]..shuffle(_puzzleRandom);
     for (int num in numbers) {
       if (_isValidPlacement(solution, row, col, num)) {
         solution[row][col] = num;
@@ -486,81 +347,16 @@ class _GameScreenState extends State<GameScreen> {
   void _checkCompletions(int row, int col) {
     int bonusPoints = 0;
     List<String> completedTypes = [];
-    final newlyCompleted = <int>{};
-    final tempCompletedRows = <int>{};
-    final tempCompletedCols = <int>{};
-    final tempCompletedBoxes = <int>{};
 
-    // Check row completion
-    if (!completedRows.contains(row) && _isRowComplete(row)) {
-      tempCompletedRows.add(row);
-      bonusPoints += 50;
-      completedTypes.add(tr('rowCompleted'));
-      // Add all cells in this row to animation set
-      for (int c = 0; c < 9; c++) {
-        newlyCompleted.add(row * 9 + c);
-      }
-    }
-
-    // Check column completion
-    if (!completedCols.contains(col) && _isColComplete(col)) {
-      tempCompletedCols.add(col);
-      bonusPoints += 50;
-      completedTypes.add(tr('colCompleted'));
-      // Add all cells in this column to animation set
-      for (int r = 0; r < 9; r++) {
-        newlyCompleted.add(r * 9 + col);
-      }
-    }
-
-    // Check box completion
+    if (!completedRows.contains(row) && _isRowComplete(row)) { completedRows.add(row); bonusPoints += 50; completedTypes.add(tr('rowCompleted')); }
+    if (!completedCols.contains(col) && _isColComplete(col)) { completedCols.add(col); bonusPoints += 50; completedTypes.add(tr('colCompleted')); }
     int boxIndex = (row ~/ 3) * 3 + (col ~/ 3);
-    if (!completedBoxes.contains(boxIndex) && _isBoxComplete(boxIndex)) {
-      tempCompletedBoxes.add(boxIndex);
-      bonusPoints += 50;
-      completedTypes.add(tr('boxCompleted'));
-      // Add all cells in this box to animation set
-      int boxRow = (row ~/ 3) * 3;
-      int boxCol = (col ~/ 3) * 3;
-      for (int r = boxRow; r < boxRow + 3; r++) {
-        for (int c = boxCol; c < boxCol + 3; c++) {
-          newlyCompleted.add(r * 9 + c);
-        }
-      }
-    }
+    if (!completedBoxes.contains(boxIndex) && _isBoxComplete(boxIndex)) { completedBoxes.add(boxIndex); bonusPoints += 50; completedTypes.add(tr('boxCompleted')); }
 
     if (bonusPoints > 0) {
-      score += _doubleScoreActive ? bonusPoints * 2 : bonusPoints;
-      _vibrateHeavy();
-
-      // Temporarily add to completed sets for animation
-      setState(() {
-        completedRows.addAll(tempCompletedRows);
-        completedCols.addAll(tempCompletedCols);
-        completedBoxes.addAll(tempCompletedBoxes);
-        _animatingCells.addAll(newlyCompleted);
-      });
-
-      // Clear animation AND remove from completed sets after delay
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) {
-          setState(() {
-            _animatingCells.removeAll(newlyCompleted);
-            completedRows.removeAll(tempCompletedRows);
-            completedCols.removeAll(tempCompletedCols);
-            completedBoxes.removeAll(tempCompletedBoxes);
-          });
-        }
-      });
-
+      score += bonusPoints; _vibrateHeavy();
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✨ ${completedTypes.join(" + ")} ${tr('completed')} +$bonusPoints ${tr('bonus')}!'),
-          duration: const Duration(seconds: 1),
-          backgroundColor: Colors.green,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✨ ${completedTypes.join(" + ")} ${tr('completed')} +$bonusPoints ${tr('bonus')}!'), duration: const Duration(seconds: 1), backgroundColor: Colors.green));
     }
   }
 
@@ -571,17 +367,17 @@ class _GameScreenState extends State<GameScreen> {
 
     int row = selectedRow!, col = selectedCol!;
 
+    // Önceki yanlış hücreyi temizle
+    if (_lastWrongRow != null && _lastWrongCol != null) {
+      if (board[_lastWrongRow!][_lastWrongCol!] != solution[_lastWrongRow!][_lastWrongCol!]) {
+        board[_lastWrongRow!][_lastWrongCol!] = 0;
+      }
+      _lastWrongRow = null;
+      _lastWrongCol = null;
+    }
+
     if (notesMode) {
       setState(() {
-        // Önceki yanlış hücreyi temizle
-        if (_lastWrongRow != null && _lastWrongCol != null) {
-          if (board[_lastWrongRow!][_lastWrongCol!] != solution[_lastWrongRow!][_lastWrongCol!]) {
-            board[_lastWrongRow!][_lastWrongCol!] = 0;
-          }
-          _lastWrongRow = null;
-          _lastWrongCol = null;
-        }
-
         if (notes[row][col].contains(number)) notes[row][col].remove(number);
         else notes[row][col].add(number);
         board[row][col] = 0;
@@ -591,15 +387,6 @@ class _GameScreenState extends State<GameScreen> {
       bool isCorrect = number == solution[row][col];
 
       setState(() {
-        // Önceki yanlış hücreyi temizle
-        if (_lastWrongRow != null && _lastWrongCol != null) {
-          if (board[_lastWrongRow!][_lastWrongCol!] != solution[_lastWrongRow!][_lastWrongCol!]) {
-            board[_lastWrongRow!][_lastWrongCol!] = 0;
-          }
-          _lastWrongRow = null;
-          _lastWrongCol = null;
-        }
-
         board[row][col] = number;
         notes[row][col].clear();
 
@@ -607,16 +394,10 @@ class _GameScreenState extends State<GameScreen> {
           _playCorrectSound(); combo++;
           if (combo > maxCombo) maxCombo = combo;
           if (widget.gameMode == GameMode.multiplayer) {
-            final comboScore = 10;
-            if (currentPlayer == 1) {
-              player1Combo++;
-              player1Score += _doubleScoreActive ? comboScore * player1Combo * 2 : comboScore * player1Combo;
-            } else {
-              player2Combo++;
-              player2Score += _doubleScoreActive ? comboScore * player2Combo * 2 : comboScore * player2Combo;
-            }
+            if (currentPlayer == 1) { player1Combo++; player1Score += 10 * player1Combo; }
+            else { player2Combo++; player2Score += 10 * player2Combo; }
           } else {
-            score += _doubleScoreActive ? (10 * combo * 2) : (10 * combo);
+            score += 10 * combo;
           }
         } else {
           _vibrateHeavy(); errors++; combo = 0;
@@ -680,44 +461,15 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _useHint() {
-    if (hints <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr('noHintsLeft')), backgroundColor: Colors.red),
-      );
-      return;
-    }
+    if (hints <= 0 || selectedRow == null || selectedCol == null) return;
+    if (isOriginal[selectedRow!][selectedCol!]) return;
+    if (board[selectedRow!][selectedCol!] == solution[selectedRow!][selectedCol!]) return;
+    _playClickSound(); _vibrate();
 
-    _playClickSound();
-    _vibrate();
-
-    // Find first empty cell and fill with correct answer
-    for (int row = 0; row < 9; row++) {
-      for (int col = 0; col < 9; col++) {
-        if (board[row][col] == 0) {
-          setState(() {
-            board[row][col] = solution[row][col];
-            hints--;
-            combo = 0;
-            selectedRow = row;
-            selectedCol = col;
-          });
-
-          _checkCompletions(row, col);
-          if (_checkWin()) {
-            _playWinSound();
-            _clearSavedGame();
-            _saveStats(won: true);
-            _showWinDialog();
-          }
-          return;
-        }
-      }
-    }
-
-    // No empty cells found
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(tr('noHintAvailable')), backgroundColor: Colors.orange),
-    );
+    int row = selectedRow!, col = selectedCol!;
+    setState(() { board[row][col] = solution[row][col]; hints--; combo = 0; });
+    _checkCompletions(row, col);
+    if (_checkWin()) { _playWinSound(); _clearSavedGame(); _saveStats(won: true); _showWinDialog(); }
   }
 
   bool _checkWin() {
@@ -726,6 +478,11 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showWinDialog() {
+    // Daily Challenge tamamlandıysa işaretle
+    if (widget.isDailyChallenge) {
+      DailyChallengeService.markTodayCompleted();
+    }
+
     if (widget.gameMode == GameMode.multiplayer) {
       showMultiplayerResultDialog(
         context,
@@ -779,7 +536,6 @@ class _GameScreenState extends State<GameScreen> {
       body: SafeArea(child: Column(children: [
         _buildTopBar(),
         _buildInfoBar(),
-        if (_doubleScoreActive || _autoCheckActive) _buildPowerUpIndicators(),
         if (widget.gameMode == GameMode.multiplayer) _buildMultiplayerScore(),
         if (widget.gameMode == GameMode.single && combo >= 2)
           Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 6), color: Colors.orange.withOpacity(0.2),
@@ -799,223 +555,40 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildTopBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[50],
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       child: Row(children: [
-        // Back button
-        IconButton(
-          icon: Icon(Icons.arrow_back, size: 24, color: isDark ? Colors.white : Colors.grey[800]),
-          onPressed: () {
-            if (widget.gameMode == GameMode.single) _saveGame();
-            Navigator.pop(context);
-          },
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-        ),
+        IconButton(icon: const Icon(Icons.arrow_back, size: 22), onPressed: () { if (widget.gameMode == GameMode.single) _saveGame(); Navigator.pop(context); }, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
         const Spacer(),
-        // Score display
-        Text(
-          widget.gameMode == GameMode.single ? '$score' : '$player1Score',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.grey[900],
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
-        ),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), decoration: BoxDecoration(color: isDark ? Colors.blue.shade900 : Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
+            child: Text(widget.gameMode == GameMode.single ? '${tr('score')}: $score' : '$player1Name: $player1Score | $player2Name: $player2Score', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
         const Spacer(),
-        // Settings button (top-right)
-        IconButton(
-          icon: Icon(Icons.settings_outlined, size: 24, color: isDark ? Colors.white : Colors.grey[800]),
-          onPressed: () {
-            _showGameSettings();
-          },
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-        ),
+        IconButton(icon: const Icon(Icons.refresh, size: 22), onPressed: () {
+          showDialog(context: context, builder: (ctx) => AlertDialog(title: Text(tr('resetGame')), content: Text(tr('resetGameConfirm')), actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('cancel'))),
+            TextButton(onPressed: () { Navigator.pop(ctx); _clearSavedGame(); setState(() => _initGame()); }, child: Text(tr('reset'))),
+          ]));
+        }, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
       ]),
-    );
-  }
-
-  // Navigate to main settings screen
-  void _showGameSettings() async {
-    // Pause game when going to settings
-    if (!isPaused) {
-      setState(() => isPaused = true);
-    }
-
-    // Navigate to settings screen
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SettingsScreen()),
     );
   }
 
   Widget _buildInfoBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[100]!, width: 1)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          // All Levels: Always show these 4 stats
-          _buildModernInfoItem(
-            label: widget.gameMode == GameMode.single ? tr('score') : tr('score'),
-            value: widget.gameMode == GameMode.single ? '$score' : '$player1Score',
-            icon: Icons.star_rounded,
-            color: Colors.amber[700]!,
-          ),
-          _buildModernInfoItem(
-            label: tr('difficulty'),
-            value: _getShortDifficulty(widget.difficulty),
-            icon: Icons.speed_rounded,
-            color: Colors.blue[600]!,
-          ),
-          _buildModernInfoItem(
-            label: tr('errors'),
-            value: '$errors/$maxErrors',
-            icon: Icons.warning_rounded,
-            color: errors >= maxErrors - 1 ? Colors.red[600]! : Colors.orange[600]!,
-          ),
-          if (timerEnabled)
-            _buildModernInfoItem(
-              label: tr('time'),
-              value: _formatTime(seconds),
-              icon: Icons.timer_outlined,
-              color: Colors.teal[600]!,
-            ),
-          // Pause button
-          InkWell(
-            onTap: () {
-              _playClickSound();
-              setState(() => isPaused = !isPaused);
-            },
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Icon(
-                isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                size: 26,
-                color: isDark ? Colors.white70 : Colors.grey[700],
-              ),
-            ),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+        _buildInfoItem(tr('difficulty'), _getLocalizedDifficulty(widget.difficulty)),
+        _buildInfoItem(tr('errors'), '$errors/$maxErrors'),
+        if (timerEnabled) _buildInfoItem(tr('time'), _formatTime(seconds)),
+        InkWell(onTap: () { _playClickSound(); setState(() => isPaused = !isPaused); }, child: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 22)),
+      ]),
     );
   }
 
-  Widget _buildPowerUpIndicators() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      color: Colors.purple.withOpacity(0.1),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (_doubleScoreActive) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.purple, width: 1.5),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.flash_on, color: Colors.purple, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    '2x ${tr('score')}',
-                    style: const TextStyle(
-                      color: Colors.purple,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (_autoCheckActive) const SizedBox(width: 12),
-          ],
-          if (_autoCheckActive)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange, width: 1.5),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.search, color: Colors.orange, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    tr('autoCheck'),
-                    style: const TextStyle(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernInfoItem({
-    required String label,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: color,
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _getShortDifficulty(String difficulty) {
-    // Return full difficulty name instead of truncated version
-    return difficulty;
+  Widget _buildInfoItem(String label, String value) {
+    return Column(children: [Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)), Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold))]);
   }
 
   Widget _buildMultiplayerScore() {
@@ -1034,29 +607,29 @@ class _GameScreenState extends State<GameScreen> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? Color(0xFF2D2D2D) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 15,
-            spreadRadius: 1,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(8),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade800,
-                  width: 3,
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
+                  width: 2.5,
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 children: List.generate(9, (row) => Expanded(
@@ -1072,10 +645,6 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildCell(int row, int col) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Use theme colors, fallback to default if not loaded yet
-    final theme = _gameTheme ?? GameTheme.getTheme('default', isDark);
-
     bool isSelected = row == selectedRow && col == selectedCol;
     bool isOriginalCell = isOriginal[row][col];
     bool isWrong = board[row][col] != 0 && board[row][col] != solution[row][col] && !isOriginalCell;
@@ -1090,75 +659,48 @@ class _GameScreenState extends State<GameScreen> {
     bool isHighlighted = (isSameRow || isSameCol || isSameBox) && !isSelected;
     bool isSameNumber = selectedRow != null && selectedCol != null && board[selectedRow!][selectedCol!] != 0 && board[row][col] == board[selectedRow!][selectedCol!] && !isSelected;
 
-    // Check if this cell is currently animating
-    final cellIndex = row * 9 + col;
-    final isAnimating = _animatingCells.contains(cellIndex);
-
-    // Check if auto-check detected an error in this cell
-    final isAutoCheckError = _errorCells.contains(cellIndex);
-
     // Border widths for 3x3 blocks
-    double rightBorder = (col == 2 || col == 5) ? 2.5 : 0.8;
-    double bottomBorder = (row == 2 || row == 5) ? 2.5 : 0.8;
+    double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
+    double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
 
-    // Use cleaner colors inspired by reference
     Color bgColor;
-    if (isSelected) {
-      bgColor = const Color(0xFFBBDEFB); // Light blue selection
-    } else if (isAutoCheckError) {
-      // Auto-check detected error - show orange highlight
-      bgColor = Colors.orange.withOpacity(0.5);
-    } else if (isWrong) {
-      bgColor = const Color(0xFFFFCDD2); // Light red for errors
-    } else if (isInCompletedGroup) {
-      bgColor = theme.completedCell;
-    } else if (isSameNumber) {
-      bgColor = const Color(0xFFE3F2FD); // Very light blue
-    } else if (isHighlighted) {
-      bgColor = const Color(0xFFF5F5F5); // Very light grey
-    } else {
-      bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
-    }
+    if (isSelected) bgColor = isDark ? const Color(0xFF1E3A5F) : Colors.blue.shade100;
+    else if (isWrong) bgColor = isDark ? Colors.red.shade900.withOpacity(0.4) : Colors.red.shade100;
+    else if (isInCompletedGroup) bgColor = isDark ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade50;
+    else if (isSameNumber) bgColor = isDark ? Colors.blue.shade900.withOpacity(0.3) : const Color(0xFFE3F2FD);
+    else if (isHighlighted) bgColor = isDark ? const Color(0xFF1A2733) : const Color(0xFFE8F4FD);
+    else bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
 
     Color textColor;
-    if (isOriginalCell) {
-      textColor = isDark ? Colors.white : Colors.black87;
-    } else if (isWrong) {
-      textColor = const Color(0xFFD32F2F); // Red text for errors
-    } else {
-      textColor = isDark ? Colors.white70 : const Color(0xFF1976D2); // Blue text for user entries
-    }
+    if (isOriginalCell) textColor = isDark ? Colors.white : Colors.black87;
+    else if (isWrong) textColor = Colors.red.shade700;
+    else textColor = isDark ? Colors.blue.shade300 : Colors.blue.shade600;
 
-    // Wrap in AnimatedScale for completion animation
-    return AnimatedScale(
-      scale: isAnimating ? 1.15 : 1.0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.elasticOut,
-      child: GestureDetector(
-        onTap: () => _selectCell(row, col),
-        child: Container(
+    return GestureDetector(
+      onTap: () => _selectCell(row, col),
+      child: Container(
         margin: const EdgeInsets.all(0.5),
         decoration: BoxDecoration(
           color: bgColor,
           border: Border(
             top: BorderSide(
-              color: row == 0 ? Colors.transparent : theme.gridLineColor,
+              color: row == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
               width: 0,
             ),
             left: BorderSide(
-              color: col == 0 ? Colors.transparent : theme.gridLineColor,
+              color: col == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
               width: 0,
             ),
             right: BorderSide(
               color: (col == 2 || col == 5)
-                ? theme.thickGridLineColor
-                : theme.gridLineColor,
+                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
+                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
               width: rightBorder,
             ),
             bottom: BorderSide(
               color: (row == 2 || row == 5)
-                ? theme.thickGridLineColor
-                : theme.gridLineColor,
+                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
+                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
               width: bottomBorder,
             ),
           ),
@@ -1194,34 +736,17 @@ class _GameScreenState extends State<GameScreen> {
                   : null,
         ),
       ),
-      ),
     );
   }
 
   Widget _buildActionButtons() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final buttons = <Widget>[
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
       _buildActionButton(Icons.undo_rounded, tr('undo'), _undo, isDark),
       _buildActionButton(Icons.backspace_outlined, tr('delete'), _clearCell, isDark),
       _buildActionButton(notesMode ? Icons.edit : Icons.edit_outlined, AppLocalizations.currentLanguage == 'en' ? 'Notes' : 'Notlar', () { _playClickSound(); _vibrate(); setState(() => notesMode = !notesMode); }, isDark, isActive: notesMode, badge: notesMode ? 'ON' : 'OFF'),
       _buildActionButton(Icons.lightbulb_outline_rounded, tr('hint'), _useHint, isDark, badge: '$hints'),
-    ];
-
-    // Add time freeze button for race mode
-    if (_timeFreezeActive && widget.gameMode == GameMode.race) {
-      buttons.add(
-        _buildActionButton(
-          Icons.ac_unit,
-          tr('freeze'),
-          _timeFrozen ? () {} : _activateTimeFreeze,
-          isDark,
-          isActive: _timeFrozen,
-          badge: _timeFrozen ? '${_timeFreezeSecondsLeft}s' : null,
-        ),
-      );
-    }
-
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: buttons));
+    ]));
   }
 
   Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, bool isDark, {bool isActive = false, String? badge}) {
@@ -1236,26 +761,31 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildNumberButtons() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(9, (i) {
-          int num = i + 1;
           return Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: InkWell(
-                onTap: () => _inputNumber(num),
-                child: Container(
-                  height: 50,
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$num',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1976D2),
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: AspectRatio(
+                aspectRatio: 0.85,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _inputNumber(i + 1),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Center(
+                      child: Text(
+                        '${i + 1}',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.blue.shade300 : Colors.blue.shade600,
+                        ),
+                      ),
                     ),
                   ),
                 ),

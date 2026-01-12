@@ -5,18 +5,13 @@ import 'game_screen.dart';
 import 'settings_screen.dart';
 import 'lobby_screen.dart';
 import 'friends_screen.dart';
-import 'shop_screen.dart';
 import 'daily_challenge_screen.dart';
 import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/friend_service.dart';
-import '../services/haptic_service.dart';
-import '../services/daily_reward_service.dart';
 import '../services/daily_challenge_service.dart';
 import '../widgets/sudoku_clash_logo.dart';
-import '../widgets/daily_reward_dialog.dart';
-import '../widgets/daily_challenge_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,10 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
   User? _user;
   bool _hasSavedGame = false;
   String _savedGameDifficulty = '';
-  DailyChallenge? _dailyChallenge;
-
-  final DailyRewardService _rewardService = DailyRewardService();
-  final DailyChallengeService _challengeService = DailyChallengeService();
 
   List<Map<String, dynamic>> get difficulties => [
     {'name': tr('easy'), 'key': 'Kolay', 'emoji': '😊', 'description': tr('easyDesc')},
@@ -53,50 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
     FriendService().setOnlineStatus(true);
 
     _checkSavedGame();
-    _checkDailyReward();
-    _loadDailyChallenge();
 
     // Set status to idle when on home screen
     UserStatusService().updateStatus(UserStatus.idle);
-  }
-
-  Future<void> _checkDailyReward() async {
-    if (_user == null) return;
-
-    // Wait a bit for better UX (let home screen appear first)
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final status = await _rewardService.checkDailyReward();
-
-    if (!mounted) return;
-
-    if (status.canClaim) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => DailyRewardDialog(
-          status: status,
-          onClaim: () async {
-            final result = await _rewardService.claimDailyReward();
-            if (result.success) {
-              // Could show a success snackbar here
-              print('✅ Daily reward claimed: ${result.rewardAmount} points!');
-            }
-          },
-        ),
-      );
-    }
-  }
-
-  Future<void> _loadDailyChallenge() async {
-    if (_user == null) return;
-
-    final challenge = await _challengeService.getTodaysChallenge();
-    if (mounted) {
-      setState(() {
-        _dailyChallenge = challenge;
-      });
-    }
   }
 
   Future<void> _checkSavedGame() async {
@@ -156,61 +106,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade300, Colors.blue.shade600],
-                      ),
+                      color: Colors.blue.shade100,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
                     ),
-                    child: Icon(Icons.person, color: Colors.white, size: 32),
+                    child: Icon(Icons.person, color: Colors.blue.shade700, size: 32),
                   ),
                   const SizedBox(height: 12),
-                  // 3D Title (no gradient)
-                  Text(
-                    tr('singlePlayer'),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black87,
-                      letterSpacing: 0.5,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(2, 2),
-                          blurRadius: 3,
-                          color: Colors.black26,
-                        ),
-                        Shadow(
-                          offset: Offset(-1, -1),
-                          blurRadius: 2,
-                          color: Colors.white70,
-                        ),
-                      ],
-                    ),
-                  ),
+                  Text(tr('singlePlayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  // 3D Subtitle (no gradient)
-                  Text(
-                    tr('selectDifficulty'),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black54,
-                      letterSpacing: 0.3,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(1, 1),
-                          blurRadius: 2,
-                          color: Colors.black12,
-                        ),
-                      ],
-                    ),
-                  ),
+                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
                   const SizedBox(height: 20),
                   ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
                     setDialogState(() => tempDifficulty = selected);
@@ -287,24 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 10),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [Colors.grey.shade600, Colors.grey.shade800],
-                      ).createShader(bounds),
-                      child: Text(
-                        tr('cancel'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
+                    child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
                   ),
                 ],
               ),
@@ -328,61 +215,15 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.orange.shade300, Colors.orange.shade600],
-                  ),
+                  color: Colors.orange.shade100,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.orange.withOpacity(0.4),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                    ),
-                  ],
                 ),
-                child: Icon(Icons.public, color: Colors.white, size: 32),
+                child: Icon(Icons.public, color: Colors.orange.shade700, size: 32),
               ),
               const SizedBox(height: 12),
-              // 3D Title (no gradient)
-              Text(
-                tr('onlineMultiplayer'),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black87,
-                  letterSpacing: 0.5,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(2, 2),
-                      blurRadius: 3,
-                      color: Colors.black26,
-                    ),
-                    Shadow(
-                      offset: Offset(-1, -1),
-                      blurRadius: 2,
-                      color: Colors.white70,
-                    ),
-                  ],
-                ),
-              ),
+              Text(tr('onlineMultiplayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              // 3D Subtitle (no gradient)
-              Text(
-                tr('selectGameMode'),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black54,
-                  letterSpacing: 0.3,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(1, 1),
-                      blurRadius: 2,
-                      color: Colors.black12,
-                    ),
-                  ],
-                ),
-              ),
+              Text(tr('selectGameMode'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
               const SizedBox(height: 24),
 
               // Rastgele Rakip Bul
@@ -497,248 +338,97 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isRandom
-                          ? [Colors.orange.shade300, Colors.orange.shade600]
-                          : [Colors.green.shade300, Colors.green.shade600],
-                      ),
+                      color: isRandom ? Colors.orange.shade100 : Colors.green.shade100,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isRandom ? Colors.orange : Colors.green).withOpacity(0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
                     ),
                     child: Icon(
                       isRandom ? Icons.shuffle : Icons.people,
-                      color: Colors.white,
+                      color: isRandom ? Colors.orange.shade700 : Colors.green.shade700,
                       size: 32,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // 3D Title (no gradient)
                   Text(
                     isRandom ? tr('randomOpponent') : tr('playWithFriend'),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black87,
-                      letterSpacing: 0.5,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(2, 2),
-                          blurRadius: 3,
-                          color: Colors.black26,
-                        ),
-                        Shadow(
-                          offset: Offset(-1, -1),
-                          blurRadius: 2,
-                          color: Colors.white70,
-                        ),
-                      ],
-                    ),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
 
                   // Game Mode Selection (only for random)
                   if (isRandom) ...[
-                    const SizedBox(height: 16),
-                    // 3D Subtitle (no gradient)
-                    Text(
-                      'Oyun Modu Seç',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black54,
-                        letterSpacing: 0.3,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 2,
-                            color: Colors.black12,
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 20),
+                    Text('Oyun Modu Seç', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        // KLASIK MODE
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'classic'),
-                            child: AnimatedScale(
-                              scale: tempGameMode == 'classic' ? 1.02 : 1.0,
-                              duration: const Duration(milliseconds: 200),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: tempGameMode == 'classic'
-                                      ? [Color(0xFF2196F3), Color(0xFF1565C0)]
-                                      : [Color(0xFF64B5F6), Color(0xFF42A5F5)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: tempGameMode == 'classic'
-                                      ? Colors.white
-                                      : Colors.white.withOpacity(0.2),
-                                    width: tempGameMode == 'classic' ? 2 : 1,
-                                  ),
-                                  boxShadow: tempGameMode == 'classic' ? [
-                                    BoxShadow(
-                                      color: Color(0xFF2196F3).withOpacity(0.6),
-                                      blurRadius: 20,
-                                      spreadRadius: 3,
-                                      offset: Offset(0, 4),
-                                    ),
-                                    BoxShadow(
-                                      color: Colors.blue.shade700.withOpacity(0.3),
-                                      blurRadius: 10,
-                                      spreadRadius: 1,
-                                    ),
-                                  ] : [
-                                    BoxShadow(
-                                      color: Colors.blue.withOpacity(0.2),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: tempGameMode == 'classic'
+                                    ? [Color(0xFF2196F3), Color(0xFF1976D2)]
+                                    : [Color(0xFF64B5F6), Color(0xFF42A5F5)],
                                 ),
-                                child: Column(
-                                  children: [
-                                    // Icon with background
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-                                      ),
-                                      child: Icon(Icons.extension, color: Colors.white, size: 22),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '⚔️ Klasik',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Sırayla',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      '30s turlar',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: tempGameMode == 'classic' ? Colors.white : Colors.transparent,
+                                  width: 2,
                                 ),
+                                boxShadow: tempGameMode == 'classic' ? [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.4),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                  ),
+                                ] : [],
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.sports_esports, color: Colors.white, size: 26),
+                                  const SizedBox(height: 6),
+                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  Text('Sırayla • 30s', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
+                                ],
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        // RACE MODE
+                        const SizedBox(width: 10),
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'race'),
-                            child: AnimatedScale(
-                              scale: tempGameMode == 'race' ? 1.02 : 1.0,
-                              duration: const Duration(milliseconds: 200),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: tempGameMode == 'race'
-                                      ? [Color(0xFF9C27B0), Color(0xFF6A1B9A)]
-                                      : [Color(0xFFBA68C8), Color(0xFFAB47BC)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: tempGameMode == 'race'
-                                      ? Colors.white
-                                      : Colors.white.withOpacity(0.2),
-                                    width: tempGameMode == 'race' ? 2 : 1,
-                                  ),
-                                  boxShadow: tempGameMode == 'race' ? [
-                                    BoxShadow(
-                                      color: Color(0xFF9C27B0).withOpacity(0.6),
-                                      blurRadius: 20,
-                                      spreadRadius: 3,
-                                      offset: Offset(0, 4),
-                                    ),
-                                    BoxShadow(
-                                      color: Colors.purple.shade700.withOpacity(0.3),
-                                      blurRadius: 10,
-                                      spreadRadius: 1,
-                                    ),
-                                  ] : [
-                                    BoxShadow(
-                                      color: Colors.purple.withOpacity(0.2),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: tempGameMode == 'race'
+                                    ? [Color(0xFF9C27B0), Color(0xFF7B1FA2)]
+                                    : [Color(0xFFBA68C8), Color(0xFFAB47BC)],
                                 ),
-                                child: Column(
-                                  children: [
-                                    // Icon with background
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-                                      ),
-                                      child: Icon(Icons.flash_on, color: Colors.white, size: 22),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '🏁 Race',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Aynı anda',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      'İlk bitiren kazanır',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: tempGameMode == 'race' ? Colors.white : Colors.transparent,
+                                  width: 2,
                                 ),
+                                boxShadow: tempGameMode == 'race' ? [
+                                  BoxShadow(
+                                    color: Colors.purple.withOpacity(0.4),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                  ),
+                                ] : [],
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.speed, color: Colors.white, size: 26),
+                                  const SizedBox(height: 6),
+                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
+                                ],
                               ),
                             ),
                           ),
@@ -748,23 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
 
                   const SizedBox(height: 20),
-                  // 3D Subtitle for difficulty (no gradient)
-                  Text(
-                    tr('selectDifficulty'),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black54,
-                      letterSpacing: 0.3,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(1, 1),
-                          blurRadius: 2,
-                          color: Colors.black12,
-                        ),
-                      ],
-                    ),
-                  ),
+                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
                     setDialogState(() => tempDifficulty = selected);
@@ -811,24 +485,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 10),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [Colors.grey.shade600, Colors.grey.shade800],
-                      ).createShader(bounds),
-                      child: Text(
-                        tr('cancel'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
+                    child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
                   ),
                 ],
               ),
@@ -1021,128 +678,247 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            children: [
-              // New Logo
-              Image.asset(
-                'assets/images/sudoku_clash_logo.png',
-                width: 280,
-                height: 200,
-                fit: BoxFit.contain,
-              ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
 
-              const SizedBox(height: 30),
+                // Logo
+                const SudokuClashLogo(
+                  size: 100,
+                  animate: false,
+                ),
+                const SizedBox(height: 30),
 
-              // DAILY CHALLENGE (if available and user is logged in)
-              if (_dailyChallenge != null && _user != null) ...[
-                DailyChallengeCard(
-                  challenge: _dailyChallenge!,
-                  onTap: () async {
-                    // Navigate to daily challenge screen with calendar
-                    final result = await Navigator.push(
+                // Başlık
+                Text(
+                  tr('sudoku'),
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : Colors.black87,
+                    letterSpacing: 2,
+                    height: 1,
+                  ),
+                ),
+                Text(
+                  tr('clash'),
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : Colors.black87,
+                    letterSpacing: 2,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  tr('tagline'),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, letterSpacing: 1),
+                ),
+                const SizedBox(height: 50),
+
+                // DAILY CHALLENGE
+                _buildDailyChallengeCard(),
+                const SizedBox(height: 16),
+
+                // TEK OYUNCU
+                _buildMenuCard(
+                  icon: Icons.person_rounded,
+                  title: tr('singlePlayer'),
+                  subtitle: tr('singlePlayerDesc'),
+                  colors: [Colors.blue.shade500, Colors.blue.shade700],
+                  badge: _hasSavedGame ? '⏸️' : null,
+                  onTap: _showSinglePlayerDialog,
+                ),
+                const SizedBox(height: 16),
+
+                // ONLINE MULTIPLAYER
+                _buildMenuCard(
+                  icon: Icons.public_rounded,
+                  title: tr('onlineMultiplayer'),
+                  subtitle: tr('onlineMultiplayerDesc'),
+                  colors: [Colors.orange.shade500, Colors.orange.shade700],
+                  onTap: _showOnlineDialog,
+                ),
+                const SizedBox(height: 16),
+
+                // AYARLAR
+                _buildMenuCard(
+                  icon: Icons.settings_rounded,
+                  title: tr('settings'),
+                  subtitle: tr('settingsDesc'),
+                  colors: [Colors.grey.shade600, Colors.grey.shade800],
+                  onTap: () {
+                    Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => DailyChallengeScreen(
-                          challenge: _dailyChallenge!,
-                        ),
-                      ),
-                    );
-
-                    // If challenge was completed, reload
-                    if (result == true) {
-                      await _loadDailyChallenge();
-                    }
+                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                    ).then((_) {
+                      setState(() {});
+                    });
                   },
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 40),
               ],
-
-              // Menu buttons - spaced evenly
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // TEK OYUNCU
-                    _buildMenuCard(
-                      icon: Icons.person_rounded,
-                      title: tr('singlePlayer'),
-                      subtitle: tr('singlePlayerDesc'),
-                      colors: [Colors.blue.shade500, Colors.blue.shade700],
-                      badge: _hasSavedGame ? '⏸️' : null,
-                      heroTag: 'single_player_icon',
-                      onTap: _showSinglePlayerDialog,
-                    ),
-
-                    // ONLINE MULTIPLAYER
-                    _buildMenuCard(
-                      icon: Icons.public_rounded,
-                      title: tr('onlineMultiplayer'),
-                      subtitle: tr('onlineMultiplayerDesc'),
-                      colors: [Colors.orange.shade500, Colors.orange.shade700],
-                      heroTag: 'online_icon',
-                      onTap: _showOnlineDialog,
-                    ),
-
-                    // MAĞAZA
-                    _buildMenuCard(
-                      icon: Icons.storefront_rounded,
-                      title: AppLocalizations.currentLanguage == 'tr' ? 'Mağaza' : 'Shop',
-                      subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Premium avatarlar ve tema paketleri' : 'Premium avatars and theme packs',
-                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                      heroTag: 'shop_icon',
-                      badge: '💰',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => const ShopScreen(),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              const begin = Offset(1.0, 0.0);
-                              const end = Offset.zero;
-                              const curve = Curves.easeInOutCubic;
-                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                              return SlideTransition(position: animation.drive(tween), child: child);
-                            },
-                          ),
-                        );
-                      },
-                    ),
-
-                    // AYARLAR
-                    _buildMenuCard(
-                      icon: Icons.settings_rounded,
-                      title: tr('settings'),
-                      subtitle: tr('settingsDesc'),
-                      colors: [Colors.grey.shade600, Colors.grey.shade800],
-                      heroTag: 'settings_icon', // Hero tag for smooth transition
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              const begin = Offset(1.0, 0.0);
-                              const end = Offset.zero;
-                              const curve = Curves.easeInOutCubic;
-                              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                              return SlideTransition(position: animation.drive(tween), child: child);
-                            },
-                            transitionDuration: const Duration(milliseconds: 300),
-                          ),
-                        ).then((_) {
-                          setState(() {});
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDailyChallengeCard() {
+    final now = DateTime.now();
+    final monthAbbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][now.month - 1];
+
+    return FutureBuilder<bool>(
+      future: DailyChallengeService.isTodayCompleted(),
+      builder: (context, snapshot) {
+        final isCompleted = snapshot.data ?? false;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DailyChallengeScreen()),
+              ).then((_) => setState(() {}));
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.orange.shade300, Colors.orange.shade500],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Tarih kutusu
+                  Container(
+                    width: 56,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          monthAbbr,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          '${now.day}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Daily Challenge',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 14, color: Colors.yellow.shade300),
+                            const SizedBox(width: 4),
+                            Text(
+                              DailyChallengeService.getLocalizedDifficulty(
+                                DailyChallengeService.getTodayDifficulty()
+                              ),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '💎',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '+${DailyChallengeService.getDailyReward()}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isCompleted)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check, color: Colors.white, size: 20),
+                    )
+                  else
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white.withOpacity(0.8),
+                      size: 18,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1152,16 +928,12 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required List<Color> colors,
     String? badge,
-    String? heroTag,
     required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          HapticService().lightImpact();
-          onTap();
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           clipBehavior: Clip.none,
@@ -1186,26 +958,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  heroTag != null
-                      ? Hero(
-                          tag: heroTag,
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(icon, color: Colors.white, size: 28),
-                          ),
-                        )
-                      : Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(icon, color: Colors.white, size: 28),
-                        ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 28),
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(

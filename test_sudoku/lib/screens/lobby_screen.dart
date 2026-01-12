@@ -89,32 +89,14 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
 
           Navigator.pushReplacement(
             context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => OnlineGameScreen(
+            MaterialPageRoute(
+              builder: (_) => OnlineGameScreen(
                 gameId: result.gameId!,
                 isPlayer1: result.isPlayer1,
                 difficulty: difficulty,
                 gameMode: gameMode,
                 startsFirst: result.isPlayer1,
               ),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                // Fade + Scale transition
-                const curve = Curves.easeInOutCubic;
-                var fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-                  CurvedAnimation(parent: animation, curve: curve),
-                );
-                var scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
-                  CurvedAnimation(parent: animation, curve: curve),
-                );
-                return FadeTransition(
-                  opacity: fadeAnimation,
-                  child: ScaleTransition(
-                    scale: scaleAnimation,
-                    child: child,
-                  ),
-                );
-              },
-              transitionDuration: const Duration(milliseconds: 400),
             ),
           );
         });
@@ -183,31 +165,21 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Klasik mod için mavi gradient, Race mod için mor gradient
+    final bool isClassicMode = widget.gameMode == 'classic';
+    final List<Color> bgGradient = isClassicMode
+        ? [const Color(0xFF0D47A1), const Color(0xFF1565C0), const Color(0xFF1976D2)] // Mavi
+        : [const Color(0xFF1A1A2E), const Color(0xFF2D1B4E), const Color(0xFF4A148C)]; // Mor
+
+    final Color accentColor = isClassicMode ? Colors.blue : Colors.orange;
 
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    const Color(0xFF1A1A2E),
-                    const Color(0xFF2D2D44),
-                    const Color(0xFF16213E),
-                  ]
-                : widget.gameMode == 'classic'
-                  ? [
-                      const Color(0xFF2196F3),
-                      const Color(0xFF1976D2),
-                      const Color(0xFF64B5F6),
-                    ]
-                  : [
-                      const Color(0xFF667EEA),
-                      const Color(0xFF764BA2),
-                      const Color(0xFFF093FB),
-                    ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: bgGradient,
           ),
         ),
         child: SafeArea(
@@ -217,212 +189,100 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Modern animated search icon with pulse effect
+                  // Animated search icon
                   RotationTransition(
                     turns: _rotationAnimation,
                     child: Container(
-                      width: 140,
-                      height: 140,
+                      width: 120,
+                      height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            const Color(0xFF667EEA),
-                            const Color(0xFF764BA2),
-                          ],
+                          colors: isClassicMode
+                              ? [Colors.blue.shade400, Colors.blue.shade700]
+                              : [Colors.orange.shade400, Colors.orange.shade700],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF667EEA).withOpacity(0.6),
-                            blurRadius: 40,
-                            spreadRadius: 10,
-                          ),
-                          BoxShadow(
-                            color: const Color(0xFF764BA2).withOpacity(0.4),
-                            blurRadius: 60,
+                            color: accentColor.withOpacity(0.4),
+                            blurRadius: 30,
                             spreadRadius: 5,
                           ),
                         ],
                       ),
-                      child: Container(
-                        margin: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.15),
-                        ),
-                        child: const Icon(
-                          Icons.search_rounded,
-                          size: 70,
-                          color: Colors.white,
-                        ),
+                      child: const Icon(
+                        Icons.search,
+                        size: 60,
+                        color: Colors.white,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 40),
 
-                  // Modern status text with shadow
+                  // Status text
+                  Text(
+                    _statusText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Timer
+                  if (_isSearching)
+                    Text(
+                      _formatTime(_searchSeconds),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 32,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+
+                  const SizedBox(height: 12),
+
+                  // Difficulty badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.2),
-                          Colors.white.withOpacity(0.1),
-                        ],
-                      ),
+                      color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1.5,
-                      ),
                     ),
                     child: Text(
-                      _statusText,
+                      '${tr('difficulty')}: ${widget.difficulty}',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                        fontSize: 16,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 60),
 
-                  // Modern timer with glow
-                  if (_isSearching)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF667EEA).withOpacity(0.3),
-                            const Color(0xFF764BA2).withOpacity(0.3),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.1),
-                            blurRadius: 15,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        _formatTime(_searchSeconds),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 40,
-                          fontWeight: FontWeight.w300,
-                          letterSpacing: 4,
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // Modern difficulty badge with gradient
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.25),
-                          Colors.white.withOpacity(0.15),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.4),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.stars_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${tr('difficulty')}: ${widget.difficulty}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 80),
-
-                  // Modern cancel button with gradient
+                  // Cancel button
                   if (_isSearching)
                     SizedBox(
                       width: double.infinity,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.red.shade400,
-                              Colors.red.shade600,
-                            ],
+                      child: ElevatedButton(
+                        onPressed: _cancelSearch,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade400,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withOpacity(0.4),
-                              blurRadius: 20,
-                              spreadRadius: 2,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _cancelSearch,
-                            borderRadius: BorderRadius.circular(16),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.cancel_rounded,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    tr('cancelSearch'),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        child: Text(
+                          tr('cancelSearch'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
