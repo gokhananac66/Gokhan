@@ -156,15 +156,68 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade300, Colors.blue.shade600],
+                      ),
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                    child: Icon(Icons.person, color: Colors.blue.shade700, size: 32),
+                    child: Icon(Icons.person, color: Colors.white, size: 32),
                   ),
                   const SizedBox(height: 12),
-                  Text(tr('singlePlayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  // 3D Title
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Color(0xFF2196F3),
+                        Color(0xFF1976D2),
+                        Color(0xFF0D47A1),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      tr('singlePlayer'),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(2, 2),
+                            blurRadius: 3,
+                            color: Colors.black26,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                  // 3D Subtitle
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Color(0xFF64B5F6),
+                        Color(0xFF42A5F5),
+                      ],
+                    ).createShader(bounds),
+                    child: Text(
+                      tr('selectDifficulty'),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
                     setDialogState(() => tempDifficulty = selected);
@@ -241,7 +294,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 10),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [Colors.grey.shade600, Colors.grey.shade800],
+                      ).createShader(bounds),
+                      child: Text(
+                        tr('cancel'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -265,15 +335,68 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
+                  gradient: LinearGradient(
+                    colors: [Colors.orange.shade300, Colors.orange.shade600],
+                  ),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
-                child: Icon(Icons.public, color: Colors.orange.shade700, size: 32),
+                child: Icon(Icons.public, color: Colors.white, size: 32),
               ),
               const SizedBox(height: 12),
-              Text(tr('onlineMultiplayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              // 3D Title
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [
+                    Color(0xFFFF9800),
+                    Color(0xFFF57C00),
+                    Color(0xFFE65100),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Text(
+                  tr('onlineMultiplayer'),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(2, 2),
+                        blurRadius: 3,
+                        color: Colors.black26,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(tr('selectGameMode'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+              // 3D Subtitle
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [
+                    Color(0xFFFFB74D),
+                    Color(0xFFFF9800),
+                  ],
+                ).createShader(bounds),
+                child: Text(
+                  tr('selectGameMode'),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Rastgele Rakip Bul
@@ -388,25 +511,75 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isRandom ? Colors.orange.shade100 : Colors.green.shade100,
+                      gradient: LinearGradient(
+                        colors: isRandom
+                          ? [Colors.orange.shade300, Colors.orange.shade600]
+                          : [Colors.green.shade300, Colors.green.shade600],
+                      ),
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isRandom ? Colors.orange : Colors.green).withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
                     child: Icon(
                       isRandom ? Icons.shuffle : Icons.people,
-                      color: isRandom ? Colors.orange.shade700 : Colors.green.shade700,
+                      color: Colors.white,
                       size: 32,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    isRandom ? tr('randomOpponent') : tr('playWithFriend'),
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  // 3D Title
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: isRandom
+                        ? [Color(0xFFFF9800), Color(0xFFF57C00), Color(0xFFE65100)]
+                        : [Color(0xFF4CAF50), Color(0xFF388E3C), Color(0xFF2E7D32)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      isRandom ? tr('randomOpponent') : tr('playWithFriend'),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(2, 2),
+                            blurRadius: 3,
+                            color: Colors.black26,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
                   // Game Mode Selection (only for random)
                   if (isRandom) ...[
-                    const SizedBox(height: 20),
-                    Text('Oyun Modu Seç', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    // 3D Subtitle
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          Color(0xFFFFB74D),
+                          Color(0xFFFF9800),
+                        ],
+                      ).createShader(bounds),
+                      child: Text(
+                        'Oyun Modu Seç',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -415,7 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'classic'),
                             child: AnimatedScale(
-                              scale: tempGameMode == 'classic' ? 1.05 : 1.0,
+                              scale: tempGameMode == 'classic' ? 1.02 : 1.0,
                               duration: const Duration(milliseconds: 200),
                               child: Container(
                                 padding: const EdgeInsets.all(18),
@@ -505,7 +678,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'race'),
                             child: AnimatedScale(
-                              scale: tempGameMode == 'race' ? 1.05 : 1.0,
+                              scale: tempGameMode == 'race' ? 1.02 : 1.0,
                               duration: const Duration(milliseconds: 200),
                               child: Container(
                                 padding: const EdgeInsets.all(18),
@@ -594,7 +767,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
 
                   const SizedBox(height: 20),
-                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                  // 3D Subtitle for difficulty
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: isRandom
+                        ? [Color(0xFFFFB74D), Color(0xFFFF9800)]
+                        : [Color(0xFF81C784), Color(0xFF66BB6A)],
+                    ).createShader(bounds),
+                    child: Text(
+                      tr('selectDifficulty'),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
                     setDialogState(() => tempDifficulty = selected);
@@ -641,7 +830,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 10),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text(tr('cancel'), style: TextStyle(color: Colors.grey.shade600)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [Colors.grey.shade600, Colors.grey.shade800],
+                      ).createShader(bounds),
+                      child: Text(
+                        tr('cancel'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

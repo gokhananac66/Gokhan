@@ -567,7 +567,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       appBar: AppBar(
-        title: Text(tr('profile')),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color(0xFF9C27B0), Color(0xFF7B1FA2), Color(0xFF6A1B9A)],
+          ).createShader(bounds),
+          child: Text(
+            tr('profile'),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.logout, color: Colors.red), onPressed: _signOut),
         ],
@@ -650,9 +663,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Email
-                  Text(_user?.email ?? tr('guestUser'), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                  const SizedBox(height: 2),
+                  // Email (improved visibility)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFFE3F2FD),
+                          Color(0xFFBBDEFB),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Text(
+                      _user?.email ?? tr('guestUser'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
                   // Nickname
                   if (_isEditingNickname)
@@ -725,13 +759,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             )
                           else
-                            Text(
-                              tr('addNickname'),
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade500,
-                                fontStyle: FontStyle.italic,
+                            // 3D Gradient Placeholder
+                            ShaderMask(
+                              shaderCallback: (bounds) => LinearGradient(
+                                colors: [
+                                  Colors.grey.shade400,
+                                  Colors.grey.shade600,
+                                ],
+                              ).createShader(bounds),
+                              child: Text(
+                                tr('addNickname'),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontStyle: FontStyle.italic,
+                                  letterSpacing: 0.3,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(1, 1),
+                                      blurRadius: 2,
+                                      color: Colors.black12,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           const SizedBox(width: 8),
