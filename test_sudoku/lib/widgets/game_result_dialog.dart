@@ -155,8 +155,8 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
           ScaleTransition(
             scale: _scaleAnimation,
             child: Container(
-              width: 300,
-              padding: const EdgeInsets.all(24),
+              width: 320,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -303,7 +303,6 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildPlayerScore(
               widget.player1Name ?? 'Oyuncu 1',
@@ -311,89 +310,97 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
               player1Won,
               Colors.blue,
             ),
-            Text(
-              isDraw ? '🤝' : '⚔️',
-              style: const TextStyle(fontSize: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                isDraw ? '🤝' : '⚔️',
+                style: const TextStyle(fontSize: 20),
+              ),
             ),
             _buildPlayerScore(
               widget.player2Name ?? 'Oyuncu 2',
               widget.player2Score ?? 0,
               player2Won,
-              Colors.red,
+              Colors.orange,
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Text(
           isDraw ? 'BERABERE!' : '${player1Won ? widget.player1Name : widget.player2Name} KAZANDI!',
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
   }
 
   Widget _buildPlayerScore(String name, int score, bool isWinner, Color color) {
-    return Column(
-      children: [
-        if (isWinner)
-          const Text('👑', style: TextStyle(fontSize: 20)),
-        Text(
-          name,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color, width: isWinner ? 2 : 1),
-          ),
-          child: Text(
-            '$score',
+    return Expanded(
+      child: Column(
+        children: [
+          if (isWinner)
+            const Text('👑', style: TextStyle(fontSize: 18)),
+          Text(
+            name,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: isWinner ? 24 : 20,
-              fontWeight: FontWeight.bold,
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color, width: isWinner ? 2 : 1),
+            ),
+            child: Text(
+              '$score',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isWinner ? 20 : 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildStatRow(String emoji, String label, String value, {bool isHighlight = false}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 18)),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
+        Text(emoji, style: const TextStyle(fontSize: 16)),
+        const SizedBox(width: 6),
         Text(
-          value,
+          label,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: isHighlight ? 24 : 18,
-            fontWeight: FontWeight.bold,
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 14,
+          ),
+        ),
+        const Spacer(),
+        Flexible(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isHighlight ? 20 : 16,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

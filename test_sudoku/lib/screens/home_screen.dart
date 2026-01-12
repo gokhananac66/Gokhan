@@ -362,72 +362,70 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'classic'),
                             child: Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: tempGameMode == 'classic'
                                     ? [Color(0xFF2196F3), Color(0xFF1976D2)]
                                     : [Color(0xFF64B5F6), Color(0xFF42A5F5)],
                                 ),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: tempGameMode == 'classic' ? Colors.white : Colors.transparent,
-                                  width: 3,
+                                  width: 2,
                                 ),
                                 boxShadow: tempGameMode == 'classic' ? [
                                   BoxShadow(
-                                    color: Colors.blue.withOpacity(0.5),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
+                                    color: Colors.blue.withOpacity(0.4),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
                                   ),
                                 ] : [],
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.sports_esports, color: Colors.white, size: 32),
-                                  const SizedBox(height: 8),
-                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('Sırayla', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                  Text('30s turlar', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                  Icon(Icons.sports_esports, color: Colors.white, size: 26),
+                                  const SizedBox(height: 6),
+                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  Text('Sırayla • 30s', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
                                 ],
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'race'),
                             child: Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: tempGameMode == 'race'
                                     ? [Color(0xFF9C27B0), Color(0xFF7B1FA2)]
                                     : [Color(0xFFBA68C8), Color(0xFFAB47BC)],
                                 ),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: tempGameMode == 'race' ? Colors.white : Colors.transparent,
-                                  width: 3,
+                                  width: 2,
                                 ),
                                 boxShadow: tempGameMode == 'race' ? [
                                   BoxShadow(
-                                    color: Colors.purple.withOpacity(0.5),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
+                                    color: Colors.purple.withOpacity(0.4),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
                                   ),
                                 ] : [],
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.speed, color: Colors.white, size: 32),
-                                  const SizedBox(height: 8),
-                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('Aynı anda', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                  Icon(Icons.speed, color: Colors.white, size: 26),
+                                  const SizedBox(height: 6),
+                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
                                 ],
                               ),
                             ),
