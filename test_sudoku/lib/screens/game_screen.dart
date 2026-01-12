@@ -594,38 +594,27 @@ class _GameScreenState extends State<GameScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Color(0xFF2D2D2D) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade600 : Colors.black87,
+          width: 2.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: AspectRatio(
         aspectRatio: 1,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
-                  width: 2.5,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: List.generate(9, (row) => Expanded(
-                  child: Row(children: List.generate(9, (col) => Expanded(child: _buildCell(row, col)))),
-                )),
-              ),
-            ),
-          ),
+        child: Column(
+          children: List.generate(9, (row) => Expanded(
+            child: Row(children: List.generate(9, (col) => Expanded(child: _buildCell(row, col)))),
+          )),
         ),
       ),
     );
@@ -644,51 +633,65 @@ class _GameScreenState extends State<GameScreen> {
     bool isSameRow = selectedRow != null && row == selectedRow;
     bool isSameCol = selectedCol != null && col == selectedCol;
     bool isSameBox = selectedRow != null && selectedCol != null && (row ~/ 3 == selectedRow! ~/ 3) && (col ~/ 3 == selectedCol! ~/ 3);
-    bool isHighlighted = (isSameRow || isSameCol || isSameBox) && !isSelected;
+    bool isHighlighted = (isSameRow || isSameCol) && !isSelected;
     bool isSameNumber = selectedRow != null && selectedCol != null && board[selectedRow!][selectedCol!] != 0 && board[row][col] == board[selectedRow!][selectedCol!] && !isSelected;
 
-    // Border widths for 3x3 blocks
-    double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
-    double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
+    // Border widths for 3x3 blocks - kalın sınırlar
+    double rightBorder = (col == 2 || col == 5) ? 2.5 : 1.0;
+    double bottomBorder = (row == 2 || row == 5) ? 2.5 : 1.0;
+    double leftBorder = (col == 0 || col == 3 || col == 6) ? 0 : 1.0;
+    double topBorder = (row == 0 || row == 3 || row == 6) ? 0 : 1.0;
 
+    // Background color - referans tasarıma göre
     Color bgColor;
-    if (isSelected) bgColor = isDark ? const Color(0xFF1E3A5F) : Colors.blue.shade100;
-    else if (isWrong) bgColor = isDark ? Colors.red.shade900.withOpacity(0.4) : Colors.red.shade100;
-    else if (isInCompletedGroup) bgColor = isDark ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade50;
-    else if (isSameNumber) bgColor = isDark ? Colors.blue.shade900.withOpacity(0.3) : const Color(0xFFE3F2FD);
-    else if (isHighlighted) bgColor = isDark ? const Color(0xFF1A2733) : const Color(0xFFE8F4FD);
-    else bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    if (isSelected) {
+      bgColor = isDark ? const Color(0xFF1E3A5F) : const Color(0xFFBBDEFB); // Açık mavi seçili
+    } else if (isWrong) {
+      bgColor = isDark ? Colors.red.shade900.withOpacity(0.4) : Colors.red.shade50;
+    } else if (isInCompletedGroup) {
+      bgColor = isDark ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade50;
+    } else if (isSameNumber) {
+      bgColor = isDark ? Colors.blue.shade900.withOpacity(0.3) : const Color(0xFFE3F2FD);
+    } else if (isHighlighted) {
+      bgColor = isDark ? const Color(0xFF1A2733) : const Color(0xFFE3F2FD); // Açık mavi vurgu
+    } else {
+      bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    }
 
+    // Text color - referans tasarıma göre
     Color textColor;
-    if (isOriginalCell) textColor = isDark ? Colors.white : Colors.black87;
-    else if (isWrong) textColor = Colors.red.shade700;
-    else textColor = isDark ? Colors.blue.shade300 : Colors.blue.shade600;
+    if (isWrong) {
+      textColor = Colors.red.shade700; // Kırmızı hata rengi
+    } else if (isOriginalCell) {
+      textColor = isDark ? Colors.white : Colors.black87; // Orijinal sayılar siyah
+    } else {
+      textColor = isDark ? Colors.blue.shade300 : const Color(0xFF1976D2); // Kullanıcı sayıları mavi
+    }
+
+    // Border colors
+    Color thinBorderColor = isDark ? Colors.grey.shade700 : Colors.grey.shade300;
+    Color thickBorderColor = isDark ? Colors.grey.shade500 : Colors.black87;
 
     return GestureDetector(
       onTap: () => _selectCell(row, col),
       child: Container(
-        margin: const EdgeInsets.all(0.5),
         decoration: BoxDecoration(
           color: bgColor,
           border: Border(
             top: BorderSide(
-              color: row == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-              width: 0,
+              color: topBorder > 0 ? thinBorderColor : Colors.transparent,
+              width: topBorder,
             ),
             left: BorderSide(
-              color: col == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-              width: 0,
+              color: leftBorder > 0 ? thinBorderColor : Colors.transparent,
+              width: leftBorder,
             ),
             right: BorderSide(
-              color: (col == 2 || col == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+              color: (col == 2 || col == 5) ? thickBorderColor : thinBorderColor,
               width: rightBorder,
             ),
             bottom: BorderSide(
-              color: (row == 2 || row == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+              color: (row == 2 || row == 5) ? thickBorderColor : thinBorderColor,
               width: bottomBorder,
             ),
           ),
@@ -698,7 +701,7 @@ class _GameScreenState extends State<GameScreen> {
               ? Text(
                   '$value',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: isOriginalCell ? FontWeight.w700 : FontWeight.w500,
                     color: textColor,
                   ),
@@ -714,7 +717,7 @@ class _GameScreenState extends State<GameScreen> {
                           child: Text(
                             cellNotes.contains(i + 1) ? '${i + 1}' : '',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 9,
                               color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
                             ),
                           ),
@@ -729,12 +732,18 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildActionButtons() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-      _buildActionButton(Icons.undo_rounded, tr('undo'), _undo, isDark),
-      _buildActionButton(Icons.backspace_outlined, tr('delete'), _clearCell, isDark),
-      _buildActionButton(notesMode ? Icons.edit : Icons.edit_outlined, AppLocalizations.currentLanguage == 'en' ? 'Notes' : 'Notlar', () { _playClickSound(); _vibrate(); setState(() => notesMode = !notesMode); }, isDark, isActive: notesMode, badge: notesMode ? 'ON' : 'OFF'),
-      _buildActionButton(Icons.lightbulb_outline_rounded, tr('hint'), _useHint, isDark, badge: '$hints'),
-    ]));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildActionButton(Icons.undo_rounded, 'Geri Al', _undo, isDark),
+          _buildActionButton(Icons.backspace_outlined, 'Sil', _clearCell, isDark),
+          _buildActionButton(notesMode ? Icons.edit_note : Icons.edit_note_outlined, 'Notlar', () { _playClickSound(); _vibrate(); setState(() => notesMode = !notesMode); }, isDark, isActive: notesMode, badge: notesMode ? 'ON' : 'OFF'),
+          _buildActionButton(Icons.lightbulb_outline_rounded, 'İpucu', _useHint, isDark, badge: '$hints'),
+        ],
+      ),
+    );
   }
 
   Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, bool isDark, {bool isActive = false, String? badge}) {
@@ -749,6 +758,37 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildNumberButtons() {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(9, (i) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: AspectRatio(aspectRatio: 0.75, child: Material(color: Colors.transparent, child: InkWell(onTap: () => _inputNumber(i + 1), borderRadius: BorderRadius.circular(8), child: Container(decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(8)), child: Center(child: Text('${i + 1}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white))))))))))));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(9, (i) => Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: AspectRatio(
+              aspectRatio: 0.85,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _inputNumber(i + 1),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Center(
+                    child: Text(
+                      '${i + 1}',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.blue.shade300 : const Color(0xFF1976D2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        )),
+      ),
+    );
   }
 }

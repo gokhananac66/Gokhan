@@ -9,7 +9,6 @@ import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/friend_service.dart';
-import '../widgets/sudoku_clash_logo.dart';
 import '../widgets/text_3d.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -703,39 +702,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 40),
 
                 // Logo
-                const SudokuClashLogo(
-                  size: 100,
-                  animate: false,
+                Image.asset(
+                  'assets/images/sudoku_clash_logo.png',
+                  width: 280,
+                  height: 200,
+                  fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 30),
-
-                // Başlık
-                Text(
-                  tr('sudoku'),
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : Colors.black87,
-                    letterSpacing: 2,
-                    height: 1,
-                  ),
-                ),
-                Text(
-                  tr('clash'),
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : Colors.black87,
-                    letterSpacing: 2,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  tr('tagline'),
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, letterSpacing: 1),
-                ),
-                const SizedBox(height: 50),
 
                 // TEK OYUNCU
                 _buildMenuCard(

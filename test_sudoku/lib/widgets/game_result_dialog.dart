@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import '../app_localizations.dart';
 
 class GameResultDialog extends StatefulWidget {
   final bool isWin;
@@ -16,8 +17,19 @@ class GameResultDialog extends StatefulWidget {
   final int? player2Score;
   final String? player1Name;
   final String? player2Name;
+  final int? player1Time;
+  final int? player2Time;
+  final int? player1Moves;
+  final int? player2Moves;
+  final int? player1Accuracy;
+  final int? player2Accuracy;
+  final int? player1Errors;
+  final int? player2Errors;
+  final String? gameMode;
+  final String? difficulty;
   final VoidCallback onNewGame;
   final VoidCallback onMainMenu;
+  final VoidCallback? onRematch;
 
   const GameResultDialog({
     super.key,
@@ -35,8 +47,19 @@ class GameResultDialog extends StatefulWidget {
     this.player2Score,
     this.player1Name,
     this.player2Name,
+    this.player1Time,
+    this.player2Time,
+    this.player1Moves,
+    this.player2Moves,
+    this.player1Accuracy,
+    this.player2Accuracy,
+    this.player1Errors,
+    this.player2Errors,
+    this.gameMode,
+    this.difficulty,
     required this.onNewGame,
     required this.onMainMenu,
+    this.onRematch,
   });
 
   @override
@@ -115,23 +138,20 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    // Berabere için farklı renk
-    List<Color> gradientColors;
-    Color shadowColor;
+    // Gradient colors based on result
+    List<Color> headerGradient;
 
     if (widget.isDraw) {
-      gradientColors = [const Color(0xFF1565C0), const Color(0xFF1976D2), const Color(0xFF2196F3)];
-      shadowColor = Colors.blue;
+      headerGradient = [const Color(0xFF1976D2), const Color(0xFF42A5F5)];
     } else if (widget.isWin) {
-      gradientColors = [const Color(0xFF1B5E20), const Color(0xFF2E7D32), const Color(0xFF43A047)];
-      shadowColor = Colors.green;
+      headerGradient = [const Color(0xFF2E7D32), const Color(0xFF66BB6A)];
     } else {
-      gradientColors = [const Color(0xFFB71C1C), const Color(0xFFC62828), const Color(0xFFD32F2F)];
-      shadowColor = Colors.red;
+      headerGradient = [const Color(0xFFC62828), const Color(0xFFEF5350)];
     }
 
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
@@ -142,7 +162,7 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
               animation: _confettiController,
               builder: (context, child) {
                 return CustomPaint(
-                  size: const Size(300, 400),
+                  size: const Size(320, 500),
                   painter: ConfettiPainter(
                     confetti: _confettiPieces,
                     progress: _confettiController.value,
@@ -155,18 +175,13 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
           ScaleTransition(
             scale: _scaleAnimation,
             child: Container(
-              width: 300,
-              padding: const EdgeInsets.all(24),
+              width: 320,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: gradientColors,
-                ),
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: shadowColor.withOpacity(0.4),
+                    color: Colors.black.withOpacity(0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -175,100 +190,88 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // İkon
+                  // Header with gradient
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        widget.isDraw ? '🤝' : (widget.isWin ? '🏆' : '😢'),
-                        style: const TextStyle(fontSize: 48),
+                      gradient: LinearGradient(
+                        colors: headerGradient,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Başlık
-                  Text(
-                    widget.isDraw ? 'BERABERE!' : (widget.isWin ? 'KAZANDIN!' : 'KAYBETTİN!'),
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 2,
-                    ),
-                  ),
-
-                  if (widget.isPerfect && widget.isWin) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('⭐', style: TextStyle(fontSize: 16)),
-                          SizedBox(width: 4),
-                          Text(
-                            'HATASIZ!',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                    child: Column(
+                      children: [
+                        // Trophy/emoji
+                        Text(
+                          widget.isDraw ? '🤝' : (widget.isWin ? '🏆' : '😢'),
+                          style: const TextStyle(fontSize: 56),
+                        ),
+                        const SizedBox(height: 12),
+                        // Title
+                        Text(
+                          widget.isDraw
+                              ? 'Berabere!'
+                              : (widget.isWin ? 'Kazandın!' : 'Kaybettin!'),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        // Game mode badge
+                        if (widget.gameMode != null || widget.difficulty != null) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${widget.gameMode == 'race' ? '🏁 Race' : '⚔️ Klasik'} · ${widget.difficulty ?? ''}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                          SizedBox(width: 4),
-                          Text('⭐', style: TextStyle(fontSize: 16)),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
-
-                  const SizedBox(height: 20),
-
-                  // İstatistikler
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: widget.isMultiplayer
-                        ? _buildMultiplayerStats()
-                        : _buildSinglePlayerStats(),
                   ),
 
-                  const SizedBox(height: 24),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        // Multiplayer player card
+                        if (widget.isMultiplayer && widget.player2Name != null) ...[
+                          _buildPlayerCard(),
+                          const SizedBox(height: 16),
+                        ],
 
-                  // Butonlar
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildButton(
-                          icon: Icons.refresh,
-                          label: widget.isWin ? 'Yeni Oyun' : 'Tekrar Dene',
-                          onTap: widget.onNewGame,
-                          isPrimary: true,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildButton(
-                          icon: Icons.home,
-                          label: 'Ana Menü',
-                          onTap: widget.onMainMenu,
-                          isPrimary: false,
-                        ),
-                      ),
-                    ],
+                        // Stats
+                        widget.isMultiplayer
+                            ? _buildMultiplayerStats()
+                            : _buildSinglePlayerStats(),
+
+                        const SizedBox(height: 20),
+
+                        // Buttons
+                        if (widget.isMultiplayer)
+                          _buildMultiplayerButtons()
+                        else
+                          _buildSinglePlayerButtons(),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -279,95 +282,262 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
     );
   }
 
-  Widget _buildSinglePlayerStats() {
-    return Column(
-      children: [
-        _buildStatRow('🎯', 'Skor', '${widget.score}', isHighlight: true),
-        const SizedBox(height: 12),
-        _buildStatRow('⏱️', 'Süre', _formatTime(widget.time)),
-        const SizedBox(height: 12),
-        _buildStatRow('❌', 'Hatalar', '${widget.errors}/${widget.maxErrors}'),
-        if (widget.combo > 1) ...[
-          const SizedBox(height: 12),
-          _buildStatRow('🔥', 'Max Combo', '${widget.combo}x'),
+  Widget _buildPlayerCard() {
+    String opponentName = widget.isWin
+        ? (widget.player2Name ?? 'Rakip')
+        : (widget.player1Name ?? 'Rakip');
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Row(
+        children: [
+          // Avatar
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade400, Colors.blue.shade600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                opponentName.isNotEmpty ? opponentName[0].toUpperCase() : 'R',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Name and subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  opponentName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  'Rakip',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // VS badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              'VS',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildMultiplayerStats() {
-    bool player1Won = (widget.player1Score ?? 0) > (widget.player2Score ?? 0);
-    bool player2Won = (widget.player2Score ?? 0) > (widget.player1Score ?? 0);
-    bool isDraw = widget.player1Score == widget.player2Score;
-
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildPlayerScore(
-              widget.player1Name ?? 'Oyuncu 1',
-              widget.player1Score ?? 0,
-              player1Won,
-              Colors.blue,
-            ),
-            Text(
-              isDraw ? '🤝' : '⚔️',
-              style: const TextStyle(fontSize: 24),
-            ),
-            _buildPlayerScore(
-              widget.player2Name ?? 'Oyuncu 2',
-              widget.player2Score ?? 0,
-              player2Won,
-              Colors.red,
-            ),
-          ],
+        _buildStatComparison(
+          '⏱️',
+          'Süre',
+          _formatTime(widget.time),
+          widget.player2Time != null ? _formatTime(widget.player2Time!) : '--:--',
+          widget.time < (widget.player2Time ?? widget.time + 1),
         ),
-        const SizedBox(height: 16),
-        Text(
-          isDraw ? 'BERABERE!' : '${player1Won ? widget.player1Name : widget.player2Name} KAZANDI!',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        const SizedBox(height: 10),
+        _buildStatComparison(
+          '🎯',
+          'Hamle',
+          '${widget.player1Moves ?? widget.score}',
+          '${widget.player2Moves ?? widget.player2Score ?? 0}',
+          (widget.player1Moves ?? 0) < (widget.player2Moves ?? 999),
+        ),
+        const SizedBox(height: 10),
+        _buildStatComparison(
+          '✨',
+          'İsabet',
+          '${widget.player1Accuracy ?? 95}%',
+          '${widget.player2Accuracy ?? 92}%',
+          (widget.player1Accuracy ?? 0) > (widget.player2Accuracy ?? 0),
+        ),
+        const SizedBox(height: 10),
+        _buildStatComparison(
+          '❌',
+          'Hata',
+          '${widget.player1Errors ?? widget.errors}',
+          '${widget.player2Errors ?? 0}',
+          (widget.player1Errors ?? widget.errors) < (widget.player2Errors ?? 999),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatComparison(String emoji, String label, String myValue, String opponentValue, bool isBetter) {
+    return Row(
+      children: [
+        // Label
+        SizedBox(
+          width: 80,
+          child: Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // My value
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isBetter ? Colors.green.shade50 : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isBetter ? Colors.green : Colors.grey.shade300,
+                width: isBetter ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isBetter) ...[
+                  Icon(Icons.check_circle, color: Colors.green, size: 16),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  myValue,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isBetter ? Colors.green.shade700 : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Opponent value
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: !isBetter ? Colors.orange.shade50 : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: !isBetter ? Colors.orange : Colors.grey.shade300,
+                width: !isBetter ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (!isBetter) ...[
+                  Icon(Icons.check_circle, color: Colors.orange, size: 16),
+                  const SizedBox(width: 4),
+                ],
+                Text(
+                  opponentValue,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: !isBetter ? Colors.orange.shade700 : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPlayerScore(String name, int score, bool isWinner, Color color) {
-    return Column(
-      children: [
-        if (isWinner)
-          const Text('👑', style: TextStyle(fontSize: 20)),
-        Text(
-          name,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color, width: isWinner ? 2 : 1),
-          ),
-          child: Text(
-            '$score',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isWinner ? 24 : 20,
-              fontWeight: FontWeight.bold,
+  Widget _buildSinglePlayerStats() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          _buildStatRow('🎯', 'Skor', '${widget.score}', isHighlight: true),
+          const SizedBox(height: 12),
+          _buildStatRow('⏱️', 'Süre', _formatTime(widget.time)),
+          const SizedBox(height: 12),
+          _buildStatRow('❌', 'Hatalar', '${widget.errors}/${widget.maxErrors}'),
+          if (widget.combo > 1) ...[
+            const SizedBox(height: 12),
+            _buildStatRow('🔥', 'Max Combo', '${widget.combo}x'),
+          ],
+          if (widget.isPerfect && widget.isWin) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.amber),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('⭐', style: TextStyle(fontSize: 16)),
+                  SizedBox(width: 4),
+                  Text(
+                    'HATASIZ!',
+                    style: TextStyle(
+                      color: Colors.amber,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Text('⭐', style: TextStyle(fontSize: 16)),
+                ],
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        ],
+      ),
     );
   }
 
@@ -381,8 +551,8 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
+              style: const TextStyle(
+                color: Colors.black87,
                 fontSize: 16,
               ),
             ),
@@ -391,7 +561,7 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
         Text(
           value,
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black87,
             fontSize: isHighlight ? 24 : 18,
             fontWeight: FontWeight.bold,
           ),
@@ -400,41 +570,121 @@ class _GameResultDialogState extends State<GameResultDialog> with TickerProvider
     );
   }
 
-  Widget _buildButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required bool isPrimary,
-  }) {
-    return Material(
-      color: isPrimary ? Colors.white : Colors.white.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isPrimary ? Colors.green.shade700 : Colors.white,
+  Widget _buildMultiplayerButtons() {
+    return Row(
+      children: [
+        // Kapat button
+        Expanded(
+          child: OutlinedButton(
+            onPressed: widget.onMainMenu,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: Colors.grey.shade400),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isPrimary ? Colors.green.shade700 : Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+            ),
+            child: Text(
+              tr('close'),
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
               ),
-            ],
+            ),
           ),
         ),
-      ),
+        const SizedBox(width: 12),
+        // Rövanş button
+        Expanded(
+          flex: 2,
+          child: ElevatedButton(
+            onPressed: widget.onRematch ?? widget.onNewGame,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purple,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.refresh, size: 20),
+                const SizedBox(width: 6),
+                Text(
+                  '${tr('rematch')}! 🔥',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSinglePlayerButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: widget.onNewGame,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: widget.isWin ? Colors.green : Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.refresh, size: 20),
+                const SizedBox(width: 6),
+                Text(
+                  widget.isWin ? tr('newGame') : tr('tryAgain'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton(
+            onPressed: widget.onMainMenu,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: Colors.grey.shade400),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.home, size: 20, color: Colors.grey.shade700),
+                const SizedBox(width: 6),
+                Text(
+                  tr('mainMenu'),
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -555,26 +805,40 @@ void showMultiplayerResultDialog(
       required String player1Name,
       required String player2Name,
       required int time,
+      String? gameMode,
+      String? difficulty,
+      int? player1Errors,
+      int? player2Errors,
       required VoidCallback onNewGame,
       required VoidCallback onMainMenu,
+      VoidCallback? onRematch,
     }) {
+  bool iWon = player1Score > player2Score;
+  bool isDraw = player1Score == player2Score;
+
   showDialog(
     context: context,
     barrierDismissible: false,
     barrierColor: Colors.black.withOpacity(0.7),
     builder: (context) => GameResultDialog(
-      isWin: true,
-      score: 0,
+      isWin: iWon,
+      isDraw: isDraw,
+      score: player1Score,
       time: time,
-      errors: 0,
-      maxErrors: 3,
+      errors: player1Errors ?? 0,
+      maxErrors: 5,
       isMultiplayer: true,
       player1Score: player1Score,
       player2Score: player2Score,
       player1Name: player1Name,
       player2Name: player2Name,
+      player1Errors: player1Errors,
+      player2Errors: player2Errors,
+      gameMode: gameMode,
+      difficulty: difficulty,
       onNewGame: onNewGame,
       onMainMenu: onMainMenu,
+      onRematch: onRematch,
     ),
   );
 }

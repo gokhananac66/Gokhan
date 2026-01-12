@@ -663,6 +663,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         player2Score: player2Score,
         player1Name: player1Name,
         player2Name: player2Name,
+        player1Errors: player1Errors,
+        player2Errors: player2Errors,
+        gameMode: widget.gameMode,
+        difficulty: widget.difficulty,
         onNewGame: () {
           Navigator.pop(dialogContext); // Dialog'u kapat
           // Dialog animasyonu bitsin diye kısa delay

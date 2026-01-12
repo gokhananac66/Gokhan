@@ -123,6 +123,8 @@ class AppLocalizations {
       'extreme': 'Extreme',
       'extremeDesc': 'Ultimate challenge',
       'newGame': 'New Game',
+      'tryAgain': 'Try Again',
+      'mainMenu': 'Main Menu',
       'continue': 'Continue',
 
       // Game
@@ -323,6 +325,8 @@ class AppLocalizations {
       'extreme': 'Ekstrem',
       'extremeDesc': 'En zorlu seviye',
       'newGame': 'Yeni Oyun',
+      'tryAgain': 'Tekrar Dene',
+      'mainMenu': 'Ana Menü',
       'continue': 'Devam Et',
 
       // Oyun
