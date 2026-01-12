@@ -919,9 +919,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 6),
-                  Text(
-                    tr('tagline'),
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, letterSpacing: 1),
+                  // 3D Gradient Tagline
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Color(0xFF00BCD4),
+                        Color(0xFF4CAF50),
+                        Color(0xFFFFEB3B),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      tr('tagline'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 2,
+                            color: Colors.black.withOpacity(0.2),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

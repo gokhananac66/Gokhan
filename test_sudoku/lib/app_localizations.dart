@@ -66,7 +66,7 @@ class AppLocalizations {
       // Menu & Home
       'sudoku': 'SUDOKU',
       'clash': 'CLASH',
-      'tagline': 'Challenge Your Mind',
+      'tagline': 'Have Fun, Race, Win!',
       'play': 'Play',
       'singlePlayer': 'Single Player',
       'singlePlayerDesc': 'Play alone and improve your skills',
@@ -288,7 +288,7 @@ class AppLocalizations {
       // Menü & Ana Sayfa
       'sudoku': 'SUDOKU',
       'clash': 'CLASH',
-      'tagline': 'Zihnini Zorla',
+      'tagline': 'Eğlen, Yarış, Kazan!',
       'play': 'Oyna',
       'singlePlayer': 'Tek Oyunculu',
       'singlePlayerDesc': 'Yalnız oyna ve yeteneklerini geliştir',
