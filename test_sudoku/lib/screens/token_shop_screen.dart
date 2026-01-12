@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/token_service.dart';
 import '../app_localizations.dart';
+import '../widgets/text_3d.dart';
 
 class TokenShopScreen extends StatefulWidget {
   const TokenShopScreen({super.key});
@@ -102,7 +103,12 @@ class _TokenShopScreenState extends State<TokenShopScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Jeton Mağazası'),
+        title: Text3D(
+          text: 'Jeton Mağazası',
+          fontSize: 20,
+          color: isDark ? Colors.white : Colors.black87,
+          shadowColor: isDark ? Colors.black : Colors.grey,
+        ),
         actions: [
           // Mevcut jeton göstergesi
           Container(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../app_localizations.dart';
+import '../widgets/text_3d.dart';
 
 class SystemSettingsScreen extends StatefulWidget {
   const SystemSettingsScreen({super.key});
@@ -114,7 +115,12 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       appBar: AppBar(
-        title: Text(tr('systemSettings')),
+        title: Text3D(
+          text: tr('systemSettings'),
+          fontSize: 20,
+          color: isDark ? Colors.white : Colors.black87,
+          shadowColor: isDark ? Colors.black : Colors.grey,
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

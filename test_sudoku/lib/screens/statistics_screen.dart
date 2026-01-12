@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_localizations.dart';
 import '../services/leaderboard_service.dart';
+import '../widgets/text_3d.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -101,7 +102,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade50,
       appBar: AppBar(
-        title: Text(tr('statistics')),
+        title: Text3D(
+          text: tr('statistics'),
+          fontSize: 20,
+          color: isDark ? Colors.white : Colors.black87,
+          shadowColor: isDark ? Colors.black : Colors.grey,
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

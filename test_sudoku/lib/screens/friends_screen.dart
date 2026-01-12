@@ -9,6 +9,7 @@ import '../services/difficulty_calculator.dart';
 import '../services/invite_cooldown_service.dart';
 import '../services/user_status_service.dart';
 import '../app_localizations.dart';
+import '../widgets/text_3d.dart';
 import 'online_game_screen.dart';
 
 class FriendsScreen extends StatefulWidget {
@@ -383,7 +384,12 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Text(tr('friends')),
+        title: Text3D(
+          text: tr('friends'),
+          fontSize: 20,
+          color: isDark ? Colors.white : Colors.black87,
+          shadowColor: isDark ? Colors.black : Colors.grey,
+        ),
         elevation: 0,
         actions: [
           IconButton(icon: const Icon(Icons.person_add_rounded), onPressed: _showAddFriendDialog),

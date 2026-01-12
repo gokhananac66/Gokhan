@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app_localizations.dart';
 import '../services/friend_service.dart';
 import '../services/leaderboard_service.dart';
+import '../widgets/text_3d.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -414,7 +415,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       appBar: AppBar(
-        title: Text(tr('profile')),
+        title: Text3D(
+          text: tr('profile'),
+          fontSize: 20,
+          color: isDark ? Colors.white : Colors.black87,
+          shadowColor: isDark ? Colors.black : Colors.grey,
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.logout, color: Colors.red), onPressed: _signOut),
         ],

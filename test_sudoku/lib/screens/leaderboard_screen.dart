@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/leaderboard_service.dart';
 import '../models/player_rank.dart';
 import '../app_localizations.dart';
+import '../widgets/text_3d.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -102,7 +103,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
       appBar: AppBar(
         title: Row(mainAxisSize: MainAxisSize.min, children: [
           const Text('🏆 ', style: TextStyle(fontSize: 24)),
-          Text(AppLocalizations.get('leaderboard'), style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text3D(
+            text: AppLocalizations.get('leaderboard'),
+            fontSize: 20,
+            color: isDark ? Colors.white : Colors.black87,
+            shadowColor: isDark ? Colors.black : Colors.grey,
+          ),
         ]),
         centerTitle: true,
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
