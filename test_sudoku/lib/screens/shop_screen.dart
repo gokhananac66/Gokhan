@@ -158,7 +158,19 @@ class _ShopScreenState extends State<ShopScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[100],
       appBar: AppBar(
-        title: Text(locale == 'tr' ? 'Mağaza' : 'Shop'),
+        title: Text(
+          locale == 'tr' ? 'Mağaza' : 'Shop',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            letterSpacing: 0.5,
+            shadows: const [
+              Shadow(offset: Offset(2, 2), blurRadius: 3, color: Colors.black26),
+              Shadow(offset: Offset(-1, -1), blurRadius: 2, color: Colors.white70),
+            ],
+          ),
+        ),
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
       ),

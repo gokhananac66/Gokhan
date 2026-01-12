@@ -65,19 +65,18 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            Icon(Icons.calendar_today, size: 20, color: Colors.grey.shade700),
-            const SizedBox(width: 8),
-            const Text(
-              'Günlük Meydan Okuma',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        title: const Text(
+          'Günlük Meydan Okuma',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            letterSpacing: 0.5,
+            shadows: [
+              Shadow(offset: Offset(2, 2), blurRadius: 3, color: Colors.black26),
+              Shadow(offset: Offset(-1, -1), blurRadius: 2, color: Colors.white70),
+            ],
+          ),
         ),
       ),
       body: SingleChildScrollView(

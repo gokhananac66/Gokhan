@@ -167,12 +167,12 @@ class _GlobalInviteOverlayState extends State<GlobalInviteOverlay> with SingleTi
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isRevanche ? 'Revanche Daveti! 🔥' : 'Oyun Daveti!',
+                          isRevanche ? 'Rövanş Daveti! 🔥' : 'Oyun Daveti!',
                           style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           isRevanche
-                            ? '${_currentInvite?.fromNickname ?? "Birisi"} sana revanche gönderiyor'
+                            ? '${_currentInvite?.fromNickname ?? "Birisi"} sana rövanş gönderiyor'
                             : '${_currentInvite?.fromNickname ?? "Birisi"} seni oyuna davet ediyor',
                           style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
                         ),

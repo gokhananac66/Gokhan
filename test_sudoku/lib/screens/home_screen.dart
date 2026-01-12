@@ -6,6 +6,7 @@ import 'settings_screen.dart';
 import 'lobby_screen.dart';
 import 'friends_screen.dart';
 import 'daily_challenge_screen.dart';
+import 'shop_screen.dart';
 import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
@@ -112,9 +113,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Icon(Icons.person, color: Colors.blue.shade700, size: 32),
                   ),
                   const SizedBox(height: 12),
-                  Text(tr('singlePlayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text(
+                    tr('singlePlayer'),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                      shadows: [
+                        Shadow(offset: Offset(2, 2), blurRadius: 3, color: Colors.black26),
+                        Shadow(offset: Offset(-1, -1), blurRadius: 2, color: Colors.white70),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                  Text(
+                    tr('selectDifficulty'),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black54,
+                      shadows: [
+                        Shadow(offset: Offset(1, 1), blurRadius: 2, color: Colors.black12),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   ...difficulties.map((diff) => _buildDifficultyOption(diff, tempDifficulty, (selected) {
                     setDialogState(() => tempDifficulty = selected);
@@ -221,9 +243,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Icon(Icons.public, color: Colors.orange.shade700, size: 32),
               ),
               const SizedBox(height: 12),
-              Text(tr('onlineMultiplayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(
+                tr('onlineMultiplayer'),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black87,
+                  shadows: [
+                    Shadow(offset: Offset(2, 2), blurRadius: 3, color: Colors.black26),
+                    Shadow(offset: Offset(-1, -1), blurRadius: 2, color: Colors.white70),
+                  ],
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(tr('selectGameMode'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+              Text(
+                tr('selectGameMode'),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black54,
+                  shadows: [
+                    Shadow(offset: Offset(1, 1), blurRadius: 2, color: Colors.black12),
+                  ],
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Rastgele Rakip Bul
@@ -350,13 +393,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 12),
                   Text(
                     isRandom ? tr('randomOpponent') : tr('playWithFriend'),
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                      shadows: [
+                        Shadow(offset: Offset(2, 2), blurRadius: 3, color: Colors.black26),
+                        Shadow(offset: Offset(-1, -1), blurRadius: 2, color: Colors.white70),
+                      ],
+                    ),
                   ),
 
                   // Game Mode Selection (only for random)
                   if (isRandom) ...[
                     const SizedBox(height: 20),
-                    Text('Oyun Modu Seç', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Oyun Modu Seç',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black54,
+                        shadows: [
+                          Shadow(offset: Offset(1, 1), blurRadius: 2, color: Colors.black12),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -364,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'classic'),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: tempGameMode == 'classic'
@@ -374,34 +435,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: tempGameMode == 'classic' ? Colors.white : Colors.transparent,
-                                  width: 2,
+                                  width: 1.5,
                                 ),
                                 boxShadow: tempGameMode == 'classic' ? [
                                   BoxShadow(
-                                    color: Colors.blue.withOpacity(0.4),
-                                    blurRadius: 6,
-                                    spreadRadius: 1,
+                                    color: Colors.blue.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    spreadRadius: 0,
                                   ),
                                 ] : [],
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.sports_esports, color: Colors.white, size: 26),
-                                  const SizedBox(height: 6),
-                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Icon(Icons.sports_esports, color: Colors.white, size: 22),
+                                  const SizedBox(height: 4),
+                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                                   const SizedBox(height: 2),
-                                  Text('Sırayla • 30s', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
+                                  Text('Sırayla • 30s', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 9)),
                                 ],
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: GestureDetector(
                             onTap: () => setDialogState(() => tempGameMode = 'race'),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: tempGameMode == 'race'
@@ -411,23 +472,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: tempGameMode == 'race' ? Colors.white : Colors.transparent,
-                                  width: 2,
+                                  width: 1.5,
                                 ),
                                 boxShadow: tempGameMode == 'race' ? [
                                   BoxShadow(
-                                    color: Colors.purple.withOpacity(0.4),
-                                    blurRadius: 6,
-                                    spreadRadius: 1,
+                                    color: Colors.purple.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    spreadRadius: 0,
                                   ),
                                 ] : [],
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.speed, color: Colors.white, size: 26),
-                                  const SizedBox(height: 6),
-                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Icon(Icons.speed, color: Colors.white, size: 22),
+                                  const SizedBox(height: 4),
+                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                                   const SizedBox(height: 2),
-                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
+                                  Text('İlk bitiren', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 9)),
                                 ],
                               ),
                             ),
@@ -743,6 +804,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: tr('onlineMultiplayerDesc'),
                   colors: [Colors.orange.shade500, Colors.orange.shade700],
                   onTap: _showOnlineDialog,
+                ),
+                const SizedBox(height: 16),
+
+                // MARKET / MAĞAZA
+                _buildMenuCard(
+                  icon: Icons.shopping_cart_rounded,
+                  title: tr('shop'),
+                  subtitle: tr('shopDesc'),
+                  colors: [Colors.purple.shade500, Colors.purple.shade700],
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ShopScreen()),
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
 

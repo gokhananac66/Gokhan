@@ -125,13 +125,26 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🏆', style: TextStyle(fontSize: 18)),
-            const SizedBox(width: 6),
-            Text('Liderlik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87)),
-          ],
+        title: Text(
+          'Liderlik Tablosu',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            letterSpacing: 0.5,
+            shadows: [
+              Shadow(
+                offset: Offset(2, 2),
+                blurRadius: 3,
+                color: Colors.black26,
+              ),
+              Shadow(
+                offset: Offset(-1, -1),
+                blurRadius: 2,
+                color: Colors.white70,
+              ),
+            ],
+          ),
         ),
         centerTitle: true,
         backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,

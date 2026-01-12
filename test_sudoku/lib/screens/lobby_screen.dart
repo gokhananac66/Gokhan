@@ -171,7 +171,7 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
         ? [const Color(0xFF0D47A1), const Color(0xFF1565C0), const Color(0xFF1976D2)] // Mavi
         : [const Color(0xFF1A1A2E), const Color(0xFF2D1B4E), const Color(0xFF4A148C)]; // Mor
 
-    final Color accentColor = isClassicMode ? Colors.blue : Colors.orange;
+    final Color accentColor = isClassicMode ? Colors.blue : Colors.purple;
 
     return Scaffold(
       body: Container(
@@ -200,7 +200,7 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
                         gradient: LinearGradient(
                           colors: isClassicMode
                               ? [Colors.blue.shade400, Colors.blue.shade700]
-                              : [Colors.orange.shade400, Colors.orange.shade700],
+                              : [Colors.purple.shade400, Colors.purple.shade700],
                         ),
                         boxShadow: [
                           BoxShadow(

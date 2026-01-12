@@ -260,6 +260,7 @@ class AppLocalizations {
 
       // Shop
       'shop': 'Shop',
+      'shopDesc': 'Buy items and earn rewards',
       'balance': 'Balance',
       'coins': 'Coins',
       'buy': 'Buy',
@@ -482,6 +483,7 @@ class AppLocalizations {
 
       // Shop
       'shop': 'Mağaza',
+      'shopDesc': 'Ürün satın al ve ödüller kazan',
       'balance': 'Bakiye',
       'coins': 'Jeton',
       'buy': 'Satın Al',
