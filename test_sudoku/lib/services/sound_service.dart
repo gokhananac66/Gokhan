@@ -32,46 +32,61 @@ class SoundService {
   /// Play button click sound
   Future<void> playButtonClick() async {
     if (!_soundEnabled) return;
-    // Sound files not added yet. To enable:
-    // 1. Create assets/sounds/ folder
-    // 2. Add button_click.mp3
-    // 3. Update pubspec.yaml: assets: - assets/sounds/
-    // 4. Uncomment: await _player.play(AssetSource('sounds/button_click.mp3'));
+    try {
+      await _player.play(AssetSource('sounds/button_click.mp3'));
+    } catch (e) {
+      print('Error playing button click sound: $e');
+    }
   }
 
   /// Play win sound
   Future<void> playWin() async {
     if (!_soundEnabled) return;
-    // Add win.mp3 to assets/sounds/ and uncomment:
-    // await _player.play(AssetSource('sounds/win.mp3'));
+    try {
+      await _player.play(AssetSource('sounds/win.mp3'));
+    } catch (e) {
+      print('Error playing win sound: $e');
+    }
   }
 
   /// Play lose sound
   Future<void> playLose() async {
     if (!_soundEnabled) return;
-    // Add lose.mp3 to assets/sounds/ and uncomment:
-    // await _player.play(AssetSource('sounds/lose.mp3'));
+    try {
+      await _player.play(AssetSource('sounds/lose.mp3'));
+    } catch (e) {
+      print('Error playing lose sound: $e');
+    }
   }
 
   /// Play move/place number sound
   Future<void> playMove() async {
     if (!_soundEnabled) return;
-    // Add move.mp3 to assets/sounds/ and uncomment:
-    // await _player.play(AssetSource('sounds/move.mp3'));
+    try {
+      await _player.play(AssetSource('sounds/move.mp3'));
+    } catch (e) {
+      print('Error playing move sound: $e');
+    }
   }
 
   /// Play error/wrong move sound
   Future<void> playError() async {
     if (!_soundEnabled) return;
-    // Add error.mp3 to assets/sounds/ and uncomment:
-    // await _player.play(AssetSource('sounds/error.mp3'));
+    try {
+      await _player.play(AssetSource('sounds/error.mp3'));
+    } catch (e) {
+      print('Error playing error sound: $e');
+    }
   }
 
   /// Play match found sound
   Future<void> playMatchFound() async {
     if (!_soundEnabled) return;
-    // Add match_found.mp3 to assets/sounds/ and uncomment:
-    // await _player.play(AssetSource('sounds/match_found.mp3'));
+    try {
+      await _player.play(AssetSource('sounds/match_found.mp3'));
+    } catch (e) {
+      print('Error playing match found sound: $e');
+    }
   }
 
   /// Dispose audio player
