@@ -122,9 +122,11 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   Future<void> _loadTheme() async {
+    final themeId = await ThemeService().getSelectedTheme();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    _gameTheme = await ThemeService().getCurrentTheme(isDark);
-    if (mounted) setState(() {});
+    setState(() {
+      _gameTheme = GameTheme.getTheme(themeId, isDark);
+    });
   }
 
   void _setMaxErrors() {
