@@ -5,10 +5,12 @@ import 'game_screen.dart';
 import 'settings_screen.dart';
 import 'lobby_screen.dart';
 import 'friends_screen.dart';
+import 'daily_challenge_screen.dart';
 import '../app_localizations.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/friend_service.dart';
+import '../services/daily_challenge_service.dart';
 import '../widgets/sudoku_clash_logo.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -719,6 +721,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 50),
 
+                // DAILY CHALLENGE
+                _buildDailyChallengeCard(),
+                const SizedBox(height: 16),
+
                 // TEK OYUNCU
                 _buildMenuCard(
                   icon: Icons.person_rounded,
@@ -762,6 +768,157 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDailyChallengeCard() {
+    final now = DateTime.now();
+    final monthAbbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][now.month - 1];
+
+    return FutureBuilder<bool>(
+      future: DailyChallengeService.isTodayCompleted(),
+      builder: (context, snapshot) {
+        final isCompleted = snapshot.data ?? false;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DailyChallengeScreen()),
+              ).then((_) => setState(() {}));
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.orange.shade300, Colors.orange.shade500],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Tarih kutusu
+                  Container(
+                    width: 56,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          monthAbbr,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          '${now.day}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Daily Challenge',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.star, size: 14, color: Colors.yellow.shade300),
+                            const SizedBox(width: 4),
+                            Text(
+                              DailyChallengeService.getLocalizedDifficulty(
+                                DailyChallengeService.getTodayDifficulty()
+                              ),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '💎',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '+${DailyChallengeService.getDailyReward()}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isCompleted)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check, color: Colors.white, size: 20),
+                    )
+                  else
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white.withOpacity(0.8),
+                      size: 18,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

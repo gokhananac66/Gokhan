@@ -8,6 +8,7 @@ import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
+import '../services/daily_challenge_service.dart';
 
 enum GameMode { single, multiplayer, race }
 
@@ -15,12 +16,16 @@ class GameScreen extends StatefulWidget {
   final GameMode gameMode;
   final String difficulty;
   final bool continueGame;
+  final bool isDailyChallenge;
+  final int? dailySeed;
 
   const GameScreen({
     super.key,
     required this.gameMode,
     this.difficulty = 'Orta',
     this.continueGame = false,
+    this.isDailyChallenge = false,
+    this.dailySeed,
   });
 
   @override
@@ -64,6 +69,9 @@ class _GameScreenState extends State<GameScreen> {
 
   List<Map<String, dynamic>> moveHistory = [];
   bool _initialized = false;
+
+  // Daily Challenge için sabit random generator
+  late Random _puzzleRandom;
 
   // Yanlış girilen hücreyi takip et
   int? _lastWrongRow;
@@ -262,6 +270,9 @@ class _GameScreenState extends State<GameScreen> {
         maxErrors = 5;
     }
 
+    // Daily Challenge için sabit seed kullan (herkes aynı bulmacayı çözsün)
+    _puzzleRandom = widget.dailySeed != null ? Random(widget.dailySeed) : Random();
+
     solution = List.generate(9, (_) => List.filled(9, 0));
     _generateSolution(0, 0);
     board = List.generate(9, (i) => List.from(solution[i]));
@@ -269,11 +280,10 @@ class _GameScreenState extends State<GameScreen> {
     notes = List.generate(9, (_) => List.generate(9, (_) => <int>{}));
 
     int cellsToRemove = _getEmptyCells();
-    final random = Random();
     int removed = 0;
     while (removed < cellsToRemove) {
-      int row = random.nextInt(9);
-      int col = random.nextInt(9);
+      int row = _puzzleRandom.nextInt(9);
+      int col = _puzzleRandom.nextInt(9);
       if (board[row][col] != 0) {
         board[row][col] = 0;
         isOriginal[row][col] = false;
@@ -289,7 +299,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _generateSolution(int row, int col) {
     if (row == 9) return true;
     if (col == 9) return _generateSolution(row + 1, 0);
-    List<int> numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]..shuffle();
+    List<int> numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]..shuffle(_puzzleRandom);
     for (int num in numbers) {
       if (_isValidPlacement(solution, row, col, num)) {
         solution[row][col] = num;
@@ -468,6 +478,11 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showWinDialog() {
+    // Daily Challenge tamamlandıysa işaretle
+    if (widget.isDailyChallenge) {
+      DailyChallengeService.markTodayCompleted();
+    }
+
     if (widget.gameMode == GameMode.multiplayer) {
       showMultiplayerResultDialog(
         context,
