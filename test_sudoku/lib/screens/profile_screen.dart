@@ -6,6 +6,7 @@ import '../app_localizations.dart';
 import '../services/friend_service.dart';
 import '../services/leaderboard_service.dart';
 import '../services/currency_service.dart';
+import 'shop_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -280,8 +281,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Yeni nickname mapping kaydet
         await _database.child('nicknames/$normalizedNickname').set(userId);
 
-        // User profile'a da kaydet
-        await _database.child('users/$userId').update({
+        // User profile'a da kaydet (FIXED: users/$userId/profile path kullan)
+        await _database.child('users/$userId/profile').update({
           'nickname': newNickname,
           'nicknameLower': normalizedNickname,
         });
@@ -430,98 +431,188 @@ class _ProfileScreenState extends State<ProfileScreen> {
             builder: (context, snapshot) {
               final purchasedItems = snapshot.data ?? [];
 
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(height: 20),
-                  Text(tr('selectAvatar'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                  const SizedBox(height: 20),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, crossAxisSpacing: 12, mainAxisSpacing: 12),
-                    itemCount: _avatars.length,
-                    itemBuilder: (context, index) {
-                      final avatar = _avatars[index];
-                      final isSelected = _selectedAvatar == index;
-                      final isPremium = avatar['premium'] == true;
-                      final isUnlocked = !isPremium || purchasedItems.contains(avatar['shopId']);
+              // Separate free and premium avatars
+              final freeAvatars = _avatars.where((a) => a['premium'] != true).toList();
+              final premiumAvatars = _avatars.where((a) => a['premium'] == true).toList();
+              final unlockedPremiumAvatars = premiumAvatars.where((a) => purchasedItems.contains(a['shopId'])).toList();
 
-                      return GestureDetector(
-                        onTap: !isUnlocked
-                            ? () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(AppLocalizations.currentLanguage == 'tr'
-                                        ? 'Bu avatarı kullanmak için mağazadan satın almalısınız'
-                                        : 'Purchase this avatar from the shop to use it'),
-                                    backgroundColor: Colors.orange,
-                                  ),
-                                );
-                              }
-                            : () async {
-                                setState(() => _selectedAvatar = index);
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))),
+                    const SizedBox(height: 20),
+                    Text(tr('selectAvatar'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                    const SizedBox(height: 20),
 
-                                // Firebase'e kaydet
-                                await _syncToFirebase();
-
-                                // SharedPreferences'e de kaydet (fallback)
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.setInt('selectedAvatar', index);
-
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(tr('avatarChanged')), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
-                                );
-                              },
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Color(avatar['color']).withOpacity(isUnlocked ? 0.2 : 0.1),
-                                shape: BoxShape.circle,
-                                border: isSelected
-                                    ? Border.all(color: Color(avatar['color']), width: 3)
-                                    : (isPremium && !isUnlocked
-                                        ? Border.all(color: Colors.grey.shade600, width: 2)
-                                        : null),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  avatar['icon'],
-                                  size: 32,
-                                  color: isUnlocked
-                                      ? Color(avatar['color'])
-                                      : Colors.grey.shade600,
+                    // Two column layout: Free (left) and Premium (right)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // LEFT: Free Avatars
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                AppLocalizations.currentLanguage == 'tr' ? 'Ücretsiz' : 'Free',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.green.shade600,
                                 ),
                               ),
-                            ),
-                            // Lock icon for premium locked avatars
-                            if (isPremium && !isUnlocked)
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.orange,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.lock,
-                                    size: 14,
-                                    color: Colors.white,
-                                  ),
+                              const SizedBox(height: 12),
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
                                 ),
+                                itemCount: freeAvatars.length,
+                                itemBuilder: (context, index) {
+                                  final avatar = freeAvatars[index];
+                                  final avatarIndex = _avatars.indexOf(avatar);
+                                  final isSelected = _selectedAvatar == avatarIndex;
+
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      setState(() => _selectedAvatar = avatarIndex);
+                                      await _syncToFirebase();
+                                      final prefs = await SharedPreferences.getInstance();
+                                      await prefs.setInt('selectedAvatar', avatarIndex);
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(tr('avatarChanged')), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
+                                      );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Color(avatar['color']).withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                        border: isSelected ? Border.all(color: Color(avatar['color']), width: 3) : null,
+                                      ),
+                                      child: Center(
+                                        child: Icon(avatar['icon'], size: 28, color: Color(avatar['color'])),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                          ],
+                            ],
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
+
+                        const SizedBox(width: 12),
+
+                        // RIGHT: Premium Avatars
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                AppLocalizations.currentLanguage == 'tr' ? 'Premium' : 'Premium',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.orange.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Show unlocked premium avatars
+                              if (unlockedPremiumAvatars.isNotEmpty)
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 4,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                  ),
+                                  itemCount: unlockedPremiumAvatars.length,
+                                  itemBuilder: (context, index) {
+                                    final avatar = unlockedPremiumAvatars[index];
+                                    final avatarIndex = _avatars.indexOf(avatar);
+                                    final isSelected = _selectedAvatar == avatarIndex;
+
+                                    return GestureDetector(
+                                      onTap: () async {
+                                        setState(() => _selectedAvatar = avatarIndex);
+                                        await _syncToFirebase();
+                                        final prefs = await SharedPreferences.getInstance();
+                                        await prefs.setInt('selectedAvatar', avatarIndex);
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(tr('avatarChanged')), backgroundColor: Colors.green, duration: const Duration(seconds: 1)),
+                                        );
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Color(avatar['color']).withOpacity(0.2),
+                                          shape: BoxShape.circle,
+                                          border: isSelected ? Border.all(color: Color(avatar['color']), width: 3) : null,
+                                        ),
+                                        child: Center(
+                                          child: Icon(avatar['icon'], size: 28, color: Color(avatar['color'])),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+
+                              // "Buy New Avatar" button if no premium avatars
+                              if (unlockedPremiumAvatars.isEmpty)
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    // Navigate to shop screen
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const ShopScreen()),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Colors.orange.shade300, Colors.orange.shade600],
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.orange.withOpacity(0.3),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(Icons.shopping_cart, color: Colors.white, size: 32),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          AppLocalizations.currentLanguage == 'tr' ? 'Yeni Avatar Al' : 'Buy Avatar',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               );
             },
           ),
@@ -759,29 +850,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             )
                           else
-                            // 3D Gradient Placeholder
-                            ShaderMask(
-                              shaderCallback: (bounds) => LinearGradient(
-                                colors: [
-                                  Colors.grey.shade400,
-                                  Colors.grey.shade600,
-                                ],
-                              ).createShader(bounds),
+                            // Better placeholder with background
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.grey.shade200,
+                                    Colors.grey.shade300,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.grey.shade400,
+                                  width: 2,
+                                  style: BorderStyle.solid,
+                                ),
+                              ),
                               child: Text(
                                 tr('addNickname'),
-                                style: const TextStyle(
-                                  fontSize: 20,
+                                style: TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.white,
+                                  color: Colors.grey.shade700,
                                   fontStyle: FontStyle.italic,
-                                  letterSpacing: 0.3,
-                                  shadows: [
-                                    Shadow(
-                                      offset: Offset(1, 1),
-                                      blurRadius: 2,
-                                      color: Colors.black12,
-                                    ),
-                                  ],
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ),
