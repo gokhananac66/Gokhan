@@ -430,7 +430,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         }
       });
 
-      _showSnackBar('Revanche daveti gönderildi! ${player.gameMode == 'race' ? '🏁' : '⚔️'} ${player.difficulty}', Colors.green);
+      _showSnackBar('Rövanş daveti gönderildi! ${player.gameMode == 'race' ? '🏁' : '⚔️'} ${player.difficulty}', Colors.green);
     } else {
       _showSnackBar(result.message, Colors.red);
     }

@@ -1028,10 +1028,12 @@ class _HomeScreenState extends State<HomeScreen> {
               // New Logo
               Image.asset(
                 'assets/images/sudoku_clash_logo.png',
-                height: 140,
+                width: 280,
+                height: 200,
+                fit: BoxFit.contain,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
 
               // DAILY CHALLENGE (if available and user is logged in)
               if (_dailyChallenge != null && _user != null) ...[

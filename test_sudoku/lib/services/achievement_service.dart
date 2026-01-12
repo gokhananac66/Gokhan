@@ -101,8 +101,8 @@ class AchievementService {
     ),
     'rematch_king': Achievement(
       id: 'rematch_king',
-      name: {'tr': 'Revanche Kralı', 'en': 'Rematch King'},
-      description: {'tr': '10 revanche daveti gönder', 'en': 'Send 10 rematch invites'},
+      name: {'tr': 'Rövanş Kralı', 'en': 'Rematch King'},
+      description: {'tr': '10 rövanş daveti gönder', 'en': 'Send 10 rematch invites'},
       category: AchievementCategory.social,
       icon: '🔄',
       points: 25,

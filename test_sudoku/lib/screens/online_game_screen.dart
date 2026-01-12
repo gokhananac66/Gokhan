@@ -751,7 +751,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
               // Show success message
               ScaffoldMessenger.of(gameContext).showSnackBar(
                 SnackBar(
-                  content: Text('Revanche daveti gönderildi! 🔥'),
+                  content: Text('Rövanş daveti gönderildi! 🔥'),
                   backgroundColor: Colors.green,
                   behavior: SnackBarBehavior.floating,
                 ),

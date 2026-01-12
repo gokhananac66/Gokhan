@@ -1236,6 +1236,34 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildNumberButtons() {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: List.generate(9, (i) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: AspectRatio(aspectRatio: 0.75, child: Material(color: Colors.transparent, child: InkWell(onTap: () => _inputNumber(i + 1), borderRadius: BorderRadius.circular(8), child: Container(decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(8)), child: Center(child: Text('${i + 1}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white))))))))))));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(9, (i) {
+          int num = i + 1;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: InkWell(
+                onTap: () => _inputNumber(num),
+                child: Container(
+                  height: 50,
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$num',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1976D2),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
   }
 }
