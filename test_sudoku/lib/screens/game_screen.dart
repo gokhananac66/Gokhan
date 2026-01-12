@@ -1025,29 +1025,29 @@ class _GameScreenState extends State<GameScreen> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? Color(0xFF2D2D2D) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 15,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(4),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
-                  width: 2.5,
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade800,
+                  width: 3,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
                 children: List.generate(9, (row) => Expanded(
@@ -1089,35 +1089,35 @@ class _GameScreenState extends State<GameScreen> {
     final isAutoCheckError = _errorCells.contains(cellIndex);
 
     // Border widths for 3x3 blocks
-    double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
-    double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
+    double rightBorder = (col == 2 || col == 5) ? 2.5 : 0.8;
+    double bottomBorder = (row == 2 || row == 5) ? 2.5 : 0.8;
 
-    // Use theme colors
+    // Use cleaner colors inspired by reference
     Color bgColor;
     if (isSelected) {
-      bgColor = theme.selectedCell;
+      bgColor = const Color(0xFFBBDEFB); // Light blue selection
     } else if (isAutoCheckError) {
       // Auto-check detected error - show orange highlight
       bgColor = Colors.orange.withOpacity(0.5);
     } else if (isWrong) {
-      bgColor = theme.wrongCell;
+      bgColor = const Color(0xFFFFCDD2); // Light red for errors
     } else if (isInCompletedGroup) {
       bgColor = theme.completedCell;
     } else if (isSameNumber) {
-      bgColor = theme.selectedCell.withOpacity(0.4);
+      bgColor = const Color(0xFFE3F2FD); // Very light blue
     } else if (isHighlighted) {
-      bgColor = theme.highlightedCell;
+      bgColor = const Color(0xFFF5F5F5); // Very light grey
     } else {
       bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
     }
 
     Color textColor;
     if (isOriginalCell) {
-      textColor = theme.textColor;
+      textColor = isDark ? Colors.white : Colors.black87;
     } else if (isWrong) {
-      textColor = theme.wrongCell.withOpacity(1.0); // Full opacity for text
+      textColor = const Color(0xFFD32F2F); // Red text for errors
     } else {
-      textColor = theme.textColor.withOpacity(0.8);
+      textColor = isDark ? Colors.white70 : const Color(0xFF1976D2); // Blue text for user entries
     }
 
     // Wrap in AnimatedScale for completion animation

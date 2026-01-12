@@ -63,7 +63,7 @@ class SoundService {
   Future<void> playMove() async {
     if (!_soundEnabled) return;
     try {
-      await _player.play(AssetSource('sounds/move.mp3'));
+      await _player.play(AssetSource('sounds/button_click.mp3'));
     } catch (e) {
       print('Error playing move sound: $e');
     }

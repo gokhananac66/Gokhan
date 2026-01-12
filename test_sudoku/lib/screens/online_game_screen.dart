@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:confetti/confetti.dart';
 import 'dart:async';
 import '../services/leaderboard_service.dart';
 import '../services/progression_service.dart';
@@ -11,6 +12,7 @@ import '../services/recent_players_service.dart';
 import '../services/game_invite_service.dart';
 import '../services/win_streak_service.dart';
 import '../services/achievement_service.dart';
+import '../services/theme_service.dart';
 import '../widgets/game_result_dialog.dart';
 import '../widgets/post_game_stats_dialog.dart';
 import '../widgets/win_streak_badge.dart';
@@ -85,6 +87,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   bool soundEnabled = true;
   bool vibrationEnabled = true;
 
+  // Game theme
+  GameTheme? _gameTheme;
+
+  // Confetti controller
+  late ConfettiController _confettiController;
+
   StreamSubscription? _gameSubscription;
   bool _isLoading = true;
   bool _gameEnded = false;
@@ -102,13 +110,21 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
     _setMaxErrors();
     _loadSettings();
+    _loadTheme();
     _loadGame();
     _startTimer();
 
     // Set status to in_online_game
     UserStatusService().updateStatus(UserStatus.inOnlineGame);
+  }
+
+  Future<void> _loadTheme() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    _gameTheme = await GameThemeService().getCurrentTheme(isDark);
+    if (mounted) setState(() {});
   }
 
   void _setMaxErrors() {
@@ -614,6 +630,8 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         if (iWon) {
           await ProgressionService.incrementWins(widget.difficulty);
           print('📈 Progression updated for difficulty: ${widget.difficulty}');
+          // Play confetti animation
+          _confettiController.play();
         }
 
         // Track win streak
@@ -882,6 +900,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
   @override
   void dispose() {
+    _confettiController.dispose();
     _gameSubscription?.cancel();
     _turnTimer?.cancel();
 
@@ -908,25 +927,40 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            _buildScoreBar(),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: _buildSudokuGrid(),
-              ),
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.grey.shade50,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildTopBar(),
+                _buildScoreBar(),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: _buildSudokuGrid(),
+                  ),
+                ),
+                _buildActionButtons(),
+                _buildNumberButtons(),
+                const SizedBox(height: 8),
+              ],
             ),
-            _buildActionButtons(),
-            _buildNumberButtons(),
-            const SizedBox(height: 8),
-          ],
+          ),
         ),
-      ),
+        // Confetti widget
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirectionality: BlastDirectionality.explosive,
+            emissionFrequency: 0.05,
+            numberOfParticles: 20,
+            gravity: 0.1,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1592,6 +1626,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
   Widget _buildCell(int row, int col) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Use theme colors, fallback to default if not loaded yet
+    final theme = _gameTheme ?? GameTheme.getTheme('default', isDark);
+
     bool isSelected = row == selectedRow && col == selectedCol;
     bool isOriginalCell = isOriginal[row][col];
     bool isWrong = board[row][col] != 0 && board[row][col] != solution[row][col] && !isOriginalCell;
@@ -1607,30 +1645,28 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     bool isInCompletedGroup = completedRows.contains(row) || completedCols.contains(col) || completedBoxes.contains(boxIndex);
 
     // Border widths for 3x3 blocks
-    double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
-    double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
+    double rightBorder = (col == 2 || col == 5) ? 2.5 : 0.8;
+    double bottomBorder = (row == 2 || row == 5) ? 2.5 : 0.8;
 
-    // Soft colors
+    // Use theme colors
     Color bgColor;
     if (isWrong) {
-      bgColor = isDark ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFCDD2);
+      bgColor = theme.wrongCell;
     } else if (isSelected) {
-      bgColor = isMyTurn
-        ? (isDark ? const Color(0xFF2D4A6F) : const Color(0xFFBBDEFB))
-        : (isDark ? const Color(0xFF3D3D3D) : const Color(0xFFE0E0E0));
+      bgColor = isMyTurn ? theme.selectedCell : theme.highlightedCell;
     } else if (isInCompletedGroup) {
-      bgColor = isDark ? Colors.green.shade900.withOpacity(0.2) : const Color(0xFFC8E6C9);
+      bgColor = theme.completedCell;
     } else {
       bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
     }
 
     Color textColor;
     if (isOriginalCell) {
-      textColor = isDark ? Colors.grey[200]! : Colors.grey[900]!;
+      textColor = theme.textColor;
     } else if (isWrong) {
       textColor = const Color(0xFFD32F2F);
     } else {
-      textColor = isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2);
+      textColor = theme.textColor.withOpacity(0.8);
     }
 
     return AnimatedScale(

@@ -166,17 +166,17 @@ class ActivityCalendar extends StatelessWidget {
   Widget _buildDay(int day, bool hasActivity, bool isToday) {
     return Expanded(
       child: Container(
-        height: 36,
+        height: 40,
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: hasActivity
-              ? activeColor
+              ? const Color(0xFF2196F3)
               : isToday
-                  ? activeColor.withOpacity(0.1)
+                  ? const Color(0xFFBBDEFB)
                   : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(20),
           border: isToday
-              ? Border.all(color: activeColor, width: 2)
+              ? Border.all(color: const Color(0xFF2196F3), width: 2)
               : null,
         ),
         child: Center(

@@ -35,6 +35,9 @@ dependencies:
   # Charts
   fl_chart: ^0.68.0
 
+  # Confetti
+  confetti: ^0.7.0
+
   # In-App Purchases
   in_app_purchase: ^3.2.0
 

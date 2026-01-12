@@ -75,13 +75,21 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      print('🔵 Starting Google Sign-In...');
+      final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+
+      // Sign out first to force account selection
+      await googleSignIn.signOut();
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
+        print('⚠️ User cancelled Google Sign-In');
         setState(() => _isLoading = false);
         return; // Kullanıcı iptal etti
       }
 
+      print('✅ Google user: ${googleUser.email}');
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
@@ -90,10 +98,12 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await _auth.signInWithCredential(credential);
+      print('✅ Signed in successfully');
       _goToHome();
     } catch (e) {
+      print('❌ Google Sign-In Error: $e');
       setState(() {
-        _errorMessage = 'Google ile giriş başarısız. Tekrar deneyin.';
+        _errorMessage = 'Google ile giriş başarısız: $e';
       });
     } finally {
       setState(() => _isLoading = false);
