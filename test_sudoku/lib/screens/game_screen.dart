@@ -9,6 +9,8 @@ import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/daily_challenge_service.dart';
+import '../services/sound_service.dart';
+import '../services/theme_service.dart';
 
 enum GameMode { single, multiplayer, race }
 
@@ -77,6 +79,9 @@ class _GameScreenState extends State<GameScreen> {
   int? _lastWrongRow;
   int? _lastWrongCol;
 
+  // Tema desteği
+  GameTheme? _gameTheme;
+
   @override
   void initState() {
     super.initState();
@@ -124,10 +129,16 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Temayı yükle
+    final themeId = await ThemeService().getSelectedTheme();
+    final isDark = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+
     setState(() {
       timerEnabled = prefs.getBool('timerEnabled') ?? true;
       soundEnabled = prefs.getBool('soundEnabled') ?? true;
       vibrationEnabled = prefs.getBool('vibrationEnabled') ?? true;
+      _gameTheme = GameTheme.getTheme(themeId, isDark);
     });
   }
 
@@ -206,20 +217,27 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _playClickSound() async {
     if (!soundEnabled) return;
-    SystemSound.play(SystemSoundType.click);
+    SoundService().playButtonClick();
   }
 
   Future<void> _playCorrectSound() async {
     if (!soundEnabled) return;
-    SystemSound.play(SystemSoundType.click);
+    SoundService().playMove();
   }
 
   Future<void> _playWinSound() async {
     if (!soundEnabled) return;
-    for (int i = 0; i < 3; i++) {
-      SystemSound.play(SystemSoundType.click);
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
+    SoundService().playWin();
+  }
+
+  Future<void> _playErrorSound() async {
+    if (!soundEnabled) return;
+    SoundService().playError();
+  }
+
+  Future<void> _playLoseSound() async {
+    if (!soundEnabled) return;
+    SoundService().playLose();
   }
 
   Future<void> _vibrate() async {
@@ -603,39 +621,58 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildSudokuGrid() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = _gameTheme ?? GameTheme.getTheme('default', isDark);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Color(0xFF2D2D2D) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
-                  width: 2.5,
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width - 32,
+          maxHeight: MediaQuery.of(context).size.width - 32,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            child: Column(
+              children: List.generate(3, (blockRow) => Expanded(
+                child: Row(
+                  children: List.generate(3, (blockCol) => Expanded(
+                    child: Container(
+                      margin: EdgeInsets.all(1.5),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: theme.thickGridLineColor,
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Column(
+                        children: List.generate(3, (cellRow) => Expanded(
+                          child: Row(
+                            children: List.generate(3, (cellCol) {
+                              final row = blockRow * 3 + cellRow;
+                              final col = blockCol * 3 + cellCol;
+                              return Expanded(child: _buildCell(row, col));
+                            }),
+                          ),
+                        )),
+                      ),
+                    ),
+                  )),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: List.generate(9, (row) => Expanded(
-                  child: Row(children: List.generate(9, (col) => Expanded(child: _buildCell(row, col)))),
-                )),
-              ),
+              )),
             ),
           ),
         ),
@@ -645,6 +682,8 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildCell(int row, int col) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = _gameTheme ?? GameTheme.getTheme('default', isDark);
+
     bool isSelected = row == selectedRow && col == selectedCol;
     bool isOriginalCell = isOriginal[row][col];
     bool isWrong = board[row][col] != 0 && board[row][col] != solution[row][col] && !isOriginalCell;
@@ -659,22 +698,20 @@ class _GameScreenState extends State<GameScreen> {
     bool isHighlighted = (isSameRow || isSameCol || isSameBox) && !isSelected;
     bool isSameNumber = selectedRow != null && selectedCol != null && board[selectedRow!][selectedCol!] != 0 && board[row][col] == board[selectedRow!][selectedCol!] && !isSelected;
 
-    // Border widths for 3x3 blocks
-    double rightBorder = (col == 2 || col == 5) ? 2.0 : 0.8;
-    double bottomBorder = (row == 2 || row == 5) ? 2.0 : 0.8;
-
+    // Arka plan rengi - temadan al
     Color bgColor;
-    if (isSelected) bgColor = isDark ? const Color(0xFF1E3A5F) : Colors.blue.shade100;
-    else if (isWrong) bgColor = isDark ? Colors.red.shade900.withOpacity(0.4) : Colors.red.shade100;
-    else if (isInCompletedGroup) bgColor = isDark ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade50;
-    else if (isSameNumber) bgColor = isDark ? Colors.blue.shade900.withOpacity(0.3) : const Color(0xFFE3F2FD);
-    else if (isHighlighted) bgColor = isDark ? const Color(0xFF1A2733) : const Color(0xFFE8F4FD);
-    else bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+    if (isSelected) bgColor = theme.selectedCell;
+    else if (isWrong) bgColor = theme.wrongCell;
+    else if (isInCompletedGroup) bgColor = theme.completedCell;
+    else if (isSameNumber) bgColor = theme.highlightedCell;
+    else if (isHighlighted) bgColor = theme.highlightedCell.withOpacity(0.5);
+    else bgColor = isDark ? const Color(0xFF262626) : Colors.white;
 
+    // Yazı rengi - temadan al, HATALAR BELİRGİN KIRMIZI
     Color textColor;
-    if (isOriginalCell) textColor = isDark ? Colors.white : Colors.black87;
-    else if (isWrong) textColor = Colors.red.shade700;
-    else textColor = isDark ? Colors.blue.shade300 : Colors.blue.shade600;
+    if (isWrong) textColor = const Color(0xFFE53935); // Belirgin kırmızı
+    else if (isOriginalCell) textColor = theme.textColor;
+    else textColor = isDark ? const Color(0xFF64B5F6) : const Color(0xFF1976D2);
 
     return GestureDetector(
       onTap: () => _selectCell(row, col),
@@ -682,27 +719,9 @@ class _GameScreenState extends State<GameScreen> {
         margin: const EdgeInsets.all(0.5),
         decoration: BoxDecoration(
           color: bgColor,
-          border: Border(
-            top: BorderSide(
-              color: row == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-              width: 0,
-            ),
-            left: BorderSide(
-              color: col == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-              width: 0,
-            ),
-            right: BorderSide(
-              color: (col == 2 || col == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
-              width: rightBorder,
-            ),
-            bottom: BorderSide(
-              color: (row == 2 || row == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
-              width: bottomBorder,
-            ),
+          border: Border.all(
+            color: theme.gridLineColor,
+            width: 0.5,
           ),
         ),
         child: Center(
@@ -710,7 +729,7 @@ class _GameScreenState extends State<GameScreen> {
               ? Text(
                   '$value',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 22,
                     fontWeight: isOriginalCell ? FontWeight.w700 : FontWeight.w500,
                     color: textColor,
                   ),
@@ -718,7 +737,7 @@ class _GameScreenState extends State<GameScreen> {
               : cellNotes.isNotEmpty
                   ? GridView.count(
                       crossAxisCount: 3,
-                      padding: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(1),
                       physics: const NeverScrollableScrollPhysics(),
                       children: List.generate(
                         9,
@@ -726,8 +745,8 @@ class _GameScreenState extends State<GameScreen> {
                           child: Text(
                             cellNotes.contains(i + 1) ? '${i + 1}' : '',
                             style: TextStyle(
-                              fontSize: 10,
-                              color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                              fontSize: 8,
+                              color: theme.hintTextColor,
                             ),
                           ),
                         ),

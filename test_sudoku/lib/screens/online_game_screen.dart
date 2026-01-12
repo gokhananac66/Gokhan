@@ -1591,38 +1591,56 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   Widget _buildSudokuGrid() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Color(0xFF2D2D2D) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade400,
-                  width: 2.5,
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width - 32,
+          maxHeight: MediaQuery.of(context).size.width - 32,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            child: Column(
+              children: List.generate(3, (blockRow) => Expanded(
+                child: Row(
+                  children: List.generate(3, (blockCol) => Expanded(
+                    child: Container(
+                      margin: EdgeInsets.all(1.5),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isDark ? Colors.grey.shade600 : Colors.grey.shade800,
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Column(
+                        children: List.generate(3, (cellRow) => Expanded(
+                          child: Row(
+                            children: List.generate(3, (cellCol) {
+                              final row = blockRow * 3 + cellRow;
+                              final col = blockCol * 3 + cellCol;
+                              return Expanded(child: _buildCell(row, col));
+                            }),
+                          ),
+                        )),
+                      ),
+                    ),
+                  )),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: List.generate(9, (row) => Expanded(
-                  child: Row(children: List.generate(9, (col) => Expanded(child: _buildCell(row, col)))),
-                )),
-              ),
+              )),
             ),
           ),
         ),
@@ -1650,27 +1668,24 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     int boxIndex = (row ~/ 3) * 3 + (col ~/ 3);
     bool isInCompletedGroup = completedRows.contains(row) || completedCols.contains(col) || completedBoxes.contains(boxIndex);
 
-    // Border widths for 3x3 blocks
-    double rightBorder = (col == 2 || col == 5) ? 2.5 : 0.8;
-    double bottomBorder = (row == 2 || row == 5) ? 2.5 : 0.8;
-
-    // Use theme colors
+    // Arka plan rengi - tema kullan
     Color bgColor;
     if (isWrong) {
-      bgColor = theme.wrongCell;
+      bgColor = isDark ? Colors.red.withOpacity(0.3) : const Color(0xFFFFCDD2);
     } else if (isSelected) {
       bgColor = isMyTurn ? theme.selectedCell : theme.highlightedCell;
     } else if (isInCompletedGroup) {
       bgColor = theme.completedCell;
     } else {
-      bgColor = isDark ? const Color(0xFF2D2D2D) : Colors.white;
+      bgColor = isDark ? const Color(0xFF262626) : Colors.white;
     }
 
+    // Yazı rengi - HATALAR BELİRGİN KIRMIZI
     Color textColor;
-    if (isOriginalCell) {
+    if (isWrong) {
+      textColor = const Color(0xFFE53935); // Belirgin kırmızı
+    } else if (isOriginalCell) {
       textColor = theme.textColor;
-    } else if (isWrong) {
-      textColor = const Color(0xFFD32F2F);
     } else {
       textColor = theme.textColor.withOpacity(0.8);
     }
@@ -1682,62 +1697,45 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       child: GestureDetector(
         onTap: () => _selectCell(row, col),
         child: Container(
-        margin: const EdgeInsets.all(0.5),
-        decoration: BoxDecoration(
-          color: bgColor,
-          border: Border(
-            top: BorderSide(
-              color: row == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-              width: 0,
-            ),
-            left: BorderSide(
-              color: col == 0 ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-              width: 0,
-            ),
-            right: BorderSide(
-              color: (col == 2 || col == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
-              width: rightBorder,
-            ),
-            bottom: BorderSide(
-              color: (row == 2 || row == 5)
-                ? (isDark ? Colors.grey.shade600 : Colors.grey.shade500)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
-              width: bottomBorder,
+          margin: const EdgeInsets.all(0.5),
+          decoration: BoxDecoration(
+            color: bgColor,
+            border: Border.all(
+              color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+              width: 0.5,
             ),
           ),
-        ),
-        child: Center(
-          child: value != 0
-              ? Text(
-                  '$value',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: isOriginalCell ? FontWeight.w700 : FontWeight.w500,
-                    color: textColor,
-                  ),
-                )
-              : cellNotes.isNotEmpty
-                  ? GridView.count(
-                      crossAxisCount: 3,
-                      padding: const EdgeInsets.all(2),
-                      children: List.generate(
-                        9,
-                        (i) => Center(
-                          child: Text(
-                            cellNotes.contains(i + 1) ? '${i + 1}' : '',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+          child: Center(
+            child: value != 0
+                ? Text(
+                    '$value',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: isOriginalCell ? FontWeight.w700 : FontWeight.w500,
+                      color: textColor,
+                    ),
+                  )
+                : cellNotes.isNotEmpty
+                    ? GridView.count(
+                        crossAxisCount: 3,
+                        padding: const EdgeInsets.all(1),
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(
+                          9,
+                          (i) => Center(
+                            child: Text(
+                              cellNotes.contains(i + 1) ? '${i + 1}' : '',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    )
-                  : null,
+                      )
+                    : null,
+          ),
         ),
-      ),
       ),
     );
   }

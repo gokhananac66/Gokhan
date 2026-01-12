@@ -745,42 +745,15 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 40),
-
-                // Logo
-                const SudokuClashLogo(
-                  size: 100,
-                  animate: false,
-                ),
                 const SizedBox(height: 30),
 
-                // Başlık
-                Text(
-                  tr('sudoku'),
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : Colors.black87,
-                    letterSpacing: 2,
-                    height: 1,
-                  ),
+                // Yeni Logo
+                Image.asset(
+                  'assets/images/sudoku_clash_logo.png',
+                  width: 280,
+                  fit: BoxFit.contain,
                 ),
-                Text(
-                  tr('clash'),
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : Colors.black87,
-                    letterSpacing: 2,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  tr('tagline'),
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, letterSpacing: 1),
-                ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 40),
 
                 // DAILY CHALLENGE
                 _buildDailyChallengeCard(),
