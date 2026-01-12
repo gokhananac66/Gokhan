@@ -418,7 +418,7 @@ class _GameScreenState extends State<GameScreen> {
             score += 10 * combo;
           }
         } else {
-          _vibrateHeavy(); errors++; combo = 0;
+          _vibrateHeavy(); _playErrorSound(); errors++; combo = 0;
           // Yanlış hücreyi kaydet
           _lastWrongRow = row;
           _lastWrongCol = col;
@@ -437,7 +437,7 @@ class _GameScreenState extends State<GameScreen> {
       if (isCorrect) {
         _checkCompletions(row, col);
         if (_checkWin()) { _playWinSound(); _clearSavedGame(); _saveStats(won: true); _showWinDialog(); }
-      } else if (errors >= maxErrors) { _clearSavedGame(); _saveStats(won: false); _showGameOverDialog(); }
+      } else if (errors >= maxErrors) { _playLoseSound(); _clearSavedGame(); _saveStats(won: false); _showGameOverDialog(); }
     }
   }
 
@@ -562,10 +562,12 @@ class _GameScreenState extends State<GameScreen> {
                 Text('${combo}x ${tr('combo')}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16)),
                 Text('  (${tr('nextPoints')}: +${10 * (combo + 1)} ${tr('points')})', style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
               ])),
-        Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), child: _buildSudokuGrid())),
+        Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), child: _buildSudokuGrid())),
+        const SizedBox(height: 8),
         _buildActionButtons(),
+        const SizedBox(height: 16),
         _buildNumberButtons(),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
       ])),
     );
   }
@@ -760,7 +762,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildActionButtons() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
       _buildActionButton(Icons.undo_rounded, tr('undo'), _undo, isDark),
       _buildActionButton(Icons.backspace_outlined, tr('delete'), _clearCell, isDark),
       _buildActionButton(notesMode ? Icons.edit : Icons.edit_outlined, AppLocalizations.currentLanguage == 'en' ? 'Notes' : 'Notlar', () { _playClickSound(); _vibrate(); setState(() => notesMode = !notesMode); }, isDark, isActive: notesMode, badge: notesMode ? 'ON' : 'OFF'),
@@ -782,7 +784,7 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildNumberButtons() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(9, (i) {

@@ -46,6 +46,24 @@ class _CoinPurchaseScreenState extends State<CoinPurchaseScreen> {
   Future<void> _purchasePackage(CoinPackage package) async {
     if (_purchasing) return;
 
+    // Check if IAP is available
+    if (!_iapService.isAvailable) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.currentLanguage == 'tr'
+                  ? 'Satın alma servisi bu cihazda kullanılamıyor. Lütfen Google Play Store yüklü bir cihazda deneyin.'
+                  : 'Purchase service is not available on this device. Please try on a device with Google Play Store.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
       _purchasing = true;
     });
@@ -131,9 +149,7 @@ class _CoinPurchaseScreenState extends State<CoinPurchaseScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : !_iapService.isAvailable
-              ? _buildNotAvailable(locale, isDark)
-              : _buildPackageList(locale, isDark),
+          : _buildPackageList(locale, isDark),
     );
   }
 

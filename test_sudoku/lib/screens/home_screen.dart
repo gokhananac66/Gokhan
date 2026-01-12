@@ -737,7 +737,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -745,15 +745,15 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 30),
+                const SizedBox(height: 16),
 
-                // Yeni Logo
+                // Yeni Logo - Daha büyük
                 Image.asset(
                   'assets/images/sudoku_clash_logo.png',
-                  width: 280,
+                  width: 340,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
 
                 // DAILY CHALLENGE
                 _buildDailyChallengeCard(),
