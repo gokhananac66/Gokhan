@@ -695,14 +695,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            _nickname.isEmpty ? tr('addNickname') : '@$_nickname',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: _nickname.isEmpty ? Colors.grey : (isDark ? Colors.white : Colors.black87),
+                          // 3D Gradient Nickname
+                          if (_nickname.isNotEmpty)
+                            ShaderMask(
+                              shaderCallback: (bounds) => LinearGradient(
+                                colors: [
+                                  Color(0xFF9C27B0),
+                                  Color(0xFFE91E63),
+                                  Color(0xFFFF6B35),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ).createShader(bounds),
+                              child: Text(
+                                '@$_nickname',
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(2, 2),
+                                      blurRadius: 4,
+                                      color: Colors.black.withOpacity(0.3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              tr('addNickname'),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade500,
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
-                          ),
                           const SizedBox(width: 8),
                           Icon(Icons.edit, size: 18, color: Colors.grey.shade600),
                         ],

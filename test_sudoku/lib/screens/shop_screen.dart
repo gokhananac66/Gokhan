@@ -166,10 +166,10 @@ class _ShopScreenState extends State<ShopScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Coin balance header
+                // Coin balance header (compact)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
@@ -177,44 +177,42 @@ class _ShopScreenState extends State<ShopScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.orange.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        '💰',
-                        style: TextStyle(fontSize: 48),
+                      // Balance info (compact)
+                      Row(
+                        children: [
+                          const Text('💰', style: TextStyle(fontSize: 32)),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                locale == 'tr' ? 'Bakiye' : 'Balance',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                              Text(
+                                '$_coins',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        locale == 'tr' ? 'Bakiye' : 'Balance',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$_coins',
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        locale == 'tr' ? 'Jeton' : 'Coins',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Buy Coins Button
+                      // Buy Coins Button (compact)
                       ElevatedButton.icon(
                         onPressed: () async {
                           await Navigator.push(
@@ -223,25 +221,24 @@ class _ShopScreenState extends State<ShopScreen> {
                               builder: (context) => const CoinPurchaseScreen(),
                             ),
                           );
-                          // Reload coins after returning
                           _loadData();
                         },
-                        icon: const Icon(Icons.add_shopping_cart, size: 20),
+                        icon: const Icon(Icons.add_shopping_cart, size: 16),
                         label: Text(
-                          locale == 'tr' ? 'Jeton Satın Al' : 'Buy Coins',
+                          locale == 'tr' ? 'Satın Al' : 'Buy',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFFFFA500),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          elevation: 4,
+                          elevation: 3,
                         ),
                       ),
                     ],
@@ -279,15 +276,44 @@ class _ShopScreenState extends State<ShopScreen> {
                                   style: const TextStyle(fontSize: 20),
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  category.getName(locale),
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : (isDark ? Colors.white70 : Colors.black87),
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                // 3D Gradient Text for selected category
+                                if (isSelected)
+                                  ShaderMask(
+                                    shaderCallback: (bounds) => const LinearGradient(
+                                      colors: [
+                                        Colors.white,
+                                        Color(0xFFF3E5F5),
+                                        Colors.white,
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ).createShader(bounds),
+                                    child: Text(
+                                      category.getName(locale),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 15,
+                                        letterSpacing: 0.3,
+                                        shadows: [
+                                          Shadow(
+                                            offset: Offset(1, 1),
+                                            blurRadius: 2,
+                                            color: Colors.black26,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    category.getName(locale),
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white70 : Colors.black87,
+                                      fontWeight: FontWeight.normal,
+                                      fontSize: 14,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),

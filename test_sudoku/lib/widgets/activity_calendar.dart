@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 /// Activity calendar widget
 /// Shows a month view with activity indicators
@@ -14,6 +13,16 @@ class ActivityCalendar extends StatelessWidget {
     required this.title,
     this.activeColor = const Color(0xFF6A1B9A),
   });
+
+  String _formatMonthYear(DateTime date, String locale) {
+    const monthsTr = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+                      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+
+    final months = locale == 'tr' ? monthsTr : monthsEn;
+    return '${months[date.month - 1]} ${date.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +60,7 @@ class ActivityCalendar extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  DateFormat.yMMMM(locale).format(currentMonth),
+                  _formatMonthYear(currentMonth, locale),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

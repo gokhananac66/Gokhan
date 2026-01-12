@@ -188,7 +188,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
     final rank = _userRankInfo!;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
       decoration: BoxDecoration(gradient: LinearGradient(colors: [Color(rank.leagueColor).withOpacity(0.3), Color(rank.leagueColor).withOpacity(0.1)])),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         _buildInfoChip(rank.leagueEmoji, rank.leagueName, Color(rank.leagueColor)),
@@ -201,25 +201,25 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildInfoChip(String emoji, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withOpacity(0.3))),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.3))),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(emoji, style: const TextStyle(fontSize: 12)),
-        const SizedBox(width: 3),
-        Text(text, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: color)),
+        Text(emoji, style: const TextStyle(fontSize: 10)),
+        const SizedBox(width: 2),
+        Text(text, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: color)),
       ]),
     );
   }
 
   Widget _buildTimeFilters(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       child: Row(children: [
         _buildTimeButton('today', AppLocalizations.get('lbToday'), Icons.today, isDark),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         _buildTimeButton('week', AppLocalizations.get('lbThisWeek'), Icons.date_range, isDark),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         _buildTimeButton('all', AppLocalizations.get('lbAllTime'), Icons.emoji_events, isDark),
       ]),
     );
@@ -232,22 +232,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         onTap: () { setState(() => _selectedTimeFilter = key); _loadLeaderboard(); },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 7),
           decoration: BoxDecoration(
             gradient: isSelected
               ? LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600])
               : null,
             color: isSelected ? null : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: isSelected ? Border.all(color: Colors.blue.withOpacity(0.5), width: 1.5) : null,
             boxShadow: isSelected ? [
-              BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
+              BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 6, spreadRadius: 0.5),
             ] : [],
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 16, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
-            const SizedBox(width: 4),
-            Flexible(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)), overflow: TextOverflow.ellipsis)),
+            Icon(icon, size: 14, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+            const SizedBox(width: 3),
+            Flexible(child: Text(label, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)), overflow: TextOverflow.ellipsis)),
           ]),
         ),
       ),
@@ -256,12 +256,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildLeagueFilters(bool isDark) {
     return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      height: 36,
+      padding: const EdgeInsets.symmetric(vertical: 4),
       color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         itemCount: _leagues.length,
         itemBuilder: (context, index) {
           final league = _leagues[index];
@@ -269,8 +269,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           return GestureDetector(
             onTap: () { setState(() => _selectedLeagueFilter = league['key']); _loadLeaderboard(); },
             child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              margin: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(color: isSelected ? (league['color'] as Color).withOpacity(0.2) : (isDark ? Colors.grey.shade800 : Colors.grey.shade100), borderRadius: BorderRadius.circular(16), border: Border.all(color: isSelected ? league['color'] as Color : Colors.transparent, width: 1.5)),
               child: Row(children: [
                 Text(league['emoji'], style: const TextStyle(fontSize: 14)),
@@ -383,7 +383,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildUserRankBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -398,9 +398,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         boxShadow: [
           BoxShadow(
             color: Colors.blue.withOpacity(0.1),
-            blurRadius: 15,
-            spreadRadius: 2,
-            offset: const Offset(0, -3),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -408,7 +408,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.blue.shade400, Colors.blue.shade600],
@@ -417,41 +417,41 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
               boxShadow: [
                 BoxShadow(
                   color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 6,
+                  blurRadius: 4,
                   spreadRadius: 0.5,
                 ),
               ],
             ),
-            child: const Icon(Icons.person, color: Colors.white, size: 16),
+            child: const Icon(Icons.person, color: Colors.white, size: 14),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Text(
             '${AppLocalizations.get('yourRank')}: ',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
               fontWeight: FontWeight.w500,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.blue.shade400, Colors.blue.shade600],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
                   color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 8,
-                  spreadRadius: 1,
+                  blurRadius: 6,
+                  spreadRadius: 0.5,
                 ),
               ],
             ),
             child: Text(
               '#$_userRank',
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
