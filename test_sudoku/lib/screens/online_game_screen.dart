@@ -1186,7 +1186,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                   score: player1Score,
                   errors: player1Errors,
                   progress: player1Progress,
-                  isMyTurn: widget.gameMode == 'race' ? amIPlayer1 : currentTurn == 1,
+                  // Race mode: Her iki oyuncu da vurgulu (aynı anda oynayabilirler)
+                  // Classic mode: Sadece sıradaki oyuncu vurgulu
+                  isMyTurn: widget.gameMode == 'race' ? true : currentTurn == 1,
                   isMe: amIPlayer1,
                   color: Colors.blue,
                   isDark: isDark,
@@ -1266,7 +1268,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                   score: player2Score,
                   errors: player2Errors,
                   progress: player2Progress,
-                  isMyTurn: widget.gameMode == 'race' ? !amIPlayer1 : currentTurn == 2,
+                  // Race mode: Her iki oyuncu da vurgulu (aynı anda oynayabilirler)
+                  // Classic mode: Sadece sıradaki oyuncu vurgulu
+                  isMyTurn: widget.gameMode == 'race' ? true : currentTurn == 2,
                   isMe: !amIPlayer1,
                   color: Colors.orange,
                   isDark: isDark,

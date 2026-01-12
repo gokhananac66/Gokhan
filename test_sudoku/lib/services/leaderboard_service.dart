@@ -18,11 +18,35 @@ class LeaderboardService {
     final user = _auth.currentUser;
     if (user == null) return null;
 
-    final prefs = await SharedPreferences.getInstance();
-    final nickname = prefs.getString('nickname') ?? user.displayName ?? 'Anonim';
-    final avatar = prefs.getInt('avatarIndex') ?? 0;
-    final country = prefs.getString('country') ?? '🇹🇷 Türkiye';
     final String odaId = user.uid;
+
+    // Firebase'den kullanıcı profilini al (nickname, avatar, country)
+    String nickname = 'Anonim';
+    int avatar = 0;
+    String country = '🇹🇷 Türkiye';
+
+    try {
+      final profileSnapshot = await _database.child('users/$odaId/profile').get();
+      if (profileSnapshot.exists) {
+        final profileData = Map<String, dynamic>.from(profileSnapshot.value as Map);
+        nickname = profileData['nickname'] ?? nickname;
+        avatar = profileData['selectedAvatar'] ?? avatar;
+        country = profileData['country'] ?? country;
+      } else {
+        // Fallback: SharedPreferences (eski kullanıcılar için)
+        final prefs = await SharedPreferences.getInstance();
+        nickname = prefs.getString('nickname') ?? user.displayName ?? 'Anonim';
+        avatar = prefs.getInt('avatarIndex') ?? 0;
+        country = prefs.getString('country') ?? '🇹🇷 Türkiye';
+      }
+    } catch (e) {
+      print('⚠️ Failed to fetch profile from Firebase: $e');
+      // Fallback to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      nickname = prefs.getString('nickname') ?? user.displayName ?? 'Anonim';
+      avatar = prefs.getInt('avatarIndex') ?? 0;
+      country = prefs.getString('country') ?? '🇹🇷 Türkiye';
+    }
 
     // Mevcut rank'ı al
     final rankSnapshot = await _database.child('users/$odaId/rank').get();

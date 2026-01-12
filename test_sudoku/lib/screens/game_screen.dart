@@ -571,17 +571,17 @@ class _GameScreenState extends State<GameScreen> {
 
     int row = selectedRow!, col = selectedCol!;
 
-    // Önceki yanlış hücreyi temizle
-    if (_lastWrongRow != null && _lastWrongCol != null) {
-      if (board[_lastWrongRow!][_lastWrongCol!] != solution[_lastWrongRow!][_lastWrongCol!]) {
-        board[_lastWrongRow!][_lastWrongCol!] = 0;
-      }
-      _lastWrongRow = null;
-      _lastWrongCol = null;
-    }
-
     if (notesMode) {
       setState(() {
+        // Önceki yanlış hücreyi temizle
+        if (_lastWrongRow != null && _lastWrongCol != null) {
+          if (board[_lastWrongRow!][_lastWrongCol!] != solution[_lastWrongRow!][_lastWrongCol!]) {
+            board[_lastWrongRow!][_lastWrongCol!] = 0;
+          }
+          _lastWrongRow = null;
+          _lastWrongCol = null;
+        }
+
         if (notes[row][col].contains(number)) notes[row][col].remove(number);
         else notes[row][col].add(number);
         board[row][col] = 0;
@@ -591,6 +591,15 @@ class _GameScreenState extends State<GameScreen> {
       bool isCorrect = number == solution[row][col];
 
       setState(() {
+        // Önceki yanlış hücreyi temizle
+        if (_lastWrongRow != null && _lastWrongCol != null) {
+          if (board[_lastWrongRow!][_lastWrongCol!] != solution[_lastWrongRow!][_lastWrongCol!]) {
+            board[_lastWrongRow!][_lastWrongCol!] = 0;
+          }
+          _lastWrongRow = null;
+          _lastWrongCol = null;
+        }
+
         board[row][col] = number;
         notes[row][col].clear();
 
