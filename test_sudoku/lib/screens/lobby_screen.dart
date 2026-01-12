@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../services/matchmaking_service.dart';
+import '../services/audio_service.dart';
 import '../app_localizations.dart';
 import 'online_game_screen.dart';
 
@@ -76,6 +77,9 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
           _isSearching = false;
           _statusText = tr('matchFound');
         });
+
+        // Eşleşme bulundu sesi çal
+        AudioService().playMatchFound();
 
         // Fetch game data to get difficulty and gameMode
         final gameSnapshot = await FirebaseDatabase.instance.ref('games/${result.gameId}').get();
@@ -165,8 +169,13 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    // Game mode'a göre renk belirle (Klasik=mavi, Race=mor)
+    final bool isRaceMode = widget.gameMode == 'race';
+    final Color primaryColor = isRaceMode ? Colors.purple : Colors.blue;
+    final Color backgroundColor = isRaceMode ? const Color(0xFF1A1A2E) : const Color(0xFF0D1B2A);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -183,18 +192,20 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
-                        colors: [Colors.orange.shade400, Colors.orange.shade700],
+                        colors: isRaceMode
+                            ? [Colors.purple.shade400, Colors.purple.shade700]
+                            : [Colors.blue.shade400, Colors.blue.shade700],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.orange.withOpacity(0.4),
+                          color: primaryColor.withOpacity(0.4),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.search,
+                    child: Icon(
+                      isRaceMode ? Icons.speed : Icons.search,
                       size: 60,
                       color: Colors.white,
                     ),
@@ -228,6 +239,39 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
                   ),
 
                 const SizedBox(height: 12),
+
+                // Game mode badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isRaceMode
+                          ? [Colors.purple.shade400, Colors.purple.shade600]
+                          : [Colors.blue.shade400, Colors.blue.shade600],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isRaceMode ? Icons.speed : Icons.sports_esports,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        isRaceMode ? '🏁 Race Modu' : '⚔️ Klasik Mod',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
                 // Difficulty badge
                 Container(

@@ -7,6 +7,7 @@ import 'dart:async';
 import '../services/leaderboard_service.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
+import '../services/audio_service.dart';
 import '../widgets/game_result_dialog.dart';
 
 class OnlineGameScreen extends StatefulWidget {
@@ -223,7 +224,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             _vibrateHeavy();
             // Ses efekti çal
             if (soundEnabled) {
-              SystemSound.play(SystemSoundType.alert);
+              AudioService().playError();
             }
             Future.delayed(const Duration(seconds: 3), () {
               if (mounted) setState(() => _showOpponentWarning = false);
@@ -267,7 +268,19 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   void _playSound() {
-    if (soundEnabled) SystemSound.play(SystemSoundType.click);
+    if (soundEnabled) AudioService().playButtonClick();
+  }
+
+  void _playWinSound() {
+    if (soundEnabled) AudioService().playWin();
+  }
+
+  void _playLoseSound() {
+    if (soundEnabled) AudioService().playLose();
+  }
+
+  void _playMatchFoundSound() {
+    if (soundEnabled) AudioService().playMatchFound();
   }
 
   void _vibrate() {
@@ -594,6 +607,15 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     print('Is Draw: $isDraw');
     print('I Won: $iWon');
     print('======================');
+
+    // Sonuca göre ses çal
+    if (isDraw) {
+      _playMatchFoundSound();
+    } else if (iWon) {
+      _playWinSound();
+    } else {
+      _playLoseSound();
+    }
 
     // LEADERBOARD'A KAYDET (Kazanan ve Kaybeden için)
     if (!isDraw) {

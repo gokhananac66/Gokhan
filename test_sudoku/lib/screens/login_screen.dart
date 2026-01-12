@@ -75,7 +75,17 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      // Önce mevcut Google oturumunu kapat
+      final googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+
+      // Önce disconnect dene (sessizce)
+      try {
+        await googleSignIn.disconnect();
+      } catch (_) {}
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
         setState(() => _isLoading = false);
@@ -92,8 +102,19 @@ class _LoginScreenState extends State<LoginScreen> {
       await _auth.signInWithCredential(credential);
       _goToHome();
     } catch (e) {
+      print('🔴 Google Sign-In Error: $e');
+      String errorMsg = 'Google ile giriş başarısız.';
+
+      if (e.toString().contains('sign_in_failed')) {
+        errorMsg = 'Google giriş yapılandırması eksik. SHA-1 parmak izi Firebase\'e eklenmiş olmalı.';
+      } else if (e.toString().contains('network_error')) {
+        errorMsg = 'İnternet bağlantınızı kontrol edin.';
+      } else if (e.toString().contains('sign_in_canceled')) {
+        errorMsg = 'Giriş iptal edildi.';
+      }
+
       setState(() {
-        _errorMessage = 'Google ile giriş başarısız. Tekrar deneyin.';
+        _errorMessage = errorMsg;
       });
     } finally {
       setState(() => _isLoading = false);

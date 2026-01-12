@@ -8,6 +8,7 @@ import '../app_localizations.dart';
 import '../widgets/game_result_dialog.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
+import '../services/audio_service.dart';
 
 enum GameMode { single, multiplayer, race }
 
@@ -198,20 +199,22 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _playClickSound() async {
     if (!soundEnabled) return;
-    SystemSound.play(SystemSoundType.click);
+    AudioService().playButtonClick();
   }
 
   Future<void> _playCorrectSound() async {
     if (!soundEnabled) return;
-    SystemSound.play(SystemSoundType.click);
+    AudioService().playCorrect();
   }
 
   Future<void> _playWinSound() async {
     if (!soundEnabled) return;
-    for (int i = 0; i < 3; i++) {
-      SystemSound.play(SystemSoundType.click);
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
+    AudioService().playWin();
+  }
+
+  Future<void> _playErrorSound() async {
+    if (!soundEnabled) return;
+    AudioService().playError();
   }
 
   Future<void> _vibrate() async {

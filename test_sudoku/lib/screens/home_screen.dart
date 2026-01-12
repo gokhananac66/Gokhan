@@ -10,6 +10,7 @@ import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
 import '../services/friend_service.dart';
 import '../widgets/sudoku_clash_logo.dart';
+import '../widgets/text_3d.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,15 +103,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade100,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.person, color: Colors.blue.shade700, size: 32),
+                    child: Icon(Icons.person, color: Colors.blue.shade700, size: 28),
                   ),
                   const SizedBox(height: 12),
-                  Text(tr('singlePlayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  Text3D(
+                    text: tr('singlePlayer'),
+                    fontSize: 22,
+                    color: Colors.blue.shade700,
+                    shadowColor: Colors.blue.shade900,
+                  ),
                   const SizedBox(height: 4),
                   Text(tr('selectDifficulty'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
                   const SizedBox(height: 20),
@@ -211,15 +217,20 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.orange.shade100,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.public, color: Colors.orange.shade700, size: 32),
+                child: Icon(Icons.public, color: Colors.orange.shade700, size: 28),
               ),
               const SizedBox(height: 12),
-              Text(tr('onlineMultiplayer'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text3D(
+                text: tr('onlineMultiplayer'),
+                fontSize: 20,
+                color: Colors.orange.shade700,
+                shadowColor: Colors.orange.shade900,
+              ),
               const SizedBox(height: 4),
               Text(tr('selectGameMode'), style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
               const SizedBox(height: 24),
@@ -230,6 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: tr('randomOpponent'),
                 subtitle: tr('randomOpponentDesc'),
                 color: Colors.orange,
+                iconSize: 20,
                 onTap: () {
                   Navigator.pop(context);
                   _showDifficultyDialog(isRandom: true);
@@ -244,6 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: tr('playWithFriend'),
                 subtitle: tr('playWithFriendDesc'),
                 color: Colors.green,
+                iconSize: 20,
                 onTap: () {
                   Navigator.pop(context);
                   // Direkt arkadaşlar ekranına git, zorluk seçme!
@@ -272,6 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
+    double iconSize = 24,
   }) {
     return Material(
       color: Colors.transparent,
@@ -280,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [color.withOpacity(0.8), color],
@@ -292,25 +306,25 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: Colors.white, size: 24),
+                child: Icon(icon, color: Colors.white, size: iconSize),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
-                    Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                    Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, color: Colors.white.withOpacity(0.8), size: 16),
+              Icon(Icons.arrow_forward_ios, color: Colors.white.withOpacity(0.8), size: 14),
             ],
           ),
         ),
@@ -334,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: isRandom ? Colors.orange.shade100 : Colors.green.shade100,
                       shape: BoxShape.circle,
@@ -342,13 +356,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Icon(
                       isRandom ? Icons.shuffle : Icons.people,
                       color: isRandom ? Colors.orange.shade700 : Colors.green.shade700,
-                      size: 32,
+                      size: 26,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    isRandom ? tr('randomOpponent') : tr('playWithFriend'),
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Text3D(
+                    text: isRandom ? tr('randomOpponent') : tr('playWithFriend'),
+                    fontSize: 20,
+                    color: isRandom ? Colors.orange.shade700 : Colors.green.shade700,
+                    shadowColor: isRandom ? Colors.orange.shade900 : Colors.green.shade900,
                   ),
 
                   // Game Mode Selection (only for random)
@@ -384,12 +400,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.sports_esports, color: Colors.white, size: 32),
-                                  const SizedBox(height: 8),
-                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('Sırayla', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                  Text('30s turlar', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                  Icon(Icons.sports_esports, color: Colors.white, size: 26),
+                                  const SizedBox(height: 6),
+                                  Text('⚔️ Klasik', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  Text('Sırayla', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
+                                  Text('30s turlar', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
                                 ],
                               ),
                             ),
@@ -422,12 +438,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.speed, color: Colors.white, size: 32),
-                                  const SizedBox(height: 8),
-                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 4),
-                                  Text('Aynı anda', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
-                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11)),
+                                  Icon(Icons.speed, color: Colors.white, size: 26),
+                                  const SizedBox(height: 6),
+                                  Text('🏁 Race', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(height: 2),
+                                  Text('Aynı anda', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
+                                  Text('İlk bitiren kazanır', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10)),
                                 ],
                               ),
                             ),

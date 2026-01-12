@@ -10,6 +10,7 @@ import 'screens/online_game_screen.dart';
 import 'app_localizations.dart';
 import 'widgets/global_invite_overlay.dart';
 import 'services/game_invite_service.dart';
+import 'services/audio_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,7 @@ void main() async {
   'https://multiplayer-sudoku-v1-default-rtdb.europe-west1.firebasedatabase.app';
 
   await AppLocalizations.loadLanguage();
+  await AudioService().init();
 
   runApp(const MyApp());
 }

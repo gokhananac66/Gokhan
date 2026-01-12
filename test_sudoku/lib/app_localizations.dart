@@ -178,6 +178,7 @@ class AppLocalizations {
       'youWonByDefault': 'You won! Opponent left.',
       'maxErrorsReached': 'Maximum errors reached!',
       'playAgain': 'Play Again',
+      'rematch': 'Rematch',
       'backToMenu': 'Back to Menu',
 
       // Errors
@@ -377,6 +378,7 @@ class AppLocalizations {
       'youWonByDefault': 'Kazandın! Rakip oyunu terk etti.',
       'maxErrorsReached': 'Maksimum hata sayısına ulaşıldı!',
       'playAgain': 'Tekrar Oyna',
+      'rematch': 'Rövanş',
       'backToMenu': 'Menüye Dön',
 
       // Hatalar

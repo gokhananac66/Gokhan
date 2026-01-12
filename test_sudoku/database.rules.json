@@ -3,7 +3,23 @@
     "users": {
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid == $uid"
+        ".write": "auth != null && auth.uid == $uid",
+
+        "friendRequests": {
+          "$requesterId": {
+            ".write": "auth != null && auth.uid == $requesterId"
+          }
+        },
+
+        "friends": {
+          "$friendUid": {
+            ".write": "auth != null && (auth.uid == $uid || auth.uid == $friendUid)"
+          }
+        },
+
+        "recent_players": {
+          ".indexOn": ["timestamp"]
+        }
       }
     },
     "games": {
@@ -15,7 +31,7 @@
     "game_invites": {
       ".read": "auth != null",
       ".write": "auth != null",
-      ".indexOn": ["fromUid", "toUid", "status"]
+      ".indexOn": ["fromUid", "toUid", "status", "createdAt"]
     },
     "matchmaking": {
       "$league": {
@@ -48,13 +64,14 @@
     "friends": {
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid == $uid"
+        ".write": "auth != null"
       }
     },
     "friendRequests": {
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null",
+        ".indexOn": ["timestamp", "status"]
       }
     },
     "profiles": {
