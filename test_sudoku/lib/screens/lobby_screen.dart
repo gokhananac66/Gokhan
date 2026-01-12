@@ -197,11 +197,17 @@ class _LobbyScreenState extends State<LobbyScreen> with SingleTickerProviderStat
                     const Color(0xFF2D2D44),
                     const Color(0xFF16213E),
                   ]
-                : [
-                    const Color(0xFF667EEA),
-                    const Color(0xFF764BA2),
-                    const Color(0xFFF093FB),
-                  ],
+                : widget.gameMode == 'classic'
+                  ? [
+                      const Color(0xFF2196F3),
+                      const Color(0xFF1976D2),
+                      const Color(0xFF64B5F6),
+                    ]
+                  : [
+                      const Color(0xFF667EEA),
+                      const Color(0xFF764BA2),
+                      const Color(0xFFF093FB),
+                    ],
           ),
         ),
         child: SafeArea(

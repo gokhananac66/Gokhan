@@ -472,18 +472,25 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [Color(0xFF4CAF50), Color(0xFF388E3C), Color(0xFF2E7D32)],
-          ).createShader(bounds),
-          child: Text(
-            tr('friends'),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-              letterSpacing: 0.5,
-            ),
+        title: Text(
+          tr('friends'),
+          style: const TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            letterSpacing: 0.5,
+            shadows: [
+              Shadow(
+                offset: Offset(2, 2),
+                blurRadius: 3,
+                color: Colors.black26,
+              ),
+              Shadow(
+                offset: Offset(-1, -1),
+                blurRadius: 2,
+                color: Colors.white70,
+              ),
+            ],
           ),
         ),
         elevation: 0,

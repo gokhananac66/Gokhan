@@ -139,7 +139,7 @@ class PostGameStatsDialog extends StatelessWidget {
                             },
                             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
                             label: const Text(
-                              'Revanche! 🔥',
+                              'Rövanş! 🔥',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -319,8 +319,9 @@ class PostGameStatsDialog extends StatelessWidget {
 
         // My value
         Expanded(
+          flex: 3,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
               color: iAmBetter
                   ? Colors.green.withOpacity(0.15)
@@ -338,14 +339,14 @@ class PostGameStatsDialog extends StatelessWidget {
               children: [
                 if (iAmBetter)
                   const Padding(
-                    padding: EdgeInsets.only(right: 4),
-                    child: Icon(Icons.check_circle, color: Colors.green, size: 14),
+                    padding: EdgeInsets.only(right: 2),
+                    child: Icon(Icons.check_circle, color: Colors.green, size: 12),
                   ),
                 Flexible(
                   child: Text(
                     myValue,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: iAmBetter
                           ? Colors.green.shade700
@@ -359,12 +360,13 @@ class PostGameStatsDialog extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
 
         // Opponent value
         Expanded(
+          flex: 3,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
               color: !iAmBetter
                   ? Colors.orange.withOpacity(0.15)
@@ -382,14 +384,14 @@ class PostGameStatsDialog extends StatelessWidget {
               children: [
                 if (!iAmBetter)
                   const Padding(
-                    padding: EdgeInsets.only(right: 4),
-                    child: Icon(Icons.check_circle, color: Colors.orange, size: 14),
+                    padding: EdgeInsets.only(right: 2),
+                    child: Icon(Icons.check_circle, color: Colors.orange, size: 12),
                   ),
                 Flexible(
                   child: Text(
                     opponentValue,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: !iAmBetter
                           ? Colors.orange.shade700

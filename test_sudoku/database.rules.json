@@ -3,7 +3,10 @@
     "users": {
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid == $uid"
+        ".write": "auth != null && auth.uid == $uid",
+        "recent_players": {
+          ".indexOn": ["timestamp"]
+        }
       }
     },
     "games": {
@@ -53,7 +56,7 @@
     },
     "friendRequests": {
       "$uid": {
-        ".read": "auth != null",
+        ".read": "auth != null && (auth.uid == $uid || root.child('friendRequests').child($uid).child(auth.uid).exists())",
         ".write": "auth != null"
       }
     },

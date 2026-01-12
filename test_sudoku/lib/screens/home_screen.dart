@@ -171,51 +171,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Icon(Icons.person, color: Colors.white, size: 32),
                   ),
                   const SizedBox(height: 12),
-                  // 3D Title
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Color(0xFF2196F3),
-                        Color(0xFF1976D2),
-                        Color(0xFF0D47A1),
+                  // 3D Title (no gradient)
+                  Text(
+                    tr('singlePlayer'),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(2, 2),
+                          blurRadius: 3,
+                          color: Colors.black26,
+                        ),
+                        Shadow(
+                          offset: Offset(-1, -1),
+                          blurRadius: 2,
+                          color: Colors.white70,
+                        ),
                       ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: Text(
-                      tr('singlePlayer'),
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(2, 2),
-                            blurRadius: 3,
-                            color: Colors.black26,
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  // 3D Subtitle
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Color(0xFF64B5F6),
-                        Color(0xFF42A5F5),
+                  // 3D Subtitle (no gradient)
+                  Text(
+                    tr('selectDifficulty'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                      letterSpacing: 0.3,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(1, 1),
+                          blurRadius: 2,
+                          color: Colors.black12,
+                        ),
                       ],
-                    ).createShader(bounds),
-                    child: Text(
-                      tr('selectDifficulty'),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -350,51 +343,44 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Icon(Icons.public, color: Colors.white, size: 32),
               ),
               const SizedBox(height: 12),
-              // 3D Title
-              ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    Color(0xFFFF9800),
-                    Color(0xFFF57C00),
-                    Color(0xFFE65100),
+              // 3D Title (no gradient)
+              Text(
+                tr('onlineMultiplayer'),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black87,
+                  letterSpacing: 0.5,
+                  shadows: [
+                    Shadow(
+                      offset: Offset(2, 2),
+                      blurRadius: 3,
+                      color: Colors.black26,
+                    ),
+                    Shadow(
+                      offset: Offset(-1, -1),
+                      blurRadius: 2,
+                      color: Colors.white70,
+                    ),
                   ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
-                child: Text(
-                  tr('onlineMultiplayer'),
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(2, 2),
-                        blurRadius: 3,
-                        color: Colors.black26,
-                      ),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 4),
-              // 3D Subtitle
-              ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    Color(0xFFFFB74D),
-                    Color(0xFFFF9800),
+              // 3D Subtitle (no gradient)
+              Text(
+                tr('selectGameMode'),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black54,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                      color: Colors.black12,
+                    ),
                   ],
-                ).createShader(bounds),
-                child: Text(
-                  tr('selectGameMode'),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    letterSpacing: 0.3,
-                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -532,52 +518,47 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // 3D Title
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: isRandom
-                        ? [Color(0xFFFF9800), Color(0xFFF57C00), Color(0xFFE65100)]
-                        : [Color(0xFF4CAF50), Color(0xFF388E3C), Color(0xFF2E7D32)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: Text(
-                      isRandom ? tr('randomOpponent') : tr('playWithFriend'),
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(2, 2),
-                            blurRadius: 3,
-                            color: Colors.black26,
-                          ),
-                        ],
-                      ),
+                  // 3D Title (no gradient)
+                  Text(
+                    isRandom ? tr('randomOpponent') : tr('playWithFriend'),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(2, 2),
+                          blurRadius: 3,
+                          color: Colors.black26,
+                        ),
+                        Shadow(
+                          offset: Offset(-1, -1),
+                          blurRadius: 2,
+                          color: Colors.white70,
+                        ),
+                      ],
                     ),
                   ),
 
                   // Game Mode Selection (only for random)
                   if (isRandom) ...[
                     const SizedBox(height: 16),
-                    // 3D Subtitle
-                    ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [
-                          Color(0xFFFFB74D),
-                          Color(0xFFFF9800),
+                    // 3D Subtitle (no gradient)
+                    Text(
+                      'Oyun Modu Seç',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black54,
+                        letterSpacing: 0.3,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(1, 1),
+                            blurRadius: 2,
+                            color: Colors.black12,
+                          ),
                         ],
-                      ).createShader(bounds),
-                      child: Text(
-                        'Oyun Modu Seç',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.3,
-                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -591,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               scale: tempGameMode == 'classic' ? 1.02 : 1.0,
                               duration: const Duration(milliseconds: 200),
                               child: Container(
-                                padding: const EdgeInsets.all(18),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: tempGameMode == 'classic'
@@ -605,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: tempGameMode == 'classic'
                                       ? Colors.white
                                       : Colors.white.withOpacity(0.2),
-                                    width: tempGameMode == 'classic' ? 3 : 1,
+                                    width: tempGameMode == 'classic' ? 2 : 1,
                                   ),
                                   boxShadow: tempGameMode == 'classic' ? [
                                     BoxShadow(
@@ -631,30 +612,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     // Icon with background
                                     Container(
-                                      padding: const EdgeInsets.all(12),
+                                      padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.2),
                                         shape: BoxShape.circle,
                                         border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                                       ),
-                                      child: Icon(Icons.extension, color: Colors.white, size: 28),
+                                      child: Icon(Icons.extension, color: Colors.white, size: 22),
                                     ),
-                                    const SizedBox(height: 10),
+                                    const SizedBox(height: 8),
                                     Text(
                                       '⚔️ Klasik',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         letterSpacing: 0.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     Text(
                                       'Sırayla',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
-                                        fontSize: 11,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -662,7 +643,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       '30s turlar',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
-                                        fontSize: 11,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -681,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               scale: tempGameMode == 'race' ? 1.02 : 1.0,
                               duration: const Duration(milliseconds: 200),
                               child: Container(
-                                padding: const EdgeInsets.all(18),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: tempGameMode == 'race'
@@ -695,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: tempGameMode == 'race'
                                       ? Colors.white
                                       : Colors.white.withOpacity(0.2),
-                                    width: tempGameMode == 'race' ? 3 : 1,
+                                    width: tempGameMode == 'race' ? 2 : 1,
                                   ),
                                   boxShadow: tempGameMode == 'race' ? [
                                     BoxShadow(
@@ -721,30 +702,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     // Icon with background
                                     Container(
-                                      padding: const EdgeInsets.all(12),
+                                      padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.2),
                                         shape: BoxShape.circle,
                                         border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
                                       ),
-                                      child: Icon(Icons.flash_on, color: Colors.white, size: 28),
+                                      child: Icon(Icons.flash_on, color: Colors.white, size: 22),
                                     ),
-                                    const SizedBox(height: 10),
+                                    const SizedBox(height: 8),
                                     Text(
                                       '🏁 Race',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         letterSpacing: 0.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
                                     Text(
                                       'Aynı anda',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
-                                        fontSize: 11,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -752,7 +733,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       'İlk bitiren kazanır',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
-                                        fontSize: 11,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -767,21 +748,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
 
                   const SizedBox(height: 20),
-                  // 3D Subtitle for difficulty
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: isRandom
-                        ? [Color(0xFFFFB74D), Color(0xFFFF9800)]
-                        : [Color(0xFF81C784), Color(0xFF66BB6A)],
-                    ).createShader(bounds),
-                    child: Text(
-                      tr('selectDifficulty'),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
+                  // 3D Subtitle for difficulty (no gradient)
+                  Text(
+                    tr('selectDifficulty'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black54,
+                      letterSpacing: 0.3,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(1, 1),
+                          blurRadius: 2,
+                          color: Colors.black12,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1044,116 +1025,10 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             children: [
-              // Logo + Title
-              Column(
-                children: [
-                  // Logo - smaller
-                  const SudokuClashLogo(
-                    size: 70,
-                    animate: true,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 3D Gradient Title - SUDOKU
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Color(0xFF2196F3),
-                        Color(0xFF1976D2),
-                        Color(0xFF0D47A1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: Text(
-                      tr('sudoku'),
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 3,
-                        height: 1,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(3, 3),
-                            blurRadius: 8,
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                          Shadow(
-                            offset: Offset(-1, -1),
-                            blurRadius: 4,
-                            color: Colors.blue.shade100.withOpacity(0.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // 3D Gradient Title - CLASH
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Color(0xFFFF6B35),
-                        Color(0xFFE91E63),
-                        Color(0xFF9C27B0),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: Text(
-                      tr('clash'),
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 3,
-                        height: 1,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(3, 3),
-                            blurRadius: 8,
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                          Shadow(
-                            offset: Offset(-1, -1),
-                            blurRadius: 4,
-                            color: Colors.orange.shade100.withOpacity(0.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-                  // 3D Gradient Tagline
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Color(0xFF00BCD4),
-                        Color(0xFF4CAF50),
-                        Color(0xFFFFEB3B),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: Text(
-                      tr('tagline'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
-                        fontWeight: FontWeight.w700,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 2,
-                            color: Colors.black.withOpacity(0.2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              // New Logo
+              Image.asset(
+                'assets/images/sudoku_clash_logo.png',
+                height: 140,
               ),
 
               const SizedBox(height: 20),
