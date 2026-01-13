@@ -59,63 +59,51 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Mavi Gradient Header - Kupa ile
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF2196F3), Color(0xFF42A5F5)],
+          // Header - Kupa görseli ile
+          Stack(
+            children: [
+              // Arka plan görseli
+              Image.asset(
+                'assets/images/daily_trophy.png',
+                width: double.infinity,
+                height: 280,
+                fit: BoxFit.cover,
               ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  // Üst bar - Geri butonu ve başlık
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 22),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Günlük Mücadeleler',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
+              // Üstte SafeArea ve geri butonu
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 22),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'Günlük Mücadeleler',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 3,
+                                color: Colors.black45,
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 48), // Denge için
-                      ],
-                    ),
-                  ),
-
-                  // Kupa resmi
-                  SizedBox(
-                    height: 180,
-                    child: Image.asset(
-                      'assets/images/trophy.png',
-                      height: 160,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.emoji_events,
-                        size: 120,
-                        color: Colors.white70,
                       ),
-                    ),
+                      const SizedBox(width: 48),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
 
           // Beyaz Takvim Bölümü
