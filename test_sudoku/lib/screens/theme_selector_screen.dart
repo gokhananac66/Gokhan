@@ -17,20 +17,28 @@ class _ThemeSelectorScreenState extends State<ThemeSelectorScreen> {
 
   final Map<String, String> _themeNames = {
     'default': 'Varsayılan',
-    'neon': '🌈 Neon',
     'ocean': '🌊 Okyanus',
     'sunset': '🌅 Gün Batımı',
     'forest': '🌲 Orman',
     'galaxy': '🌌 Galaksi',
+    'midnight': '🌙 Gece Yarısı',
+    'rose': '🌹 Gül',
+    'lavender': '💜 Lavanta',
+    'earth': '🏔️ Toprak',
+    'mint': '🍃 Nane',
   };
 
   final Map<String, String> _themeNamesEn = {
     'default': 'Default',
-    'neon': '🌈 Neon',
     'ocean': '🌊 Ocean',
     'sunset': '🌅 Sunset',
     'forest': '🌲 Forest',
     'galaxy': '🌌 Galaxy',
+    'midnight': '🌙 Midnight',
+    'rose': '🌹 Rose',
+    'lavender': '💜 Lavender',
+    'earth': '🏔️ Earth',
+    'mint': '🍃 Mint',
   };
 
   @override
