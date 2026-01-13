@@ -7,6 +7,7 @@ import '../services/friend_service.dart';
 import '../services/leaderboard_service.dart';
 import '../services/currency_service.dart';
 import 'shop_screen.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -633,7 +634,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () async {
               Navigator.pop(context);
               await _auth.signOut();
-              if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+              if (mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: Text(tr('signOut'), style: const TextStyle(color: Colors.red)),
           ),
