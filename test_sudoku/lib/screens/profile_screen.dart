@@ -623,23 +623,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
+    final navigator = Navigator.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(tr('signOut')),
         content: Text(tr('signOutConfirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(tr('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(tr('cancel'))),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               await _auth.signOut();
-              if (mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
+              navigator.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
             },
             child: Text(tr('signOut'), style: const TextStyle(color: Colors.red)),
           ),
