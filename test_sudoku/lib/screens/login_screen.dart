@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final logoSize = screenWidth * 0.7; // Ekran genişliğinin %70'i
+    final logoSize = screenWidth - 56; // Ekran genişliği - padding (28*2)
 
     return Scaffold(
       backgroundColor: Colors.white,
