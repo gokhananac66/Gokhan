@@ -44,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
-  // Email/Şifre ile Giriş
   Future<void> _signInWithEmail() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       setState(() => _errorMessage = 'Email ve şifre gerekli!');
@@ -78,7 +77,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
-  // Google ile Giriş
   Future<void> _signInWithGoogle() async {
     setState(() {
       _isLoading = true;
@@ -90,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         scopes: ['email', 'profile'],
       );
 
-      // Önceki oturumu temizle
       await googleSignIn.signOut();
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -146,62 +143,78 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final logoSize = screenWidth * 0.7; // Ekran genişliğinin %70'i
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A2E),
-              Color(0xFF16213E),
-              Color(0xFF0F3460),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                children: [
-                  const SizedBox(height: 50),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              children: [
+                const SizedBox(height: 30),
 
-                  // 3D Logo Area
-                  _build3DLogo(),
-                  const SizedBox(height: 40),
+                // Logo - Maksimum boyut
+                Image.asset(
+                  'assets/images/sudoku_clash_logo.png',
+                  width: logoSize,
+                  height: logoSize,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: logoSize,
+                    height: logoSize * 0.5,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'SUDOKU CLASH',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
 
-                  // Tab Selector
-                  _buildTabSelector(),
-                  const SizedBox(height: 28),
+                // Tab Selector
+                _buildTabSelector(),
+                const SizedBox(height: 24),
 
-                  // Form Fields
-                  _buildEmailField(),
-                  const SizedBox(height: 16),
-                  _buildPasswordField(),
+                // Form Fields
+                _buildEmailField(),
+                const SizedBox(height: 14),
+                _buildPasswordField(),
 
-                  // Error Message
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 16),
-                    _buildErrorMessage(),
-                  ],
-
-                  const SizedBox(height: 28),
-
-                  // Submit Button
-                  _buildSubmitButton(),
-                  const SizedBox(height: 24),
-
-                  // Divider
-                  _buildDivider(),
-                  const SizedBox(height: 24),
-
-                  // Google Button
-                  _buildGoogleButton(),
-                  const SizedBox(height: 40),
+                // Error Message
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 14),
+                  _buildErrorMessage(),
                 ],
-              ),
+
+                const SizedBox(height: 24),
+
+                // Submit Button
+                _buildSubmitButton(),
+                const SizedBox(height: 20),
+
+                // Divider
+                _buildDivider(),
+                const SizedBox(height: 20),
+
+                // Google Button
+                _buildGoogleButton(),
+                const SizedBox(height: 30),
+              ],
             ),
           ),
         ),
@@ -209,119 +222,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _build3DLogo() {
-    return Column(
-      children: [
-        // 3D Logo Container
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-            ),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF667eea).withOpacity(0.4),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-              ),
-              const BoxShadow(
-                color: Colors.black26,
-                blurRadius: 15,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Grid pattern
-              GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
-                ),
-                itemCount: 9,
-                itemBuilder: (context, index) => Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Center(
-                    child: Text(
-                      index < 5 ? '${index + 1}' : '',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // 3D Title
-        Stack(
-          children: [
-            // Shadow layer
-            Transform.translate(
-              offset: const Offset(3, 3),
-              child: Text(
-                'SUDOKU CLASH',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
-                  color: Colors.black.withOpacity(0.3),
-                ),
-              ),
-            ),
-            // Main text with gradient
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFF667eea), Color(0xFF764ba2), Color(0xFFf093fb)],
-              ).createShader(bounds),
-              child: const Text(
-                'SUDOKU CLASH',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Beyinlerin Savaşı',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.6),
-            letterSpacing: 2,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildTabSelector() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -363,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 15,
-            color: isSelected ? Colors.white : Colors.white60,
+            color: isSelected ? Colors.white : Colors.grey.shade600,
           ),
         ),
       ),
@@ -373,18 +278,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget _buildEmailField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: TextField(
         controller: _emailController,
         keyboardType: TextInputType.emailAddress,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.black87),
         decoration: InputDecoration(
           hintText: 'Email adresiniz',
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-          prefixIcon: Icon(Icons.email_outlined, color: Colors.white.withOpacity(0.7)),
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),
@@ -395,22 +300,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget _buildPasswordField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: TextField(
         controller: _passwordController,
         obscureText: _obscurePassword,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.black87),
         decoration: InputDecoration(
           hintText: 'Şifreniz',
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-          prefixIcon: Icon(Icons.lock_outlined, color: Colors.white.withOpacity(0.7)),
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          prefixIcon: Icon(Icons.lock_outlined, color: Colors.grey.shade600),
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword ? Icons.visibility_off : Icons.visibility,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.grey.shade600,
             ),
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
@@ -425,18 +330,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.15),
+        color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        border: Border.all(color: Colors.red.shade200),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+          Icon(Icons.error_outline, color: Colors.red.shade600, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+              style: TextStyle(color: Colors.red.shade700, fontSize: 13),
             ),
           ),
         ],
@@ -490,15 +395,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget _buildDivider() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
+        Expanded(child: Divider(color: Colors.grey.shade300)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'veya',
-            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
           ),
         ),
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
+        Expanded(child: Divider(color: Colors.grey.shade300)),
       ],
     );
   }
@@ -510,9 +415,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
