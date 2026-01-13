@@ -54,440 +54,185 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     final daysInMonth = DailyChallengeService.getDaysInCurrentMonth();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final firstWeekday = firstDayOfMonth.weekday;
-    final difficulty = DailyChallengeService.getTodayDifficulty();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Custom App Bar
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // Mavi Gradient Header - Kupa ile
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF2196F3), Color(0xFF42A5F5)],
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Column(
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back_ios,
-                      color: isDark ? Colors.white : Colors.black87,
-                      size: 22,
+                  // Üst bar - Geri butonu ve başlık
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 22),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'Günlük Mücadeleler',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 48), // Denge için
+                      ],
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
-                  const Spacer(),
-                  Text(
-                    'GÜNLÜK MEYDAN OKUMA',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1,
-                      color: isDark ? Colors.white : Colors.black87,
+
+                  // Kupa resmi
+                  SizedBox(
+                    height: 180,
+                    child: Image.asset(
+                      'assets/images/trophy.png',
+                      height: 160,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.emoji_events,
+                        size: 120,
+                        color: Colors.white70,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  const SizedBox(width: 48), // Balance for back button
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
+          ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
+          // Beyaz Takvim Bölümü
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              color: Colors.white,
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
 
-                    // Üst Kısım - Büyük Takvim Kartı
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                  // Ay ve tamamlanma sayısı
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${_getMonthName(now.month)} ${now.year}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF667eea).withOpacity(0.4),
-                            blurRadius: 24,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Üst Satır - Ay ve Seri
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _getMonthName(now.month).toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${now.year}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade100,
+                                shape: BoxShape.circle,
                               ),
-                              if (_streak > 0)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Text('🔥', style: TextStyle(fontSize: 18)),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '$_streak gün',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                              child: Icon(
+                                Icons.star,
+                                color: Colors.amber.shade700,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${_completedDays.length}/$daysInMonth',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Hafta günleri
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P']
+                          .map((day) => SizedBox(
+                                width: 40,
+                                child: Text(
+                                  day,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey.shade500,
                                   ),
                                 ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Takvim Grid - Hafta Günleri
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: ['P', 'S', 'Ç', 'P', 'C', 'C', 'P']
-                                .map((day) => SizedBox(
-                                      width: 36,
-                                      child: Text(
-                                        day,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white.withOpacity(0.6),
-                                        ),
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Takvim Grid - Günler
-                          _buildCalendarGrid(now, daysInMonth, firstWeekday),
-                        ],
-                      ),
+                              ))
+                          .toList(),
                     ),
+                  ),
 
-                    const SizedBox(height: 24),
+                  const SizedBox(height: 8),
 
-                    // Bugünün Görevi Kartı
-                    Container(
+                  // Takvim Grid
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildCalendarGrid(now, daysInMonth, firstWeekday),
+                  ),
+
+                  const Spacer(),
+
+                  // Oyna Butonu
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: SizedBox(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isTodayCompleted ? null : _playDailyChallenge,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2196F3),
+                          disabledBackgroundColor: Colors.grey.shade400,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: _isTodayCompleted
-                                        ? [Colors.green.shade400, Colors.green.shade600]
-                                        : [Colors.amber.shade400, Colors.orange.shade500],
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    _isTodayCompleted ? '✓' : '${now.day}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _isTodayCompleted ? 'Tamamlandı!' : 'Bugünün Bulmacası',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white : Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        _buildSmallBadge(
-                                          DailyChallengeService.getLocalizedDifficulty(difficulty),
-                                          Colors.purple,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        _buildSmallBadge(
-                                          '+${DailyChallengeService.getDailyReward()} puan',
-                                          Colors.green,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          _isTodayCompleted ? 'Tamamlandı' : 'Oyna',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
                           ),
-
-                          const SizedBox(height: 20),
-
-                          // Ödüller Satırı
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.05)
-                                  : const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildRewardItem('🎯', 'Puan', '+${DailyChallengeService.getDailyReward()}'),
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade300,
-                                ),
-                                _buildRewardItem('💎', 'Jeton', '+${DailyChallengeService.getDailyTokens()}'),
-                                Container(
-                                  width: 1,
-                                  height: 40,
-                                  color: isDark ? Colors.white12 : Colors.grey.shade300,
-                                ),
-                                _buildRewardItem('⭐', 'XP', '+50'),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Oyna Butonu
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: _isTodayCompleted ? null : _playDailyChallenge,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _isTodayCompleted
-                                    ? Colors.grey.shade400
-                                    : const Color(0xFF667eea),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: _isTodayCompleted ? 0 : 4,
-                                shadowColor: const Color(0xFF667eea).withOpacity(0.4),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _isTodayCompleted ? Icons.check_circle : Icons.play_arrow_rounded,
-                                    size: 26,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _isTodayCompleted ? 'BUGÜN TAMAMLANDI' : 'OYNA',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // İstatistik Kartı
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Bu Ay',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildStatItem(
-                                  '${_completedDays.length}',
-                                  'Tamamlanan',
-                                  const Color(0xFF667eea),
-                                  isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildStatItem(
-                                  '${daysInMonth - _completedDays.length}',
-                                  'Kalan',
-                                  Colors.orange,
-                                  isDark,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildStatItem(
-                                  '${((_completedDays.length / now.day) * 100).round()}%',
-                                  'Başarı',
-                                  Colors.green,
-                                  isDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSmallBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRewardItem(String emoji, String label, String value) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: isDark ? Colors.white54 : Colors.grey.shade600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(String value, String label, Color color, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? Colors.white70 : Colors.grey.shade600,
             ),
           ),
         ],
@@ -499,9 +244,9 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     List<Widget> rows = [];
     List<Widget> currentRow = [];
 
-    // Boş günler
+    // Boş günler (ayın ilk gününden önce)
     for (int i = 1; i < firstWeekday; i++) {
-      currentRow.add(const SizedBox(width: 36, height: 36));
+      currentRow.add(const SizedBox(width: 40, height: 44));
     }
 
     // Günler
@@ -511,32 +256,52 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       final isPast = day < now.day;
 
       currentRow.add(
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: isCompleted
-                ? Colors.white
-                : isToday
-                    ? Colors.white.withOpacity(0.3)
-                    : Colors.transparent,
-            shape: BoxShape.circle,
-          ),
+        SizedBox(
+          width: 40,
+          height: 44,
           child: Center(
-            child: isCompleted
-                ? const Icon(Icons.check, color: Color(0xFF667eea), size: 18)
-                : Text(
-                    '$day',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                      color: isToday
-                          ? Colors.white
-                          : isPast
-                              ? Colors.white.withOpacity(0.4)
-                              : Colors.white.withOpacity(0.8),
+            child: isToday
+                ? Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF2196F3),
+                        width: 2,
+                      ),
                     ),
-                  ),
+                    child: Center(
+                      child: isCompleted
+                          ? Icon(Icons.check, color: Colors.green.shade600, size: 20)
+                          : Text(
+                              '$day',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2196F3),
+                              ),
+                            ),
+                    ),
+                  )
+                : isCompleted
+                    ? Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.check, color: Colors.green.shade600, size: 18),
+                      )
+                    : Text(
+                        '$day',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: isPast ? Colors.grey.shade400 : Colors.black87,
+                        ),
+                      ),
           ),
         ),
       );
@@ -544,7 +309,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       if (currentRow.length == 7) {
         rows.add(
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
+            padding: const EdgeInsets.symmetric(vertical: 2),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: currentRow,
@@ -555,14 +320,14 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       }
     }
 
-    // Son satır
+    // Son satırı tamamla
     if (currentRow.isNotEmpty) {
       while (currentRow.length < 7) {
-        currentRow.add(const SizedBox(width: 36, height: 36));
+        currentRow.add(const SizedBox(width: 40, height: 44));
       }
       rows.add(
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: currentRow,
