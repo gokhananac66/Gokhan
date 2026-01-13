@@ -69,6 +69,21 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                 height: 280,
                 fit: BoxFit.cover,
               ),
+              // Üstte koyu gradient overlay
+              Container(
+                width: double.infinity,
+                height: 100,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black54,
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
               // Üstte SafeArea ve geri butonu
               SafeArea(
                 bottom: false,
@@ -86,15 +101,9 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            shadows: [
-                              Shadow(
-                                offset: Offset(1, 1),
-                                blurRadius: 3,
-                                color: Colors.black45,
-                              ),
-                            ],
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
