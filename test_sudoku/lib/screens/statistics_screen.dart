@@ -116,172 +116,285 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentStats = _stats[_selectedMode] ?? {};
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade50,
-      appBar: AppBar(
-        title: Text(
-          tr('statistics'),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            shadows: [
-              Shadow(
-                offset: Offset(2, 2),
-                blurRadius: 3,
-                color: Colors.black26,
-              ),
-              Shadow(
-                offset: Offset(-1, -1),
-                blurRadius: 2,
-                color: Colors.white70,
-              ),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+            ? [const Color(0xFF1A237E), const Color(0xFF121212), const Color(0xFF121212)]
+            : [const Color(0xFF90CAF9), const Color(0xFFE3F2FD), const Color(0xFFF5F5F5)],
+          stops: const [0.0, 0.35, 1.0],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Mode selector
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                        ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
-                        : [Colors.white, Colors.grey.shade50],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Color(0xFF9C27B0).withOpacity(0.3),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0xFF9C27B0).withOpacity(0.15),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: _modes.map((mode) {
-                      bool isSelected = _selectedMode == mode;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedMode = mode),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              gradient: isSelected
-                                ? LinearGradient(
-                                    colors: [Color(0xFF9C27B0), Color(0xFFE91E63)],
-                                  )
-                                : null,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: isSelected ? [
-                                BoxShadow(
-                                  color: Color(0xFF9C27B0).withOpacity(0.4),
-                                  blurRadius: 8,
-                                  spreadRadius: 1,
-                                ),
-                              ] : [],
-                            ),
-                            child: Text(
-                              mode,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                fontSize: 15,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    const SizedBox(height: 12),
+
+                    // Custom Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          // Geri Butonu
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withOpacity(0.3)),
+                              ),
+                              child: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: isDark ? Colors.white : Colors.black87,
+                                size: 20,
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-
-          // Istatistik listesi
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // BAR CHART
-                  StatsBarChart(
-                    wins: currentStats['wins'] ?? 0,
-                    losses: currentStats['losses'] ?? 0,
-                    draws: _calculateDraws(currentStats),
-                    isDark: isDark,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // OYUNLAR BOLUMU
-                  _buildSectionTitle('Oyunlar', isDark),
-                  const SizedBox(height: 12),
-                  _buildStatCard(
-                    icon: Icons.grid_on,
-                    iconColor: Colors.blue,
-                    title: 'Başlatılan Oyunlar',
-                    value: '${currentStats['gamesPlayed'] ?? 0}',
-                    isDark: isDark,
-                  ),
-                  _buildStatCard(
-                    icon: Icons.emoji_events_outlined,
-                    iconColor: Colors.green,
-                    title: 'Kazanılan Oyunlar',
-                    value: '${currentStats['wins'] ?? 0}',
-                    isDark: isDark,
-                  ),
-                  _buildStatCard(
-                    icon: Icons.flag_outlined,
-                    iconColor: Colors.orange,
-                    title: 'Kazanma Oranı',
-                    value: '${_getWinRate(_selectedMode).toStringAsFixed(1)}%',
-                    isDark: isDark,
-                  ),
-                  _buildStatCard(
-                    icon: Icons.star_outlined,
-                    iconColor: Colors.purple,
-                    title: 'Toplam Skor',
-                    value: '${currentStats['totalScore'] ?? 0}',
-                    isDark: isDark,
-                  ),
-                  if (_selectedMode == 'Race' && currentStats['fastestWin'] != null)
-                    _buildStatCard(
-                      icon: Icons.speed,
-                      iconColor: Colors.red,
-                      title: 'En Hızlı Kazanma',
-                      value: _formatTime(currentStats['fastestWin']),
-                      isDark: isDark,
+                          const Spacer(),
+                          // Başlık
+                          Text(
+                            '📊 ${tr('statistics')}',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(1, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          // Placeholder for symmetry
+                          const SizedBox(width: 44),
+                        ],
+                      ),
                     ),
 
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                    const SizedBox(height: 16),
 
-  Widget _buildSectionTitle(String title, bool isDark) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: isDark ? Colors.white : Colors.black87,
+                    // Mode selector - Premium Style
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: _modes.map((mode) {
+                          bool isSelected = _selectedMode == mode;
+                          String emoji = mode == 'Klasik' ? '⚔️' : (mode == 'Race' ? '🏁' : '🌍');
+
+                          List<Color> getGradient() {
+                            if (mode == 'Klasik') return [const Color(0xFF2196F3), const Color(0xFF1976D2)];
+                            if (mode == 'Race') return [const Color(0xFF9C27B0), const Color(0xFF7B1FA2)];
+                            return [const Color(0xFF1A237E), const Color(0xFF0D1642)];
+                          }
+
+                          Color getGlowColor() {
+                            if (mode == 'Klasik') return const Color(0xFF2196F3);
+                            if (mode == 'Race') return const Color(0xFF9C27B0);
+                            return const Color(0xFF1A237E);
+                          }
+
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedMode = mode),
+                              child: Container(
+                                margin: EdgeInsets.only(
+                                  left: mode == 'Klasik' ? 0 : 6,
+                                  right: mode == 'Genel' ? 0 : 6,
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                decoration: BoxDecoration(
+                                  gradient: isSelected
+                                      ? LinearGradient(colors: getGradient())
+                                      : LinearGradient(
+                                          colors: isDark
+                                            ? [const Color(0xFF2D2D2D), const Color(0xFF252525)]
+                                            : [Colors.white, Colors.grey.shade50],
+                                        ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? getGlowColor().withOpacity(0.5)
+                                        : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                                    width: isSelected ? 2 : 1.5,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [BoxShadow(color: getGlowColor().withOpacity(0.4), blurRadius: 8, spreadRadius: 1)]
+                                      : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, spreadRadius: 0.5)],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(emoji, style: const TextStyle(fontSize: 22)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      mode,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected ? Colors.white : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // İstatistik listesi
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // BAR CHART - Premium Card
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isDark
+                                    ? [const Color(0xFF2D2D2D), const Color(0xFF1E1E1E)]
+                                    : [Colors.white, Colors.grey.shade50],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(isDark ? 0.1 : 0.5),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 15,
+                                    spreadRadius: 1,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: StatsBarChart(
+                                wins: currentStats['wins'] ?? 0,
+                                losses: currentStats['losses'] ?? 0,
+                                draws: _calculateDraws(currentStats),
+                                isDark: isDark,
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // OYUNLAR BOLUMU - Section Header
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [const Color(0xFFf7971e).withOpacity(0.9), const Color(0xFFffd200).withOpacity(0.9)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFf7971e).withOpacity(0.4),
+                                    blurRadius: 12,
+                                    spreadRadius: 1,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.25),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text('🎮', style: TextStyle(fontSize: 20)),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Oyun İstatistikleri',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 4,
+                                          offset: const Offset(1, 1),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _buildStatCard(
+                              icon: Icons.grid_on,
+                              iconColor: Colors.blue,
+                              title: 'Başlatılan Oyunlar',
+                              value: '${currentStats['gamesPlayed'] ?? 0}',
+                              isDark: isDark,
+                            ),
+                            _buildStatCard(
+                              icon: Icons.emoji_events_outlined,
+                              iconColor: Colors.green,
+                              title: 'Kazanılan Oyunlar',
+                              value: '${currentStats['wins'] ?? 0}',
+                              isDark: isDark,
+                            ),
+                            _buildStatCard(
+                              icon: Icons.flag_outlined,
+                              iconColor: Colors.orange,
+                              title: 'Kazanma Oranı',
+                              value: '${_getWinRate(_selectedMode).toStringAsFixed(1)}%',
+                              isDark: isDark,
+                            ),
+                            _buildStatCard(
+                              icon: Icons.star_outlined,
+                              iconColor: Colors.purple,
+                              title: 'Toplam Skor',
+                              value: '${currentStats['totalScore'] ?? 0}',
+                              isDark: isDark,
+                            ),
+                            if (_selectedMode == 'Race' && currentStats['fastestWin'] != null)
+                              _buildStatCard(
+                                icon: Icons.speed,
+                                iconColor: Colors.red,
+                                title: 'En Hızlı Kazanma',
+                                value: _formatTime(currentStats['fastestWin']),
+                                isDark: isDark,
+                              ),
+
+                            const SizedBox(height: 32),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -295,26 +408,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark
-            ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)]
-            : [Colors.white, Colors.grey.shade50],
+          colors: [iconColor, iconColor.withOpacity(0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: iconColor.withOpacity(0.3),
+          color: Colors.white.withOpacity(0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: iconColor.withOpacity(0.15),
-            blurRadius: 10,
+            color: iconColor.withOpacity(0.4),
+            blurRadius: 15,
             spreadRadius: 1,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -323,45 +434,47 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [iconColor.withOpacity(0.8), iconColor],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: iconColor.withOpacity(0.4),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: Colors.white, size: 26),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [iconColor.withOpacity(0.2), iconColor.withOpacity(0.1)],
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
               value == '0' || value == '-' ? '-' : value,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: iconColor,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(1, 1),
+                  ),
+                ],
               ),
             ),
           ),

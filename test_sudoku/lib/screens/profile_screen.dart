@@ -647,6 +647,163 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    // İlk onay dialogu
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            const SizedBox(width: 10),
+            Expanded(child: Text(tr('deleteAccount'))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(tr('deleteAccountWarning'), style: const TextStyle(fontSize: 15)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${tr('willBeDeleted')}:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700)),
+                  const SizedBox(height: 8),
+                  _buildDeleteItem('Email ve hesap bilgileri'),
+                  _buildDeleteItem('Profil ve kullanıcı adı'),
+                  _buildDeleteItem('Tüm oyun istatistikleri'),
+                  _buildDeleteItem('Liderlik tablosu kayıtları'),
+                  _buildDeleteItem('Arkadaş listesi'),
+                  _buildDeleteItem('Başarımlar ve rozetler'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(tr('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(tr('delete'), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Son onay dialogu
+    final finalConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(tr('areYouSure')),
+        content: Text(tr('deleteAccountFinal')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(tr('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(tr('deleteAccountConfirm'), style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (finalConfirmed != true) return;
+
+    // Hesabı sil
+    try {
+      final uid = user.uid;
+
+      // 1. Firebase Realtime Database verilerini sil
+      await _database.child('users/$uid').remove();
+      await _database.child('leaderboard/multiplayer/$uid').remove();
+
+      // Nickname mapping'i sil
+      if (_nickname.isNotEmpty) {
+        await _database.child('nicknames/${_nickname.toLowerCase()}').remove();
+      }
+
+      // 2. SharedPreferences temizle
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // 3. Firebase Auth hesabını sil
+      await user.delete();
+
+      // Login ekranına yönlendir
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(tr('accountDeleted')),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        // Yeniden giriş gerekli
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(tr('reAuthRequired')),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('${tr('error')}: ${e.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('${tr('error')}: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildDeleteItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(Icons.remove_circle, size: 14, color: Colors.red.shade400),
+          const SizedBox(width: 8),
+          Text(text, style: TextStyle(fontSize: 13, color: Colors.red.shade700)),
+        ],
+      ),
+    );
+  }
+
   String _getAccountType() {
     if (_user == null) return tr('guest');
     if (_user!.isAnonymous) return tr('guest');
@@ -660,260 +817,346 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentAvatar = _avatars[_selectedAvatar];
     final bool hasGooglePhoto = _user?.photoURL != null;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
-      appBar: AppBar(
-        title: Text(
-          tr('profile'),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            shadows: [
-              Shadow(
-                offset: Offset(2, 2),
-                blurRadius: 3,
-                color: Colors.black26,
-              ),
-              Shadow(
-                offset: Offset(-1, -1),
-                blurRadius: 2,
-                color: Colors.white70,
-              ),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+            ? [const Color(0xFF1A237E), const Color(0xFF121212), const Color(0xFF121212)]
+            : [const Color(0xFF90CAF9), const Color(0xFFE3F2FD), const Color(0xFFF5F5F5)],
+          stops: const [0.0, 0.35, 1.0],
         ),
-        actions: [
-          IconButton(icon: const Icon(Icons.logout, color: Colors.red), onPressed: _signOut),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Avatar ve Temel Bilgiler
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF9C27B0).withOpacity(isDark ? 0.3 : 0.1),
-                    Color(0xFFE91E63).withOpacity(isDark ? 0.2 : 0.05),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+
+                // Custom Header
+                Row(
+                  children: [
+                    // Geri Butonu
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: isDark ? Colors.white : Colors.black87,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    // Başlık
+                    Text(
+                      '👤 ${tr('profile')}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(1, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Placeholder for symmetry
+                    const SizedBox(width: 44),
                   ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Color(0xFF9C27B0).withOpacity(0.3),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFF9C27B0).withOpacity(0.3),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 8),
+
+                const SizedBox(height: 20),
+                // Avatar ve Temel Bilgiler - Premium Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF9C27B0), Color(0xFFE91E63)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF9C27B0).withOpacity(0.5),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Avatar
-                  GestureDetector(
-                    onTap: _showAvatarPicker,
-                    child: Stack(
-                      children: [
-                        // Gradient Ring
-                        Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF9C27B0), Color(0xFFE91E63)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                  child: Column(
+                    children: [
+                      // Avatar
+                      GestureDetector(
+                        onTap: _showAvatarPicker,
+                        child: Stack(
+                          children: [
+                            // Gradient Ring
+                            Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withOpacity(0.25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                  ),
+                                  child: hasGooglePhoto
+                                      ? CircleAvatar(radius: 40, backgroundImage: NetworkImage(_user!.photoURL!))
+                                      : CircleAvatar(
+                                          radius: 40,
+                                          backgroundColor: Color(currentAvatar['color']).withOpacity(0.2),
+                                          child: Icon(currentAvatar['icon'], size: 40, color: Color(currentAvatar['color'])),
+                                        ),
+                                ),
+                              ),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0xFF9C27B0).withOpacity(0.4),
-                                blurRadius: 8,
-                                spreadRadius: 1,
+                            // Edit badge
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(Icons.edit, size: 16, color: const Color(0xFF9C27B0)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Email badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.email_outlined, size: 16, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Text(
+                              _user?.email ?? tr('guestUser'),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Nickname
+                      if (_isEditingNickname)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _nicknameController,
+                                  maxLength: 15,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: tr('enterNickname'),
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                                    counterText: '',
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.2),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    errorText: _errorMessage,
+                                    errorStyle: const TextStyle(color: Colors.yellow),
+                                  ),
+                                  onChanged: (_) => _errorMessage != null ? setState(() => _errorMessage = null) : null,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: _isLoading ? null : _saveNickname,
+                                icon: _isLoading
+                                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    : const Icon(Icons.check, color: Colors.greenAccent),
+                              ),
+                              IconButton(
+                                onPressed: () => setState(() {
+                                  _isEditingNickname = false;
+                                  _nicknameController.text = _nickname;
+                                  _errorMessage = null;
+                                }),
+                                icon: const Icon(Icons.close, color: Colors.redAccent),
                               ),
                             ],
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(3),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                              ),
-                              child: hasGooglePhoto
-                                  ? CircleAvatar(radius: 30, backgroundImage: NetworkImage(_user!.photoURL!))
-                                  : CircleAvatar(
-                                      radius: 30,
-                                      backgroundColor: Color(currentAvatar['color']).withOpacity(0.2),
-                                      child: Icon(currentAvatar['icon'], size: 30, color: Color(currentAvatar['color'])),
+                        )
+                      else
+                        GestureDetector(
+                          onTap: () => setState(() => _isEditingNickname = true),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_nickname.isNotEmpty)
+                                Text(
+                                  '@$_nickname',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                    shadows: [
+                                      Shadow(
+                                        offset: const Offset(2, 2),
+                                        blurRadius: 4,
+                                        color: Colors.black.withOpacity(0.3),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.4),
+                                      width: 2,
                                     ),
-                            ),
+                                  ),
+                                  child: Text(
+                                    tr('addNickname'),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.edit, size: 18, color: Colors.white.withOpacity(0.8)),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
+                ),
 
-                  // Email (improved visibility)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFFE3F2FD),
-                          Color(0xFFBBDEFB),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Text(
-                      _user?.email ?? tr('guestUser'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue.shade800,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
-                  // Nickname
-                  if (_isEditingNickname)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _nicknameController,
-                            maxLength: 15,
-                            decoration: InputDecoration(
-                              hintText: tr('enterNickname'),
-                              counterText: '',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              errorText: _errorMessage,
-                            ),
-                            onChanged: (_) => _errorMessage != null ? setState(() => _errorMessage = null) : null,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _isLoading ? null : _saveNickname,
-                          icon: _isLoading
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.check, color: Colors.green),
-                        ),
-                        IconButton(
-                          onPressed: () => setState(() {
-                            _isEditingNickname = false;
-                            _nicknameController.text = _nickname;
-                            _errorMessage = null;
-                          }),
-                          icon: const Icon(Icons.close, color: Colors.red),
-                        ),
+                // Kişisel Bilgiler - Premium Section Header
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFf7971e).withOpacity(0.9),
+                        const Color(0xFFffd200).withOpacity(0.9),
                       ],
-                    )
-                  else
-                    GestureDetector(
-                      onTap: () => setState(() => _isEditingNickname = true),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // 3D Gradient Nickname
-                          if (_nickname.isNotEmpty)
-                            ShaderMask(
-                              shaderCallback: (bounds) => LinearGradient(
-                                colors: [
-                                  Color(0xFF9C27B0),
-                                  Color(0xFFE91E63),
-                                  Color(0xFFFF6B35),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ).createShader(bounds),
-                              child: Text(
-                                '@$_nickname',
-                                style: TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                  shadows: [
-                                    Shadow(
-                                      offset: Offset(2, 2),
-                                      blurRadius: 4,
-                                      color: Colors.black.withOpacity(0.3),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          else
-                            // Better placeholder with background
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.grey.shade200,
-                                    Colors.grey.shade300,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.grey.shade400,
-                                  width: 2,
-                                  style: BorderStyle.solid,
-                                ),
-                              ),
-                              child: Text(
-                                tr('addNickname'),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.grey.shade700,
-                                  fontStyle: FontStyle.italic,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.edit, size: 18, color: Colors.grey.shade600),
-                        ],
-                      ),
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                ],
-              ),
-            ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFf7971e).withOpacity(0.4),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('📋', style: TextStyle(fontSize: 20)),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        tr('personalInfo'),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(1, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-            const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-            // Kişisel Bilgiler
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: isDark ? Colors.black26 : Colors.grey.shade200, blurRadius: 10, offset: const Offset(0, 4))],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(tr('personalInfo'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-                  const SizedBox(height: 16),
+                // Kişisel Bilgiler Content
+                Column(
+                  children: [
 
                   // Isim
                   _buildInfoRow(
@@ -963,162 +1206,288 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: null,
                   ),
 
-                  // Ulke
-                  _buildInfoRow(
-                    icon: Icons.flag_outlined,
-                    label: tr('country'),
-                    value: _country.isEmpty ? tr('notSpecified') : _country,
-                    onTap: _selectCountry,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Mode-based Statistics
-            if (_classicStats != null || _raceStats != null)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: isDark ? Colors.black26 : Colors.grey.shade200, blurRadius: 10, offset: const Offset(0, 4))],
+                    // Ulke
+                    _buildInfoRow(
+                      icon: Icons.flag_outlined,
+                      label: tr('country'),
+                      value: _country.isEmpty ? tr('notSpecified') : _country,
+                      onTap: _selectCountry,
+                    ),
+                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.bar_chart, color: Colors.blue, size: 24),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Oyun Modu İstatistikleri',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+
+                const SizedBox(height: 16),
+
+                // Mode-based Statistics
+                if (_classicStats != null || _raceStats != null) ...[
+                  // Section Header
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4facfe).withOpacity(0.4),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Classic Mode Stats
-                    if (_classicStats != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1976D2)]),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.sports_esports, color: Colors.white, size: 20),
-                                const SizedBox(width: 8),
-                                Text('⚔️ Klasik Mod', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildStatChip('Oyun', '${_classicStats!['gamesPlayed'] ?? 0}', Colors.white.withOpacity(0.9)),
-                                _buildStatChip('Galibiyet', '${_classicStats!['wins'] ?? 0}', Colors.white.withOpacity(0.9)),
-                                _buildStatChip('Win %', '${_classicStats!['winRate'] ?? '0.0'}', Colors.white.withOpacity(0.9)),
-                                _buildStatChip('Skor', '${_classicStats!['totalScore'] ?? 0}', Colors.white.withOpacity(0.9)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // Race Mode Stats
-                    if (_raceStats != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFF7B1FA2)]),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.speed, color: Colors.white, size: 20),
-                                const SizedBox(width: 8),
-                                Text('🏁 Race Mod', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildStatChip('Oyun', '${_raceStats!['gamesPlayed'] ?? 0}', Colors.white.withOpacity(0.9)),
-                                _buildStatChip('Galibiyet', '${_raceStats!['wins'] ?? 0}', Colors.white.withOpacity(0.9)),
-                                _buildStatChip('Win %', '${_raceStats!['winRate'] ?? '0.0'}', Colors.white.withOpacity(0.9)),
-                                if (_raceStats!['fastestWin'] != null)
-                                  _buildStatChip('En Hızlı', _formatTime(_raceStats!['fastestWin']), Colors.white.withOpacity(0.9)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 16),
-
-            // Cikis Butonu
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFEF5350), Color(0xFFE53935)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.red.withOpacity(0.3),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _signOut,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.logout, color: Colors.white),
-                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text('📊', style: TextStyle(fontSize: 20)),
+                        ),
+                        const SizedBox(width: 12),
                         Text(
-                          tr('signOut'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
+                          'Oyun Modu İstatistikleri',
+                          style: TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(1, 1),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 32),
-          ],
+                  const SizedBox(height: 12),
+
+                  // Classic Mode Stats
+                  if (_classicStats != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1976D2)]),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2196F3).withOpacity(0.4),
+                            blurRadius: 15,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text('⚔️', style: TextStyle(fontSize: 20)),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Klasik Mod',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 2)],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildStatChip('Oyun', '${_classicStats!['gamesPlayed'] ?? 0}', Colors.white),
+                              _buildStatChip('Galibiyet', '${_classicStats!['wins'] ?? 0}', Colors.white),
+                              _buildStatChip('Win %', '${_classicStats!['winRate'] ?? '0.0'}', Colors.white),
+                              _buildStatChip('Skor', '${_classicStats!['totalScore'] ?? 0}', Colors.white),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Race Mode Stats
+                  if (_raceStats != null)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFF7B1FA2)]),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF9C27B0).withOpacity(0.4),
+                            blurRadius: 15,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text('🏁', style: TextStyle(fontSize: 20)),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Race Mod',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 2)],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildStatChip('Oyun', '${_raceStats!['gamesPlayed'] ?? 0}', Colors.white),
+                              _buildStatChip('Galibiyet', '${_raceStats!['wins'] ?? 0}', Colors.white),
+                              _buildStatChip('Win %', '${_raceStats!['winRate'] ?? '0.0'}', Colors.white),
+                              if (_raceStats!['fastestWin'] != null)
+                                _buildStatChip('En Hızlı', _formatTime(_raceStats!['fastestWin']), Colors.white),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // Cikis Butonu
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEF5350), Color(0xFFE53935)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.4),
+                        blurRadius: 15,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _signOut,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.logout, color: Colors.white, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              tr('signOut'),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Hesabımı Sil Butonu
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _deleteAccount,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.delete_forever, color: Colors.grey.shade600, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              tr('deleteAccount'),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1270,13 +1639,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatChip(String label, String value, Color textColor) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(value, style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 11)),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              shadows: [Shadow(color: Colors.black.withOpacity(0.2), blurRadius: 2)],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: textColor.withOpacity(0.9),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

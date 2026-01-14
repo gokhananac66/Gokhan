@@ -45,14 +45,13 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
+  // Tab controller
+  int _selectedTab = 0; // 0: Arkadaşlar, 1: Bekleyen İstekler, 2: Son Oynadıklarım
+
   @override
   void initState() {
     super.initState();
-
-    // Set online status FIRST, before setting up listeners
-    // This prevents race condition where friends read our status before we set it
     _friendService.setOnlineStatus(true);
-
     _initAnimations();
     _loadData();
     _setupInviteListeners();
@@ -106,35 +105,20 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     setState(() => _isLoading = true);
 
     try {
-      // 10 saniyelik timeout ekle
       final friends = await _friendService.getFriends().timeout(
         const Duration(seconds: 10),
-        onTimeout: () {
-          print('getFriends timeout!');
-          return [];
-        },
+        onTimeout: () => [],
       );
 
       final requests = await _friendService.getFriendRequests().timeout(
         const Duration(seconds: 10),
-        onTimeout: () {
-          print('getFriendRequests timeout!');
-          return [];
-        },
+        onTimeout: () => [],
       );
 
       final recentPlayers = await _recentPlayersService.getRecentPlayers().timeout(
         const Duration(seconds: 10),
-        onTimeout: () {
-          print('getRecentPlayers timeout!');
-          return [];
-        },
+        onTimeout: () => [],
       );
-
-      print('🎮 [FRIENDS] Recent players loaded: ${recentPlayers.length}');
-      for (var player in recentPlayers) {
-        print('  - ${player.nickname}: ${player.gameResult} (${player.gameMode})');
-      }
 
       if (mounted) {
         setState(() {
@@ -154,7 +138,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   }
 
   void _setupInviteListeners() {
-    // Global listener artık main.dart'ta, sadece status değişikliklerini dinle
     _inviteService.onInviteStatusChanged = (inviteId, status) {
       if (_pendingInviteId == inviteId) {
         _countdownTimer?.cancel();
@@ -194,7 +177,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   Future<void> _navigateToGame(String gameId, {required bool isPlayer1}) async {
     if (!mounted) return;
 
-    // Fetch game data to get difficulty and gameMode
     final gameSnapshot = await FirebaseDatabase.instance.ref('games/$gameId').get();
     if (!gameSnapshot.exists) {
       _showSnackBar('Oyun bulunamadı!', Colors.red);
@@ -296,7 +278,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    // 0. Check if friend is in an online game
     final statusService = UserStatusService();
     final isInOnlineGame = await statusService.isUserInOnlineGame(friend.uid);
     if (isInOnlineGame) {
@@ -304,7 +285,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       return;
     }
 
-    // 1. Check cooldown - 2 red = 1 minute ban
     final canSend = await _cooldownService.canSendInvite(uid, friend.uid);
     if (!canSend) {
       final remainingSeconds = await _cooldownService.getRemainingCooldownSeconds(uid, friend.uid);
@@ -312,25 +292,20 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       return;
     }
 
-    // 1. Get current user level
     final prefs = await SharedPreferences.getInstance();
     final myLevel = prefs.getInt('level') ?? 1;
 
-    // 2. Check level difference (max ±20)
     if (!DifficultyCalculator.isLevelDifferenceAcceptable(myLevel, friend.level, isFriend: true)) {
       final diff = DifficultyCalculator.getLevelDifference(myLevel, friend.level);
       _showSnackBar('Level farkı çok büyük! (Fark: $diff, Max: 20)', Colors.red);
       return;
     }
 
-    // 3. Calculate automatic difficulty
     final autoDifficulty = DifficultyCalculator.calculateDifficulty(myLevel, friend.level);
 
-    // 4. Show ONLY game mode selection dialog (no difficulty selection)
     final gameMode = await _showGameModeDialogSimple(friend, autoDifficulty);
-    if (gameMode == null) return; // User cancelled
+    if (gameMode == null) return;
 
-    // 5. Send invite with auto difficulty and selected gameMode
     final result = await _inviteService.sendInvite(
       targetUid: friend.uid,
       targetNickname: friend.nickname,
@@ -369,7 +344,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    // Check if friend is in an online game
     final statusService = UserStatusService();
     final isInOnlineGame = await statusService.isUserInOnlineGame(player.uid);
     if (isInOnlineGame) {
@@ -377,7 +351,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       return;
     }
 
-    // Check cooldown
     final canSend = await _cooldownService.canSendInvite(uid, player.uid);
     if (!canSend) {
       final remainingSeconds = await _cooldownService.getRemainingCooldownSeconds(uid, player.uid);
@@ -385,28 +358,24 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
       return;
     }
 
-    // Get current user level
     final prefs = await SharedPreferences.getInstance();
     final myLevel = prefs.getInt('level') ?? 1;
 
-    // Get recent player's current level from Firebase
     final playerSnapshot = await _database.child('users/${player.uid}/level').get();
     final playerLevel = playerSnapshot.exists ? (playerSnapshot.value as int) : 1;
 
-    // Check level difference
     if (!DifficultyCalculator.isLevelDifferenceAcceptable(myLevel, playerLevel, isFriend: false)) {
       final diff = DifficultyCalculator.getLevelDifference(myLevel, playerLevel);
       _showSnackBar('Level farkı çok büyük! (Fark: $diff, Max: 20)', Colors.red);
       return;
     }
 
-    // Use the same game mode and difficulty as last time
     final result = await _inviteService.sendInvite(
       targetUid: player.uid,
       targetNickname: player.nickname,
       difficulty: player.difficulty,
       gameMode: player.gameMode,
-      isRevanche: true, // Friends screen'den revanche daveti
+      isRevanche: true,
     );
 
     if (result.success) {
@@ -469,70 +438,355 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        title: Text(
-          tr('friends'),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            shadows: [
-              Shadow(
-                offset: Offset(2, 2),
-                blurRadius: 3,
-                color: Colors.black26,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+            ? [const Color(0xFF1A237E), const Color(0xFF121212), const Color(0xFF121212)]
+            : [const Color(0xFF90CAF9), const Color(0xFFE3F2FD), const Color(0xFFF5F5F5)],
+          stops: const [0.0, 0.35, 1.0],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+
+              // Custom Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    // Geri Butonu
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: isDark ? Colors.white : Colors.black87,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    // Başlık
+                    Text(
+                      '👥 ${tr('friends')}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(1, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Action buttons
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _showAddFriendDialog,
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            ),
+                            child: Icon(
+                              Icons.person_add_rounded,
+                              color: isDark ? Colors.white : Colors.black87,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              Shadow(
-                offset: Offset(-1, -1),
-                blurRadius: 2,
-                color: Colors.white70,
+
+              const SizedBox(height: 16),
+
+              // Tab Butonları
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    _buildTabButton(0, '👥', AppLocalizations.currentLanguage == 'tr' ? 'Arkadaşlar' : 'Friends', _friends.length, isDark),
+                    const SizedBox(width: 10),
+                    _buildTabButton(1, '📩', AppLocalizations.currentLanguage == 'tr' ? 'İstekler' : 'Requests', _friendRequests.length, isDark),
+                    const SizedBox(width: 10),
+                    _buildTabButton(2, '🎮', AppLocalizations.currentLanguage == 'tr' ? 'Son Oyunlar' : 'Recent', _recentPlayers.length, isDark),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // İçerik
+              Expanded(
+                child: _isLoading
+                    ? _buildLoadingSkeleton()
+                    : Column(
+                        children: [
+                          // Pending invite card
+                          if (_pendingInviteId != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: _buildPendingInviteCard(),
+                            ),
+                          // Tab content
+                          Expanded(
+                            child: RefreshIndicator(
+                              onRefresh: _loadData,
+                              child: _buildTabContent(isDark),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ],
           ),
         ),
-        elevation: 0,
-        actions: [
-          IconButton(icon: const Icon(Icons.person_add_rounded), onPressed: _showAddFriendDialog),
-          IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _loadData),
-        ],
       ),
-      body: _isLoading
-          ? _buildLoadingSkeleton()
-          : RefreshIndicator(
-        onRefresh: _loadData,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+    );
+  }
+
+  Widget _buildTabButton(int index, String emoji, String label, int count, bool isDark) {
+    final isSelected = _selectedTab == index;
+
+    List<Color> getSelectedGradient() {
+      if (index == 0) return [Color(0xFF2196F3), Color(0xFF1976D2)]; // Mavi
+      if (index == 1) return [Color(0xFFFF9800), Color(0xFFF57C00)]; // Turuncu
+      return [Color(0xFF9C27B0), Color(0xFF7B1FA2)]; // Mor
+    }
+
+    Color getSelectedBorderColor() {
+      if (index == 0) return Colors.blue.withOpacity(0.5);
+      if (index == 1) return Colors.orange.withOpacity(0.5);
+      return Colors.purple.withOpacity(0.5);
+    }
+
+    Color getSelectedShadowColor() {
+      if (index == 0) return Colors.blue.withOpacity(0.4);
+      if (index == 1) return Colors.orange.withOpacity(0.4);
+      return Colors.purple.withOpacity(0.4);
+    }
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTab = index),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(colors: getSelectedGradient())
+                : LinearGradient(colors: isDark ? [Color(0xFF2D2D2D), Color(0xFF252525)] : [Colors.white, Colors.grey.shade50]),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? getSelectedBorderColor() : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              width: isSelected ? 2 : 1.5,
+            ),
+            boxShadow: isSelected
+                ? [BoxShadow(color: getSelectedShadowColor(), blurRadius: 8, spreadRadius: 1)]
+                : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, spreadRadius: 0.5)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 20)),
+                  if (count > 0) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white.withOpacity(0.3) : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabContent(bool isDark) {
+    switch (_selectedTab) {
+      case 0:
+        return _buildFriendsTab(isDark);
+      case 1:
+        return _buildRequestsTab(isDark);
+      case 2:
+        return _buildRecentPlayersTab(isDark);
+      default:
+        return _buildFriendsTab(isDark);
+    }
+  }
+
+  // TAB 1: Arkadaşlar
+  Widget _buildFriendsTab(bool isDark) {
+    final onlineFriends = _friends.where((f) => f.online).toList();
+    final offlineFriends = _friends.where((f) => !f.online).toList();
+
+    if (_friends.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.people_outline,
+        title: tr('noFriendsYet'),
+        subtitle: tr('addFriendsToPlay'),
+        buttonText: tr('addFriend'),
+        onButtonPressed: _showAddFriendDialog,
+        color: Colors.blue,
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (onlineFriends.isNotEmpty) ...[
+          _buildSectionHeader(tr('onlineFriends'), Icons.circle, Colors.green, badge: onlineFriends.length),
+          const SizedBox(height: 12),
+          ...onlineFriends.map((f) => _buildFriendCard3D(f)),
+          const SizedBox(height: 24),
+        ],
+        if (offlineFriends.isNotEmpty) ...[
+          _buildSectionHeader(tr('offlineFriends'), Icons.circle_outlined, Colors.grey),
+          const SizedBox(height: 12),
+          ...offlineFriends.map((f) => _buildFriendCard3D(f)),
+        ],
+        if (onlineFriends.isEmpty && offlineFriends.isEmpty)
+          _buildEmptyOnlineState(),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  // TAB 2: Bekleyen İstekler
+  Widget _buildRequestsTab(bool isDark) {
+    if (_friendRequests.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.mail_outline,
+        title: AppLocalizations.currentLanguage == 'tr' ? 'Bekleyen istek yok' : 'No pending requests',
+        subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Arkadaşlık istekleri burada görünecek' : 'Friend requests will appear here',
+        color: Colors.orange,
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildSectionHeader(tr('friendRequests'), Icons.mail_rounded, Colors.orange, badge: _friendRequests.length),
+        const SizedBox(height: 12),
+        ..._friendRequests.map(_buildFriendRequestCard),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  // TAB 3: Son Oynadıklarım
+  Widget _buildRecentPlayersTab(bool isDark) {
+    if (_recentPlayers.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.sports_esports_outlined,
+        title: AppLocalizations.currentLanguage == 'tr' ? 'Henüz oyun oynamadınız' : 'No recent games',
+        subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Son oynadığınız rakipler burada görünecek' : 'Recent opponents will appear here',
+        color: Colors.purple,
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildSectionHeader(
+          AppLocalizations.currentLanguage == 'tr' ? 'Son Oynadıklarınız' : 'Recent Players',
+          Icons.history_rounded,
+          Colors.purple,
+          badge: _recentPlayers.length,
+        ),
+        const SizedBox(height: 12),
+        ..._recentPlayers.map(_buildRecentPlayerCard),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    String? buttonText,
+    VoidCallback? onButtonPressed,
+    required Color color,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (_pendingInviteId != null) _buildPendingInviteCard(),
-            if (_recentPlayers.isNotEmpty) ...[
-              _buildSectionHeader('Son Oynadıklarınız', Icons.history_rounded, Colors.purple, badge: _recentPlayers.length),
-              const SizedBox(height: 12),
-              ..._recentPlayers.take(3).map(_buildRecentPlayerCard),
-              const SizedBox(height: 24),
-            ],
-            if (_friendRequests.isNotEmpty) ...[
-              _buildSectionHeader(tr('friendRequests'), Icons.mail_rounded, Colors.orange, badge: _friendRequests.length),
-              const SizedBox(height: 12),
-              ..._friendRequests.map(_buildFriendRequestCard),
-              const SizedBox(height: 24),
-            ],
-            _buildSectionHeader(tr('onlineFriends'), Icons.circle, Colors.green, badge: _friends.where((f) => f.online).length),
-            const SizedBox(height: 12),
-            if (_friends.where((f) => f.online).isEmpty)
-              _buildEmptyOnlineState()
-            else
-              ..._friends.where((f) => f.online).map(_buildFriendCard3D),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, size: 64, color: color.withOpacity(0.5)),
+            ),
             const SizedBox(height: 24),
-            if (_friends.where((f) => !f.online).isNotEmpty) ...[
-              _buildSectionHeader(tr('offlineFriends'), Icons.circle_outlined, Colors.grey),
-              const SizedBox(height: 12),
-              ..._friends.where((f) => !f.online).map(_buildFriendCard3D),
+            Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+            const SizedBox(height: 8),
+            Text(subtitle, style: TextStyle(color: Colors.grey.shade500), textAlign: TextAlign.center),
+            if (buttonText != null && onButtonPressed != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: onButtonPressed,
+                icon: const Icon(Icons.person_add),
+                label: Text(buttonText),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
             ],
-            if (_friends.isEmpty) _buildEmptyState(),
-            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -541,7 +795,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
 
   Widget _buildPendingInviteCard() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600]),
@@ -589,6 +842,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     final resultColor = RecentPlayer.getResultColor(player.gameResult);
     final locale = AppLocalizations.currentLanguage;
 
+    // Check if this player is already a friend
+    final isFriend = _friends.any((f) => f.uid == player.uid);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -606,14 +862,10 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: resultColor.withOpacity(0.5),
-              width: 2,
-            ),
+            border: Border.all(color: resultColor.withOpacity(0.5), width: 2),
           ),
           child: Row(
             children: [
-              // Result icon badge
               Container(
                 width: 50,
                 height: 50,
@@ -622,28 +874,37 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: resultColor, width: 2),
                 ),
-                child: Center(
-                  child: Text(
-                    player.getResultIcon(),
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                ),
+                child: Center(child: Text(player.getResultIcon(), style: const TextStyle(fontSize: 24))),
               ),
               const SizedBox(width: 14),
-
-              // Player info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      player.nickname,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            player.nickname,
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isFriend) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '👥',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -657,41 +918,47 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                           ),
                           child: Text(
                             player.gameMode == 'race' ? '🏁 Race' : '⚔️ Classic',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.blue.shade300 : Colors.blue.shade700,
-                            ),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isDark ? Colors.blue.shade300 : Colors.blue.shade700),
                           ),
                         ),
                         const SizedBox(width: 6),
                         Text(
                           '• ${player.getRelativeTime(locale)}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                          ),
+                          style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-
-              // Re-invite button
+              // Add friend button (only if not already a friend)
+              if (!isFriend) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)]),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: const Color(0xFF2196F3).withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _sendFriendRequestToRecentPlayer(player),
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(Icons.person_add_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              // Rematch button
               Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)],
-                  ),
+                  gradient: const LinearGradient(colors: [Color(0xFF9C27B0), Color(0xFFBA68C8)]),
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF9C27B0).withOpacity(0.3),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: const Color(0xFF9C27B0).withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))],
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -700,11 +967,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                     borderRadius: BorderRadius.circular(12),
                     child: const Padding(
                       padding: EdgeInsets.all(10),
-                      child: Icon(
-                        Icons.refresh_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      child: Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
                     ),
                   ),
                 ),
@@ -716,18 +979,90 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     );
   }
 
+  Future<void> _sendFriendRequestToRecentPlayer(RecentPlayer player) async {
+    final result = await _friendService.sendFriendRequest(player.nickname);
+    _showSnackBar(result.message, result.success ? Colors.green : Colors.red);
+
+    // Reload data if successful to update the UI
+    if (result.success) {
+      await _loadData();
+    }
+  }
+
   Widget _buildFriendRequestCard(FriendRequest request) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.orange.shade200)),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF2D2D2D), const Color(0xFF1E1E1E)]
+              : [Colors.orange.shade50, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withOpacity(0.5), width: 2),
+        boxShadow: [
+          BoxShadow(color: Colors.orange.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
       child: Row(
         children: [
-          CircleAvatar(backgroundColor: Colors.orange.shade100, child: Text(request.nickname.isNotEmpty ? request.nickname[0].toUpperCase() : '?', style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold))),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(request.nickname, style: const TextStyle(fontWeight: FontWeight.bold)), Text(tr('wantsToBeYourFriend'), style: TextStyle(fontSize: 12, color: Colors.grey.shade600))])),
-          IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => _acceptFriendRequest(request)),
-          IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () => _rejectFriendRequest(request)),
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Colors.orange.shade400, Colors.orange.shade600]),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                request.nickname.isNotEmpty ? request.nickname[0].toUpperCase() : '?',
+                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  request.nickname,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87),
+                ),
+                Text(tr('wantsToBeYourFriend'), style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.green,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.check, color: Colors.white),
+              onPressed: () => _acceptFriendRequest(request),
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              padding: EdgeInsets.zero,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => _rejectFriendRequest(request),
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              padding: EdgeInsets.zero,
+            ),
+          ),
         ],
       ),
     );
@@ -738,13 +1073,12 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     final isOnline = friend.online;
     final isPending = _pendingInviteTarget == friend.nickname;
 
-    // League color
     Color getLeagueColor() {
-      if (friend.level <= 20) return const Color(0xFFCD7F32); // Bronze
-      if (friend.level <= 40) return const Color(0xFFC0C0C0); // Silver
-      if (friend.level <= 60) return const Color(0xFFFFD700); // Gold
-      if (friend.level <= 80) return const Color(0xFF00CED1); // Platinum
-      return const Color(0xFF9400D3); // Diamond
+      if (friend.level <= 20) return const Color(0xFFCD7F32);
+      if (friend.level <= 40) return const Color(0xFFC0C0C0);
+      if (friend.level <= 60) return const Color(0xFFFFD700);
+      if (friend.level <= 80) return const Color(0xFF00CED1);
+      return const Color(0xFF9400D3);
     }
 
     final leagueColor = getLeagueColor();
@@ -777,68 +1111,45 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                     width: isOnline ? 2.5 : 1.5,
                   ),
                   boxShadow: isOnline ? [
-                    BoxShadow(
-                      color: leagueColor.withOpacity(0.4),
-                      blurRadius: 15,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: leagueColor.withOpacity(0.4), blurRadius: 15, spreadRadius: 2, offset: const Offset(0, 4)),
                   ] : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 3)),
                   ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Stack(
                     children: [
-                      // Animated background pulse for online friends
                       if (isOnline)
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
                               gradient: RadialGradient(
-                                colors: [
-                                  leagueColor.withOpacity(0.2 * _pulseAnimation.value),
-                                  Colors.transparent,
-                                ],
+                                colors: [leagueColor.withOpacity(0.2 * _pulseAnimation.value), Colors.transparent],
                               ),
                             ),
                           ),
                         ),
-
-                      // Content
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            // Avatar
                             _buildModernAvatar(friend, isOnline, leagueColor, isDark),
                             const SizedBox(width: 16),
-
-                            // Info
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Nickname
                                   Text(
                                     friend.nickname,
                                     style: TextStyle(
-                                      color: isOnline
-                                        ? Colors.white
-                                        : (isDark ? Colors.white : Colors.black87),
+                                      color: isOnline ? Colors.white : (isDark ? Colors.white : Colors.black87),
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 6),
-
-                                  // Level & Status
                                   Row(
                                     children: [
                                       _buildModernLevelBadge(friend.level, leagueColor, isOnline),
@@ -853,11 +1164,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                                                 color: isOnline ? Colors.greenAccent : Colors.grey,
                                                 shape: BoxShape.circle,
                                                 boxShadow: isOnline ? [
-                                                  BoxShadow(
-                                                    color: Colors.greenAccent.withOpacity(0.6),
-                                                    blurRadius: 6,
-                                                    spreadRadius: 1,
-                                                  ),
+                                                  BoxShadow(color: Colors.greenAccent.withOpacity(0.6), blurRadius: 6, spreadRadius: 1),
                                                 ] : null,
                                               ),
                                             ),
@@ -866,9 +1173,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                                               child: Text(
                                                 isOnline ? tr('online') : friend.lastSeenText,
                                                 style: TextStyle(
-                                                  color: isOnline
-                                                    ? Colors.white.withOpacity(0.9)
-                                                    : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                                  color: isOnline ? Colors.white.withOpacity(0.9) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                 ),
@@ -883,19 +1188,10 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                                 ],
                               ),
                             ),
-
-                            // Action button
                             if (isOnline && !isPending)
                               _buildModernInviteButton(friend)
                             else if (isPending)
-                              const SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 3,
-                                ),
-                              ),
+                              const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
                           ],
                         ),
                       ),
@@ -918,30 +1214,19 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         gradient: LinearGradient(
           colors: isOnline
             ? [leagueColor.withOpacity(0.8), leagueColor]
-            : isDark
-              ? [Colors.grey.shade700, Colors.grey.shade800]
-              : [Colors.grey.shade300, Colors.grey.shade400],
+            : isDark ? [Colors.grey.shade700, Colors.grey.shade800] : [Colors.grey.shade300, Colors.grey.shade400],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
-          BoxShadow(
-            color: isOnline ? leagueColor.withOpacity(0.4) : Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            spreadRadius: 1,
-            offset: const Offset(0, 3),
-          ),
+          BoxShadow(color: isOnline ? leagueColor.withOpacity(0.4) : Colors.black.withOpacity(0.15), blurRadius: 10, spreadRadius: 1, offset: const Offset(0, 3)),
         ],
       ),
       child: Center(
         child: Text(
           friend.nickname.isNotEmpty ? friend.nickname[0].toUpperCase() : '?',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
         ),
       ),
     );
@@ -957,28 +1242,14 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
             : [Colors.grey.withOpacity(0.2), Colors.grey.withOpacity(0.1)],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isOnline ? leagueColor : Colors.grey,
-          width: 1.5,
-        ),
+        border: Border.all(color: isOnline ? leagueColor : Colors.grey, width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.stars_rounded,
-            color: isOnline ? Colors.white : Colors.grey.shade600,
-            size: 14,
-          ),
+          Icon(Icons.stars_rounded, color: isOnline ? Colors.white : Colors.grey.shade600, size: 14),
           const SizedBox(width: 4),
-          Text(
-            '$level',
-            style: TextStyle(
-              color: isOnline ? Colors.white : Colors.grey.shade700,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text('$level', style: TextStyle(color: isOnline ? Colors.white : Colors.grey.shade700, fontSize: 12, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -987,18 +1258,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
   Widget _buildModernInviteButton(FriendData friend) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-        ),
+        gradient: const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)]),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.4),
-            blurRadius: 8,
-            spreadRadius: 1,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: const Color(0xFF4CAF50).withOpacity(0.4), blurRadius: 8, spreadRadius: 1, offset: const Offset(0, 2))],
       ),
       child: Material(
         color: Colors.transparent,
@@ -1012,14 +1274,7 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
               children: [
                 Icon(Icons.send_rounded, color: Colors.white, size: 18),
                 SizedBox(width: 6),
-                Text(
-                  'DAVET',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('DAVET', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -1028,7 +1283,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     );
   }
 
-  /// Basitleştirilmiş mod seçim dialog'u - Sadece mod seç, zorluk yok
   Future<String?> _showGameModeDialogSimple(FriendData friend, String difficulty) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -1041,15 +1295,11 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: Colors.green.shade100, shape: BoxShape.circle),
                     child: Icon(Icons.sports_esports, color: Colors.green.shade700, size: 28),
                   ),
                   const SizedBox(width: 12),
@@ -1065,13 +1315,9 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                 ],
               ),
               const SizedBox(height: 8),
-              // Auto difficulty badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(20)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1082,8 +1328,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Classic Mode
               _buildModeOption(
                 icon: Icons.sports_esports,
                 title: '⚔️ Klasik Mod',
@@ -1093,8 +1337,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                 isDark: isDark,
               ),
               const SizedBox(height: 12),
-
-              // Race Mode
               _buildModeOption(
                 icon: Icons.speed,
                 title: '🏁 Race Mod',
@@ -1104,97 +1346,6 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
-
-              // Cancel button
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('İptal', style: TextStyle(color: Colors.grey.shade600)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Eski mod seçim dialog'u (kullanılmıyor artık)
-  Future<String?> _showGameModeDialog(FriendData friend, String difficulty) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return showDialog<String>(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.sports_esports, color: Colors.green.shade700, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Oyun Modu Seç', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        Text('${friend.nickname} ile oynamak için', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Auto difficulty badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.auto_awesome, size: 14, color: Colors.orange.shade700),
-                    const SizedBox(width: 4),
-                    Text('Otomatik Zorluk: $difficulty', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange.shade800)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Classic Mode
-              _buildModeOption(
-                icon: Icons.sports_esports,
-                title: '⚔️ Klasik Mod',
-                description: 'Sırayla hamle yapın, 30 saniye turlar',
-                color: Colors.blue,
-                onTap: () => Navigator.pop(context, 'classic'),
-                isDark: isDark,
-              ),
-              const SizedBox(height: 12),
-
-              // Race Mode
-              _buildModeOption(
-                icon: Icons.speed,
-                title: '🏁 Race Mod',
-                description: 'Ayrı tahtalar, ilk bitiren kazanır',
-                color: Colors.purple,
-                onTap: () => Navigator.pop(context, 'race'),
-                isDark: isDark,
-              ),
-              const SizedBox(height: 16),
-
-              // Cancel button
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text('İptal', style: TextStyle(color: Colors.grey.shade600)),
@@ -1222,28 +1373,15 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color.withOpacity(0.8), color],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: LinearGradient(colors: [color.withOpacity(0.8), color], begin: Alignment.topLeft, end: Alignment.bottomRight),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: Colors.white, size: 28),
               ),
               const SizedBox(width: 16),
@@ -1265,43 +1403,15 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildInviteButton(FriendData friend) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _sendGameInvite(friend),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFF6B35), Color(0xFFFF8C42)]), borderRadius: BorderRadius.circular(12)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.sports_esports, color: Colors.white, size: 18), const SizedBox(width: 6), Text(tr('invite'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))]),
-        ),
-      ),
-    );
-  }
-
   Widget _buildEmptyOnlineState() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(16)),
-      child: Column(children: [Icon(Icons.person_off, size: 48, color: Colors.grey.shade400), const SizedBox(height: 12), Text(tr('noOnlineFriends'), style: TextStyle(color: Colors.grey.shade600))]),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        children: [
-          Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle), child: Icon(Icons.people_outline, size: 64, color: Colors.blue.shade300)),
-          const SizedBox(height: 24),
-          Text(tr('noFriendsYet'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
-          const SizedBox(height: 8),
-          Text(tr('addFriendsToPlay'), style: TextStyle(color: Colors.grey.shade500), textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(onPressed: _showAddFriendDialog, icon: const Icon(Icons.person_add), label: Text(tr('addFriend')), style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
-        ],
-      ),
+      child: Column(children: [
+        Icon(Icons.person_off, size: 48, color: Colors.grey.shade400),
+        const SizedBox(height: 12),
+        Text(tr('noOnlineFriends'), style: TextStyle(color: Colors.grey.shade600)),
+      ]),
     );
   }
 
@@ -1317,59 +1427,25 @@ class _FriendsScreenState extends State<FriendsScreen> with TickerProviderStateM
           highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Avatar skeleton
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
+                  Container(width: 64, height: 64, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18))),
                   const SizedBox(width: 16),
-                  // Text skeleton
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: double.infinity,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                        Container(width: double.infinity, height: 20, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
                         const SizedBox(height: 8),
-                        Container(
-                          width: 100,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                        Container(width: 100, height: 14, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
                       ],
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Button skeleton
-                  Container(
-                    width: 80,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                  Container(width: 80, height: 40, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
                 ],
               ),
             ),

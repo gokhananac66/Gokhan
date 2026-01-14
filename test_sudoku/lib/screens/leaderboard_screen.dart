@@ -121,92 +121,156 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Liderlik Tablosu',
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            shadows: [
-              Shadow(
-                offset: Offset(2, 2),
-                blurRadius: 3,
-                color: Colors.black26,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+            ? [const Color(0xFF1A237E), const Color(0xFF121212), const Color(0xFF121212)]
+            : [const Color(0xFF90CAF9), const Color(0xFFE3F2FD), const Color(0xFFF5F5F5)],
+          stops: const [0.0, 0.35, 1.0],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+
+              // Custom Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    // Geri Butonu
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: isDark ? Colors.white : Colors.black87,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    // Başlık
+                    Text(
+                      '🏆 ${AppLocalizations.currentLanguage == 'tr' ? 'Liderlik Tablosu' : 'Leaderboard'}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(1, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Placeholder for symmetry
+                    const SizedBox(width: 44),
+                  ],
+                ),
               ),
-              Shadow(
-                offset: Offset(-1, -1),
-                blurRadius: 2,
-                color: Colors.white70,
+
+              const SizedBox(height: 16),
+
+              // Tab Butonları
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    _buildTabButton(0, '⚔️', 'Klasik', isDark),
+                    const SizedBox(width: 10),
+                    _buildTabButton(1, '🏁', 'Race', isDark),
+                    const SizedBox(width: 10),
+                    _buildTabButton(2, '🌍', 'Genel', isDark),
+                  ],
+                ),
               ),
+
+              const SizedBox(height: 16),
+
+              // İçerik
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      if (_userRankInfo != null) _buildUserInfoBar(isDark),
+                      const SizedBox(height: 12),
+                      _buildTimeFilters(isDark),
+                      const SizedBox(height: 12),
+                      _buildLeagueFilters(isDark),
+                      const SizedBox(height: 12),
+                      _isLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(50),
+                              child: CircularProgressIndicator(),
+                            )
+                          : _scores.isEmpty
+                              ? _buildEmptyState()
+                              : _buildLeaderboardList(isDark),
+                    ],
+                  ),
+                ),
+              ),
+              if (_userRank != null) _buildUserRankBar(isDark),
             ],
           ),
         ),
-        centerTitle: true,
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        foregroundColor: isDark ? Colors.white : Colors.black87,
-        elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.1),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark ? [Color(0xFF2D2D2D), Color(0xFF1E1E1E)] : [Colors.white, Colors.grey.shade50],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1.5),
-              boxShadow: [
-                BoxShadow(color: Colors.blue.withOpacity(0.1), blurRadius: 8, spreadRadius: 1),
-              ],
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-              indicator: BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1976D2)]),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 8, spreadRadius: 1),
-                ],
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(icon: Icon(Icons.extension, size: 16), text: '⚔️ Klasik'),
-                Tab(icon: Icon(Icons.flash_on, size: 16), text: '🏁 Race'),
-                Tab(icon: Icon(Icons.emoji_events, size: 16), text: '🌍 Genel'),
-              ],
-            ),
-          ),
-        ),
       ),
-      body: Column(children: [
-        if (_userRankInfo != null) _buildUserInfoBar(isDark),
-        _buildTimeFilters(isDark),
-        _buildLeagueFilters(isDark),
-        Expanded(child: _isLoading ? const Center(child: CircularProgressIndicator()) : _scores.isEmpty ? _buildEmptyState() : _buildLeaderboardList(isDark)),
-        if (_userRank != null) _buildUserRankBar(isDark),
-      ]),
     );
   }
 
   Widget _buildUserInfoBar(bool isDark) {
     final rank = _userRankInfo!;
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-      decoration: BoxDecoration(gradient: LinearGradient(colors: [Color(rank.leagueColor).withOpacity(0.3), Color(rank.leagueColor).withOpacity(0.1)])),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xFFFFD700).withOpacity(0.9), const Color(0xFFFF8C00).withOpacity(0.9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD700).withOpacity(0.4),
+            blurRadius: 15,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(children: [
+        // Sola yaslı - Lig
         _buildInfoChip(rank.leagueEmoji, rank.leagueName, Color(rank.leagueColor)),
+        const Spacer(),
+        // Ortada - Level
         _buildInfoChip('📊', 'Lvl ${rank.level}', Colors.blue),
+        const Spacer(),
+        // Ortada - Win Rate
         _buildInfoChip('🎯', '%${(rank.winRate * 100).toStringAsFixed(0)}', Colors.green),
+        const Spacer(),
+        // Sağa yaslı - Period Games
         _buildInfoChip('🎮', '${rank.periodGames}/25', Colors.orange),
       ]),
     );
@@ -214,25 +278,40 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
   Widget _buildInfoChip(String emoji, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.3))),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(emoji, style: const TextStyle(fontSize: 10)),
-        const SizedBox(width: 2),
-        Text(text, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: color)),
+        Text(emoji, style: const TextStyle(fontSize: 14)),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            color: Colors.white,
+            shadows: [
+              Shadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 2,
+              ),
+            ],
+          ),
+        ),
       ]),
     );
   }
 
   Widget _buildTimeFilters(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(children: [
         _buildTimeButton('today', AppLocalizations.get('lbToday'), Icons.today, isDark),
-        const SizedBox(width: 6),
+        const SizedBox(width: 10),
         _buildTimeButton('week', AppLocalizations.get('lbThisWeek'), Icons.date_range, isDark),
-        const SizedBox(width: 6),
+        const SizedBox(width: 10),
         _buildTimeButton('all', AppLocalizations.get('lbAllTime'), Icons.emoji_events, isDark),
       ]),
     );
@@ -245,22 +324,51 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         onTap: () { setState(() => _selectedTimeFilter = key); _loadLeaderboard(); },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 7),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             gradient: isSelected
-              ? LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600])
-              : null,
-            color: isSelected ? null : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-            borderRadius: BorderRadius.circular(10),
-            border: isSelected ? Border.all(color: Colors.blue.withOpacity(0.5), width: 1.5) : null,
+              ? LinearGradient(colors: [const Color(0xFF4facfe), const Color(0xFF00f2fe)])
+              : LinearGradient(
+                  colors: isDark
+                    ? [const Color(0xFF2D2D2D), const Color(0xFF252525)]
+                    : [Colors.white, Colors.grey.shade50],
+                ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected
+                ? Colors.white.withOpacity(0.3)
+                : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              width: 1.5,
+            ),
             boxShadow: isSelected ? [
-              BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 6, spreadRadius: 0.5),
-            ] : [],
+              BoxShadow(
+                color: const Color(0xFF4facfe).withOpacity(0.4),
+                blurRadius: 12,
+                spreadRadius: 1,
+                offset: const Offset(0, 4),
+              ),
+            ] : [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                spreadRadius: 0.5,
+              ),
+            ],
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 14, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
-            const SizedBox(width: 3),
-            Flexible(child: Text(label, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)), overflow: TextOverflow.ellipsis)),
+            Icon(icon, size: 18, color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ]),
         ),
       ),
@@ -268,13 +376,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
   }
 
   Widget _buildLeagueFilters(bool isDark) {
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+    return SizedBox(
+      height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: _leagues.length,
         itemBuilder: (context, index) {
           final league = _leagues[index];
@@ -282,13 +388,47 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           return GestureDetector(
             onTap: () { setState(() => _selectedLeagueFilter = league['key']); _loadLeaderboard(); },
             child: Container(
-              margin: const EdgeInsets.only(right: 6),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(color: isSelected ? (league['color'] as Color).withOpacity(0.2) : (isDark ? Colors.grey.shade800 : Colors.grey.shade100), borderRadius: BorderRadius.circular(16), border: Border.all(color: isSelected ? league['color'] as Color : Colors.transparent, width: 1.5)),
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: isSelected
+                    ? LinearGradient(
+                        colors: [(league['color'] as Color).withOpacity(0.9), (league['color'] as Color).withOpacity(0.7)],
+                      )
+                    : LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF2D2D2D), const Color(0xFF252525)]
+                            : [Colors.white, Colors.grey.shade50],
+                      ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isSelected
+                      ? Colors.white.withOpacity(0.3)
+                      : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                  width: 1.5,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: (league['color'] as Color).withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : [],
+              ),
               child: Row(children: [
                 Text(league['emoji'], style: const TextStyle(fontSize: 14)),
-                const SizedBox(width: 4),
-                Text(league['name'], style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? league['color'] as Color : (isDark ? Colors.grey.shade400 : Colors.grey.shade700))),
+                const SizedBox(width: 6),
+                Text(
+                  league['name'],
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade700),
+                  ),
+                ),
               ]),
             ),
           );
@@ -298,22 +438,78 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
   }
 
   Widget _buildEmptyState() {
-    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const Text('🎮', style: TextStyle(fontSize: 64)),
-      const SizedBox(height: 16),
-      Text(AppLocalizations.get('noScoresYet'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 8),
-      Text(_selectedLeagueFilter != null ? 'Bu ligde henüz oyuncu yok!' : 'Online oyun kazan ve sıralamaya gir!', style: TextStyle(color: Colors.grey.shade600)),
-    ]));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF2D2D2D), const Color(0xFF252525)]
+                : [Colors.white, Colors.grey.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Center(
+              child: Text('🎮', style: TextStyle(fontSize: 40)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            AppLocalizations.get('noScoresYet'),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _selectedLeagueFilter != null
+                ? (AppLocalizations.currentLanguage == 'tr' ? 'Bu ligde henüz oyuncu yok!' : 'No players in this league yet!')
+                : (AppLocalizations.currentLanguage == 'tr' ? 'Online oyun kazan ve sıralamaya gir!' : 'Win online games to enter the leaderboard!'),
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ]),
+      ),
+    );
   }
 
   Widget _buildLeaderboardList(bool isDark) {
-    return RefreshIndicator(
-      onRefresh: _loadLeaderboard,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _scores.length,
-        itemBuilder: (context, index) => _buildListItem(index, _scores[index], isDark),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: List.generate(
+          _scores.length,
+          (index) => _buildListItem(index, _scores[index], isDark),
+        ),
       ),
     );
   }
@@ -330,21 +526,79 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
     bool isCurrentUser = score['odaId'] == _currentUserId;
 
     String leagueEmoji = {'bronze': '🥉', 'silver': '🥈', 'gold': '🥇', 'platinum': '💎', 'diamond': '👑'}[league] ?? '🥉';
-    Color rankColor = rank == 1 ? const Color(0xFFFFD700) : rank == 2 ? Colors.grey.shade400 : rank == 3 ? const Color(0xFFCD7F32) : Colors.transparent;
+
+    // Top 3 için özel gradientler
+    List<Color> getTopRankGradient() {
+      if (rank == 1) return [const Color(0xFFFFD700), const Color(0xFFFF8C00)];
+      if (rank == 2) return [const Color(0xFFC0C0C0), const Color(0xFF9E9E9E)];
+      if (rank == 3) return [const Color(0xFFCD7F32), const Color(0xFFA0522D)];
+      return isDark
+          ? [const Color(0xFF2D2D2D), const Color(0xFF252525)]
+          : [Colors.white, Colors.grey.shade50];
+    }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isCurrentUser ? (isDark ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50) : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
-        borderRadius: BorderRadius.circular(12),
-        border: isCurrentUser ? Border.all(color: Colors.blue, width: 2) : rank <= 3 ? Border.all(color: rankColor, width: 1) : null,
+        gradient: isCurrentUser
+            ? LinearGradient(colors: [const Color(0xFF2196F3).withOpacity(0.9), const Color(0xFF1976D2).withOpacity(0.9)])
+            : rank <= 3
+                ? LinearGradient(colors: getTopRankGradient())
+                : LinearGradient(colors: getTopRankGradient()),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isCurrentUser
+              ? Colors.white.withOpacity(0.3)
+              : rank <= 3
+                  ? Colors.white.withOpacity(0.3)
+                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+          width: 1.5,
+        ),
+        boxShadow: (isCurrentUser || rank <= 3)
+            ? [
+                BoxShadow(
+                  color: isCurrentUser
+                      ? const Color(0xFF2196F3).withOpacity(0.4)
+                      : rank == 1
+                          ? const Color(0xFFFFD700).withOpacity(0.4)
+                          : rank == 2
+                              ? const Color(0xFFC0C0C0).withOpacity(0.4)
+                              : const Color(0xFFCD7F32).withOpacity(0.4),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  spreadRadius: 0.5,
+                ),
+              ],
       ),
       child: Row(children: [
         Container(
-          width: 32, height: 32,
-          decoration: BoxDecoration(color: rank <= 3 ? rankColor : (isDark ? Colors.grey.shade700 : Colors.grey.shade300), shape: BoxShape.circle),
-          child: Center(child: Text(rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '$rank', style: TextStyle(fontWeight: FontWeight.bold, fontSize: rank <= 3 ? 16 : 14, color: rank <= 3 ? Colors.white : (isDark ? Colors.white : Colors.black87)))),
+          width: 36, height: 36,
+          decoration: BoxDecoration(
+            color: isCurrentUser || rank <= 3
+                ? Colors.white.withOpacity(0.25)
+                : (isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '$rank',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: rank <= 3 ? 18 : 14,
+                color: isCurrentUser || rank <= 3
+                    ? Colors.white
+                    : (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
+          ),
         ),
         const SizedBox(width: 12),
         Text(avatar, style: const TextStyle(fontSize: 28)),
@@ -358,62 +612,200 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                   final badgeIcon = snapshot.data;
                   return Text(
                     badgeIcon != null ? '$badgeIcon $nickname' : nickname,
-                    style: TextStyle(fontWeight: FontWeight.bold, color: isCurrentUser ? Colors.blue : null),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: isCurrentUser || rank <= 3 ? Colors.white : (isDark ? Colors.white : Colors.black87),
+                    ),
                     overflow: TextOverflow.ellipsis,
                   );
                 },
               ),
             ),
-            if (isCurrentUser) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(4)), child: const Text('SEN', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))),
+            if (isCurrentUser) Container(
+              margin: const EdgeInsets.only(left: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                AppLocalizations.currentLanguage == 'tr' ? 'SEN' : 'YOU',
+                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
           ]),
+          const SizedBox(height: 4),
           Row(children: [
             if (_currentMode == 'overall') ...[
               Text(leagueEmoji, style: const TextStyle(fontSize: 12)),
               const SizedBox(width: 4),
-              Text('Lvl $level', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              Text(
+                'Lvl $level',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isCurrentUser || rank <= 3 ? Colors.white.withOpacity(0.85) : Colors.grey.shade600,
+                ),
+              ),
               const SizedBox(width: 8),
-              Text('%${(winRate * 100).toStringAsFixed(0)}', style: TextStyle(fontSize: 12, color: Colors.green.shade600)),
+              Text(
+                '%${(winRate * 100).toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isCurrentUser || rank <= 3 ? Colors.white.withOpacity(0.85) : Colors.green.shade600,
+                ),
+              ),
             ] else ...[
-              Text('${score['wins'] ?? 0} galibiyet', style: TextStyle(fontSize: 12, color: Colors.green.shade600)),
+              Text(
+                '${score['wins'] ?? 0} ${AppLocalizations.currentLanguage == 'tr' ? 'galibiyet' : 'wins'}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isCurrentUser || rank <= 3 ? Colors.white.withOpacity(0.85) : Colors.green.shade600,
+                ),
+              ),
               const SizedBox(width: 8),
-              Text('${score['gamesPlayed'] ?? 0} oyun', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              Text(
+                '${score['gamesPlayed'] ?? 0} ${AppLocalizations.currentLanguage == 'tr' ? 'oyun' : 'games'}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isCurrentUser || rank <= 3 ? Colors.white.withOpacity(0.85) : Colors.grey.shade600,
+                ),
+              ),
               if (_currentMode == 'race' && score['fastestWin'] != null) ...[
                 const SizedBox(width: 8),
-                Icon(Icons.timer, size: 12, color: Colors.orange.shade600),
+                Icon(Icons.timer, size: 12, color: isCurrentUser || rank <= 3 ? Colors.white.withOpacity(0.85) : Colors.orange.shade600),
                 const SizedBox(width: 2),
-                Text(_formatTime(score['fastestWin']), style: TextStyle(fontSize: 12, color: Colors.orange.shade600)),
+                Text(_formatTime(score['fastestWin']), style: TextStyle(fontSize: 12, color: isCurrentUser || rank <= 3 ? Colors.white.withOpacity(0.85) : Colors.orange.shade600)),
               ],
             ],
           ]),
         ])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('$totalScore', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(_currentMode == 'overall' ? 'puan' : 'skor', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-        ]),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isCurrentUser || rank <= 3
+                ? Colors.white.withOpacity(0.25)
+                : (isDark ? Colors.grey.shade700 : Colors.grey.shade100),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(children: [
+            Text(
+              '$totalScore',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isCurrentUser || rank <= 3 ? Colors.white : (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
+            Text(
+              _currentMode == 'overall'
+                  ? (AppLocalizations.currentLanguage == 'tr' ? 'puan' : 'pts')
+                  : (AppLocalizations.currentLanguage == 'tr' ? 'skor' : 'score'),
+              style: TextStyle(
+                fontSize: 10,
+                color: isCurrentUser || rank <= 3 ? Colors.white.withOpacity(0.85) : Colors.grey.shade600,
+              ),
+            ),
+          ]),
+        ),
       ]),
+    );
+  }
+
+  Widget _buildTabButton(int index, String emoji, String label, bool isDark) {
+    final isSelected = _tabController.index == index;
+
+    // Seçili buton için özel renkler
+    List<Color> getSelectedGradient() {
+      if (index == 0) {
+        // Klasik - Mavi
+        return [Color(0xFF2196F3), Color(0xFF1976D2)];
+      } else if (index == 1) {
+        // Race - Mor
+        return [Color(0xFF9C27B0), Color(0xFF7B1FA2)];
+      } else {
+        // Genel - Koyu Lacivert
+        return [Color(0xFF1A237E), Color(0xFF0D1642)];
+      }
+    }
+
+    Color getSelectedBorderColor() {
+      if (index == 0) return Colors.blue.withOpacity(0.5);
+      if (index == 1) return Colors.purple.withOpacity(0.5);
+      return Color(0xFF3949AB).withOpacity(0.5);
+    }
+
+    Color getSelectedShadowColor() {
+      if (index == 0) return Colors.blue.withOpacity(0.4);
+      if (index == 1) return Colors.purple.withOpacity(0.4);
+      return Color(0xFF1A237E).withOpacity(0.4);
+    }
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _tabController.animateTo(index);
+            _currentMode = index == 0 ? 'classic' : (index == 1 ? 'race' : 'overall');
+          });
+          _loadLeaderboard();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(colors: getSelectedGradient())
+                : LinearGradient(colors: isDark ? [Color(0xFF2D2D2D), Color(0xFF252525)] : [Colors.white, Colors.grey.shade50]),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? getSelectedBorderColor() : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              width: isSelected ? 2 : 1.5,
+            ),
+            boxShadow: isSelected
+                ? [BoxShadow(color: getSelectedShadowColor(), blurRadius: 8, spreadRadius: 1)]
+                : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, spreadRadius: 0.5)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 26)),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildUserRankBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF2D2D2D), const Color(0xFF1E1E1E)]
-              : [Colors.blue.shade50, Colors.white],
+          colors: [const Color(0xFF2196F3).withOpacity(0.9), const Color(0xFF1976D2).withOpacity(0.9)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border(
-          top: BorderSide(color: Colors.blue.withOpacity(0.3), width: 1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
-            blurRadius: 10,
+            color: const Color(0xFF2196F3).withOpacity(0.4),
+            blurRadius: 12,
             spreadRadius: 1,
-            offset: const Offset(0, -2),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -421,50 +813,32 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(5),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade400, Colors.blue.shade600],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 4,
-                  spreadRadius: 0.5,
-                ),
-              ],
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.person, color: Colors.white, size: 14),
+            child: const Icon(Icons.person, color: Colors.white, size: 18),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 10),
           Text(
             '${AppLocalizations.get('yourRank')}: ',
             style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
               fontWeight: FontWeight.w500,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade400, Colors.blue.shade600],
-              ),
+              color: Colors.white.withOpacity(0.25),
               borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 6,
-                  spreadRadius: 0.5,
-                ),
-              ],
             ),
             child: Text(
               '#$_userRank',
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -473,21 +847,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           if (_userRankInfo != null && _currentMode == 'overall') ...[
             const SizedBox(width: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Color(_userRankInfo!.leagueColor).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Color(_userRankInfo!.leagueColor).withOpacity(0.5),
-                  width: 1.5,
-                ),
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 '${_userRankInfo!.leagueEmoji} ${_userRankInfo!.leagueName}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(_userRankInfo!.leagueColor),
+                  color: Colors.white,
                 ),
               ),
             ),

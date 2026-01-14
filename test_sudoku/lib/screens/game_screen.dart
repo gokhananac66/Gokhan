@@ -11,6 +11,7 @@ import '../services/user_status_service.dart';
 import '../services/daily_challenge_service.dart';
 import '../services/sound_service.dart';
 import '../services/theme_service.dart';
+import 'system_settings_screen.dart';
 
 enum GameMode { single, multiplayer, race }
 
@@ -549,25 +550,42 @@ class _GameScreenState extends State<GameScreen> {
     if (!_initialized) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final gridSize = screenWidth - 8; // Grid boyutu - maksimum
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: SafeArea(child: Column(children: [
+        // Üst bar - geri, skor, ayarlar
         _buildTopBar(),
+        const SizedBox(height: 4),
+        // Info bar - istatistikler
         _buildInfoBar(),
         if (widget.gameMode == GameMode.multiplayer) _buildMultiplayerScore(),
         if (widget.gameMode == GameMode.single && combo >= 2)
-          Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 6), color: Colors.orange.withOpacity(0.2),
+          Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 4), color: Colors.orange.withOpacity(0.15),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Text('🔥 ', style: TextStyle(fontSize: 18)),
-                Text('${combo}x ${tr('combo')}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16)),
-                Text('  (${tr('nextPoints')}: +${10 * (combo + 1)} ${tr('points')})', style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
+                const Text('🔥 ', style: TextStyle(fontSize: 16)),
+                Text('${combo}x ${tr('combo')}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 14)),
               ])),
-        Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), child: _buildSudokuGrid())),
-        const SizedBox(height: 8),
+        const SizedBox(height: 20),
+        // Grid - tam genişlik
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: SizedBox(
+            width: gridSize,
+            height: gridSize,
+            child: _buildSudokuGrid(),
+          ),
+        ),
+        const SizedBox(height: 50),
+        // Action butonları
         _buildActionButtons(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 35),
+        // Sayı butonları
         _buildNumberButtons(),
-        const SizedBox(height: 8),
+        // Reklam alanı için boşluk
+        const Spacer(),
       ])),
     );
   }
@@ -575,20 +593,30 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildTopBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(children: [
-        IconButton(icon: const Icon(Icons.arrow_back, size: 22), onPressed: () { if (widget.gameMode == GameMode.single) _saveGame(); Navigator.pop(context); }, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+        // Geri butonu
+        InkWell(
+          onTap: () { if (widget.gameMode == GameMode.single) _saveGame(); Navigator.pop(context); },
+          child: Icon(Icons.chevron_left, size: 32, color: isDark ? Colors.blue.shade300 : Colors.blue.shade600),
+        ),
         const Spacer(),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), decoration: BoxDecoration(color: isDark ? Colors.blue.shade900 : Colors.blue.shade50, borderRadius: BorderRadius.circular(16)),
-            child: Text(widget.gameMode == GameMode.single ? '${tr('score')}: $score' : '$player1Name: $player1Score | $player2Name: $player2Score', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+        // Skor - sadece rakam
+        Text(
+          '$score',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+        ),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.refresh, size: 22), onPressed: () {
-          showDialog(context: context, builder: (ctx) => AlertDialog(title: Text(tr('resetGame')), content: Text(tr('resetGameConfirm')), actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('cancel'))),
-            TextButton(onPressed: () { Navigator.pop(ctx); _clearSavedGame(); setState(() => _initGame()); }, child: Text(tr('reset'))),
-          ]));
-        }, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+        // Ayarlar butonu
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SystemSettingsScreen()),
+            );
+          },
+          child: Icon(Icons.settings_outlined, size: 28, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+        ),
       ]),
     );
   }
@@ -596,19 +624,44 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildInfoBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      child: Row(children: [
+        // Zorluk - sola yaslı (Geri Al ile hizalı)
         _buildInfoItem(tr('difficulty'), _getLocalizedDifficulty(widget.difficulty)),
+        const Spacer(),
+        // Hatalar - ortada (Sil ile hizalı)
         _buildInfoItem(tr('errors'), '$errors/$maxErrors'),
-        if (timerEnabled) _buildInfoItem(tr('time'), _formatTime(seconds)),
-        InkWell(onTap: () { _playClickSound(); setState(() => isPaused = !isPaused); }, child: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 22)),
+        const Spacer(),
+        // Süre - ortada (Notlar ile hizalı)
+        _buildInfoItem(tr('time'), _formatTime(seconds)),
+        const Spacer(),
+        // Pause butonu - sağa yaslı (İpucu ile hizalı)
+        InkWell(
+          onTap: () { _playClickSound(); setState(() => isPaused = !isPaused); },
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 24, color: isDark ? Colors.white : Colors.black87),
+            ),
+            const SizedBox(height: 4),
+            Text(isPaused ? 'Devam' : 'Duraklat', style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+          ]),
+        ),
       ]),
     );
   }
 
   Widget _buildInfoItem(String label, String value) {
-    return Column(children: [Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)), Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold))]);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+      const SizedBox(height: 4),
+      Text(label, style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+    ]);
   }
 
   Widget _buildMultiplayerScore() {
@@ -625,58 +678,40 @@ class _GameScreenState extends State<GameScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = _gameTheme ?? GameTheme.getTheme('default', isDark);
 
-    return Center(
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width - 32,
-          maxHeight: MediaQuery.of(context).size.width - 32,
-        ),
-        decoration: BoxDecoration(
-          color: isDark ? Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 15,
-              spreadRadius: 1,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            child: Column(
-              children: List.generate(3, (blockRow) => Expanded(
-                child: Row(
-                  children: List.generate(3, (blockCol) => Expanded(
-                    child: Container(
-                      margin: EdgeInsets.all(1.5),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: theme.thickGridLineColor,
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: Column(
-                        children: List.generate(3, (cellRow) => Expanded(
-                          child: Row(
-                            children: List.generate(3, (cellCol) {
-                              final row = blockRow * 3 + cellRow;
-                              final col = blockCol * 3 + cellCol;
-                              return Expanded(child: _buildCell(row, col));
-                            }),
-                          ),
-                        )),
-                      ),
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.thickGridLineColor, width: 2),
+      ),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Column(
+          children: List.generate(3, (blockRow) => Expanded(
+            child: Row(
+              children: List.generate(3, (blockCol) => Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: blockCol < 2 ? BorderSide(color: theme.thickGridLineColor, width: 2) : BorderSide.none,
+                      bottom: blockRow < 2 ? BorderSide(color: theme.thickGridLineColor, width: 2) : BorderSide.none,
                     ),
-                  )),
+                  ),
+                  child: Column(
+                    children: List.generate(3, (cellRow) => Expanded(
+                      child: Row(
+                        children: List.generate(3, (cellCol) {
+                          final row = blockRow * 3 + cellRow;
+                          final col = blockCol * 3 + cellCol;
+                          return Expanded(child: _buildCell(row, col));
+                        }),
+                      ),
+                    )),
+                  ),
                 ),
               )),
             ),
-          ),
+          )),
         ),
       ),
     );
@@ -762,51 +797,66 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildActionButtons() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-      _buildActionButton(Icons.undo_rounded, tr('undo'), _undo, isDark),
-      _buildActionButton(Icons.backspace_outlined, tr('delete'), _clearCell, isDark),
-      _buildActionButton(notesMode ? Icons.edit : Icons.edit_outlined, AppLocalizations.currentLanguage == 'en' ? 'Notes' : 'Notlar', () { _playClickSound(); _vibrate(); setState(() => notesMode = !notesMode); }, isDark, isActive: notesMode, badge: notesMode ? 'ON' : 'OFF'),
-      _buildActionButton(Icons.lightbulb_outline_rounded, tr('hint'), _useHint, isDark, badge: '$hints'),
-    ]));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        _buildActionButton(Icons.refresh, 'Geri Al', _undo, isDark),
+        _buildActionButton(Icons.auto_fix_high_outlined, 'Sil', _clearCell, isDark),
+        _buildActionButton(Icons.edit_outlined, 'Notlar', () { _playClickSound(); _vibrate(); setState(() => notesMode = !notesMode); }, isDark, isActive: notesMode, badge: notesMode ? 'ON' : 'OFF'),
+        _buildActionButton(Icons.lightbulb_outline, 'İpucu', _useHint, isDark, badge: '$hints'),
+      ]),
+    );
   }
 
   Widget _buildActionButton(IconData icon, String label, VoidCallback onTap, bool isDark, {bool isActive = false, String? badge}) {
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Column(children: [
-      Stack(clipBehavior: Clip.none, children: [
-        Icon(icon, color: isActive ? Colors.blue : (isDark ? Colors.grey.shade300 : Colors.grey.shade700), size: 26),
-        if (badge != null) Positioned(right: -8, top: -4, child: Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1), decoration: BoxDecoration(color: isActive ? Colors.blue : Colors.grey.shade500, borderRadius: BorderRadius.circular(8)), child: Text(badge, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)))),
-      ]),
-      const SizedBox(height: 4),
-      Text(label, style: TextStyle(fontSize: 12, color: isActive ? Colors.blue : (isDark ? Colors.grey.shade300 : Colors.grey.shade700))),
-    ])));
+    final color = isDark ? Colors.white : Colors.black87;
+    final activeColor = Colors.blue.shade600;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Stack(clipBehavior: Clip.none, children: [
+            Icon(icon, color: isActive ? activeColor : color, size: 28),
+            if (badge != null) Positioned(
+              right: -10, top: -6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isActive ? activeColor : Colors.grey.shade500,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(badge, style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 6),
+          Text(label, style: TextStyle(fontSize: 11, color: isActive ? activeColor : color)),
+        ]),
+      ),
+    );
   }
 
   Widget _buildNumberButtons() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(9, (i) {
           return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: AspectRatio(
-                aspectRatio: 0.85,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _inputNumber(i + 1),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Center(
-                      child: Text(
-                        '${i + 1}',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.blue.shade300 : Colors.blue.shade600,
-                        ),
-                      ),
+            child: InkWell(
+              onTap: () => _inputNumber(i + 1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: Text(
+                    '${i + 1}',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.blue.shade300 : Colors.blue.shade600,
                     ),
                   ),
                 ),

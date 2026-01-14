@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:confetti/confetti.dart';
 import 'dart:async';
+import '../main.dart'; // navigatorKey için
 import '../services/leaderboard_service.dart';
 import '../services/progression_service.dart';
 import '../services/user_status_service.dart';
@@ -745,7 +746,13 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             );
 
             if (result.success) {
-              // Navigate back to home or friends screen
+              // ✅ Rövanş daveti başarılı - Davet gönderen kişi için listener başlat
+              final inviteId = result.inviteId;
+              final gameId = result.gameId;
+
+              print('🎮 [REVANCHE] Invite sent successfully. InviteId: $inviteId, GameId: $gameId');
+
+              // Ana ekrana dön
               if (mounted && Navigator.canPop(gameContext)) {
                 Navigator.popUntil(gameContext, (route) => route.isFirst || route.settings.name == '/home');
               }
@@ -753,11 +760,80 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
               // Show success message
               ScaffoldMessenger.of(gameContext).showSnackBar(
                 SnackBar(
-                  content: Text('Rövanş daveti gönderildi! 🔥'),
+                  content: Text('Rövanş daveti gönderildi! Rakip kabul ederse oyuna başlayacaksınız... 🔥'),
                   backgroundColor: Colors.green,
                   behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 3),
                 ),
               );
+
+              // ✅ ÇÖZÜM: Davet kabul edildiğinde otomatik oyuna başla
+              if (inviteId != null && gameId != null) {
+                final inviteService = GameInviteService();
+
+                // Davet durumunu dinle
+                final inviteRef = FirebaseDatabase.instance.ref().child('game_invites/$inviteId');
+                final subscription = inviteRef.onValue.listen((event) async {
+                  if (!event.snapshot.exists) return;
+
+                  final data = Map<String, dynamic>.from(event.snapshot.value as Map);
+                  final status = data['status']?.toString();
+
+                  print('🔔 [REVANCHE] Invite status changed: $status');
+
+                  if (status == 'accepted') {
+                    print('✅ [REVANCHE] Invite accepted! Starting game...');
+
+                    // Oyun verilerini al
+                    final gameSnapshot = await FirebaseDatabase.instance.ref().child('games/$gameId').get();
+                    if (!gameSnapshot.exists) {
+                      print('❌ [REVANCHE] Game not found: $gameId');
+                      return;
+                    }
+
+                    final gameData = Map<String, dynamic>.from(gameSnapshot.value as Map);
+                    final player1Uid = gameData['player1Uid']?.toString();
+                    final player2Uid = gameData['player2Uid']?.toString();
+                    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+
+                    final isPlayer1 = currentUid == player1Uid;
+
+                    // Navigator key ile context'e erişim (global)
+                    final navigatorContext = navigatorKey.currentContext;
+                    if (navigatorContext != null && navigatorContext.mounted) {
+                      Navigator.push(
+                        navigatorContext,
+                        MaterialPageRoute(
+                          builder: (context) => OnlineGameScreen(
+                            gameId: gameId,
+                            difficulty: gameData['difficulty']?.toString() ?? 'Orta',
+                            isPlayer1: isPlayer1,
+                            gameMode: gameData['gameMode']?.toString() ?? 'classic',
+                            startsFirst: isPlayer1, // Player1 başlar
+                          ),
+                        ),
+                      );
+                    }
+                  } else if (status == 'rejected' || status == 'expired') {
+                    print('❌ [REVANCHE] Invite $status');
+                    // Kullanıcıya bildir
+                    final navigatorContext = navigatorKey.currentContext;
+                    if (navigatorContext != null && navigatorContext.mounted) {
+                      ScaffoldMessenger.of(navigatorContext).showSnackBar(
+                        SnackBar(
+                          content: Text(status == 'rejected' ? 'Rövanş daveti reddedildi.' : 'Rövanş daveti zaman aşımına uğradı.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  }
+                });
+
+                // 35 saniye sonra listener'ı temizle (timeout + buffer)
+                Future.delayed(Duration(seconds: 35), () {
+                  subscription.cancel();
+                });
+              }
             } else {
               ScaffoldMessenger.of(gameContext).showSnackBar(
                 SnackBar(

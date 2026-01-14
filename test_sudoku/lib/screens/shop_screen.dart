@@ -155,231 +155,340 @@ class _ShopScreenState extends State<ShopScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final locale = AppLocalizations.currentLanguage;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[100],
-      appBar: AppBar(
-        title: Text(
-          locale == 'tr' ? 'Mağaza' : 'Shop',
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            shadows: const [
-              Shadow(offset: Offset(2, 2), blurRadius: 3, color: Colors.black26),
-              Shadow(offset: Offset(-1, -1), blurRadius: 2, color: Colors.white70),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+            ? [const Color(0xFF1A237E), const Color(0xFF121212), const Color(0xFF121212)]
+            : [const Color(0xFF90CAF9), const Color(0xFFE3F2FD), const Color(0xFFF5F5F5)],
+          stops: const [0.0, 0.35, 1.0],
         ),
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        elevation: 0,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Coin balance header (compact)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.orange.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Balance info (compact)
-                      Row(
-                        children: [
-                          const Text('💰', style: TextStyle(fontSize: 32)),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                locale == 'tr' ? 'Bakiye' : 'Balance',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
-                              ),
-                              Text(
-                                '$_coins',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      // Buy Coins Button (compact)
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CoinPurchaseScreen(),
-                            ),
-                          );
-                          _loadData();
-                        },
-                        icon: const Icon(Icons.add_shopping_cart, size: 16),
-                        label: Text(
-                          locale == 'tr' ? 'Satın Al' : 'Buy',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFFFFA500),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          elevation: 3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    const SizedBox(height: 12),
 
-                // Category tabs
-                Container(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                    child: Row(
-                      children: ShopCategory.values.map((category) {
-                        final isSelected = _selectedCategory == category;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedCategory = category),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              gradient: isSelected
-                                  ? const LinearGradient(
-                                      colors: [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
-                                    )
-                                  : null,
-                              color: isSelected ? null : Colors.grey.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
+                    // Custom Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          // Geri Butonu
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withOpacity(0.3)),
+                              ),
+                              child: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: isDark ? Colors.white : Colors.black87,
+                                size: 20,
+                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  category.getIcon(),
-                                  style: const TextStyle(fontSize: 20),
+                          ),
+                          const Spacer(),
+                          // Başlık
+                          Text(
+                            '🛒 ${locale == 'tr' ? 'Mağaza' : 'Shop'}',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(1, 1),
                                 ),
-                                const SizedBox(width: 6),
-                                // 3D Gradient Text for selected category
-                                if (isSelected)
-                                  ShaderMask(
-                                    shaderCallback: (bounds) => const LinearGradient(
-                                      colors: [
-                                        Colors.white,
-                                        Color(0xFFF3E5F5),
-                                        Colors.white,
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ).createShader(bounds),
-                                    child: Text(
-                                      category.getName(locale),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 15,
-                                        letterSpacing: 0.3,
-                                        shadows: [
-                                          Shadow(
-                                            offset: Offset(1, 1),
-                                            blurRadius: 2,
-                                            color: Colors.black26,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    category.getName(locale),
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white70 : Colors.black87,
-                                      fontWeight: FontWeight.normal,
-                                      fontSize: 14,
-                                    ),
-                                  ),
                               ],
                             ),
                           ),
-                        );
-                      }).toList(),
+                          const Spacer(),
+                          // Placeholder for symmetry
+                          const SizedBox(width: 44),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
 
-                // Items grid
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
+                    const SizedBox(height: 16),
+
+                    // Coin Balance Card - Premium Style
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFFD700).withOpacity(0.5),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // Coin Icon
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Center(
+                                child: Text('💰', style: TextStyle(fontSize: 28)),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            // Balance Info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    locale == 'tr' ? 'Bakiye' : 'Balance',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white.withOpacity(0.9),
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '$_coins',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: const Offset(1, 1),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Buy Button
+                            GestureDetector(
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CoinPurchaseScreen(),
+                                  ),
+                                );
+                                _loadData();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.add, color: const Color(0xFFFF8C00), size: 18),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      locale == 'tr' ? 'Satın Al' : 'Buy',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFF8C00),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    itemCount: ShopItems.getByCategory(_selectedCategory).length,
-                    itemBuilder: (context, index) {
-                      final item = ShopItems.getByCategory(_selectedCategory)[index];
-                      final isPurchased = _purchasedItems.contains(item.id);
-                      final canAfford = _coins >= item.price;
 
-                      return _buildShopItemCard(item, isPurchased, canAfford, isDark, locale);
-                    },
-                  ),
+                    const SizedBox(height: 16),
+
+                    // Category tabs - Premium Style
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: ShopCategory.values.map((category) {
+                          final isSelected = _selectedCategory == category;
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedCategory = category),
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: isSelected
+                                    ? LinearGradient(
+                                        colors: [
+                                          _getCategoryColor(category),
+                                          _getCategoryColor(category).withOpacity(0.7),
+                                        ],
+                                      )
+                                    : null,
+                                color: isSelected ? null : (isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.7)),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.3)
+                                      : Colors.transparent,
+                                  width: 1.5,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: _getCategoryColor(category).withOpacity(0.4),
+                                          blurRadius: 12,
+                                          spreadRadius: 1,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    category.getIcon(),
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    category.getName(locale),
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      fontSize: 14,
+                                      shadows: isSelected
+                                          ? [
+                                              Shadow(
+                                                color: Colors.black.withOpacity(0.3),
+                                                blurRadius: 2,
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Items grid
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.75,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemCount: ShopItems.getByCategory(_selectedCategory).length,
+                        itemBuilder: (context, index) {
+                          final item = ShopItems.getByCategory(_selectedCategory)[index];
+                          final isPurchased = _purchasedItems.contains(item.id);
+                          final canAfford = _coins >= item.price;
+
+                          return _buildShopItemCard(item, isPurchased, canAfford, isDark, locale);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+        ),
+      ),
     );
   }
 
+  Color _getCategoryColor(ShopCategory category) {
+    switch (category) {
+      case ShopCategory.avatars:
+        return const Color(0xFFFF6B6B);
+      case ShopCategory.themes:
+        return const Color(0xFF4facfe);
+      case ShopCategory.powerups:
+        return const Color(0xFF56ab2f);
+      case ShopCategory.hints:
+        return const Color(0xFFf7971e);
+      case ShopCategory.badges:
+        return const Color(0xFFa18cd1);
+    }
+  }
+
   Widget _buildShopItemCard(ShopItem item, bool isPurchased, bool canAfford, bool isDark, String locale) {
+    final itemColor = item.color ?? _getCategoryColor(_selectedCategory);
+
     return GestureDetector(
       onTap: isPurchased ? null : () => _purchaseItem(item),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isPurchased
+                ? [const Color(0xFF56ab2f), const Color(0xFFa8e063)]
+                : (canAfford
+                    ? [itemColor, itemColor.withOpacity(0.7)]
+                    : [Colors.grey.shade600, Colors.grey.shade400]),
+          ),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isPurchased
-                ? Colors.green.withOpacity(0.5)
-                : (item.color?.withOpacity(0.3) ?? Colors.grey.withOpacity(0.2)),
-            width: 2,
+            color: Colors.white.withOpacity(0.3),
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: isPurchased
-                  ? Colors.green.withOpacity(0.2)
-                  : (item.color?.withOpacity(0.1) ?? Colors.grey.withOpacity(0.1)),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: (isPurchased ? const Color(0xFF56ab2f) : itemColor).withOpacity(canAfford ? 0.4 : 0.2),
+              blurRadius: 15,
+              spreadRadius: 1,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -387,16 +496,23 @@ class _ShopScreenState extends State<ShopScreen> {
           children: [
             // Main content
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icon
-                  Text(
-                    item.icon,
-                    style: TextStyle(
-                      fontSize: 48,
-                      color: isPurchased ? null : Colors.grey,
+                  // Icon Container
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: Text(
+                        item.icon,
+                        style: const TextStyle(fontSize: 32),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -407,22 +523,33 @@ class _ShopScreenState extends State<ShopScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: isPurchased
-                          ? (isDark ? Colors.white : Colors.black87)
-                          : Colors.grey,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(1, 1),
+                        ),
+                      ],
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
 
                   // Description
                   Text(
                     item.getDescription(locale),
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      color: Colors.white.withOpacity(0.85),
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 2,
+                        ),
+                      ],
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
@@ -434,22 +561,28 @@ class _ShopScreenState extends State<ShopScreen> {
                   // Price or purchased badge
                   if (isPurchased)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                          const Icon(Icons.check_circle, color: Colors.white, size: 16),
                           const SizedBox(width: 4),
                           Text(
                             locale == 'tr' ? 'Sahip' : 'Owned',
-                            style: const TextStyle(
-                              color: Colors.green,
+                            style: TextStyle(
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -457,12 +590,10 @@ class _ShopScreenState extends State<ShopScreen> {
                     )
                   else
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: canAfford
-                            ? (item.color?.withOpacity(0.2) ?? Colors.purple.withOpacity(0.2))
-                            : Colors.grey.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -472,9 +603,15 @@ class _ShopScreenState extends State<ShopScreen> {
                           Text(
                             '${item.price}',
                             style: TextStyle(
-                              color: canAfford ? (item.color ?? Colors.purple) : Colors.grey,
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -486,18 +623,19 @@ class _ShopScreenState extends State<ShopScreen> {
 
             // "Not enough coins" overlay
             if (!isPurchased && !canAfford)
-              Positioned.fill(
+              Positioned(
+                top: 10,
+                right: 10,
                 child: Container(
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.lock,
-                      color: Colors.white.withOpacity(0.5),
-                      size: 32,
-                    ),
+                  child: const Icon(
+                    Icons.lock,
+                    color: Colors.white,
+                    size: 18,
                   ),
                 ),
               ),

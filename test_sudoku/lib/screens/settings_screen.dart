@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import 'statistics_screen.dart';
 import 'profile_screen.dart';
-import 'leaderboard_screen.dart';
 import 'system_settings_screen.dart';
 import 'achievements_screen.dart';
 import 'theme_selector_screen.dart';
 import 'badge_selector_screen.dart';
 import '../app_localizations.dart';
-import '../services/currency_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -26,12 +23,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showAboutDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isTr = AppLocalizations.currentLanguage == 'tr';
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         backgroundColor: Colors.transparent,
         child: Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: isDark
@@ -42,12 +42,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.blue.withOpacity(0.5),
+              color: Colors.indigo.withOpacity(0.5),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.blue.withOpacity(0.3),
+                color: Colors.indigo.withOpacity(0.3),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -57,13 +57,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
+                // Header - Gradient with Logo
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+                      colors: [Color(0xFF3F51B5), Color(0xFF1A237E)],
                     ),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(22),
@@ -73,32 +73,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.info, color: Colors.white, size: 40),
+                        child: Text('🎯', style: TextStyle(fontSize: 36)),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       const Text(
                         'Sudoku Clash',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 26,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
+                      Text(
+                        isTr ? 'Dünyanın İlk Online Sudoku Oyunu' : "World's First Online Sudoku Game",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           '${tr('version')}: 1.0.0',
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),
                     ],
@@ -106,41 +116,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 // Content
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        tr('aboutDesc'),
-                        style: TextStyle(
-                          fontSize: 15,
-                          height: 1.5,
-                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                      // Oyun Modları Section
+                      _buildSectionTitle(isTr ? 'Oyun Modları' : 'Game Modes', '🎮', isDark),
+                      const SizedBox(height: 10),
+                      _buildFeatureItem('👤', isTr ? 'Tek Oyunculu (6 Zorluk Seviyesi)' : 'Single Player (6 Difficulty Levels)', isDark),
+                      _buildFeatureItem('⚔️', isTr ? 'Online Klasik (Sıra Tabanlı)' : 'Online Classic (Turn-Based)', isDark),
+                      _buildFeatureItem('🏁', isTr ? 'Online Race (Hız Yarışı)' : 'Online Race (Speed Battle)', isDark),
+                      _buildFeatureItem('📅', isTr ? 'Günlük Meydan Okuma' : 'Daily Challenge', isDark),
+
+                      const SizedBox(height: 16),
+
+                      // Özellikler Section
+                      _buildSectionTitle(isTr ? 'Özellikler' : 'Features', '✨', isDark),
+                      const SizedBox(height: 10),
+                      _buildFeatureItem('🏆', isTr ? 'Liderlik Tablosu ve Sıralamalar' : 'Leaderboard & Rankings', isDark),
+                      _buildFeatureItem('🎖️', isTr ? 'Lig Sistemi (Bronze → Diamond)' : 'League System (Bronze → Diamond)', isDark),
+                      _buildFeatureItem('🏅', isTr ? 'Başarımlar ve Rozetler' : 'Achievements & Badges', isDark),
+                      _buildFeatureItem('👥', isTr ? 'Arkadaş Sistemi ve Davetler' : 'Friends System & Invites', isDark),
+                      _buildFeatureItem('🎨', isTr ? '10 Farklı Oyun Teması' : '10 Different Game Themes', isDark),
+                      _buildFeatureItem('📝', isTr ? 'Not Alma Sistemi' : 'Notes System', isDark),
+                      _buildFeatureItem('💡', isTr ? 'İpucu Sistemi' : 'Hint System', isDark),
+                      _buildFeatureItem('🔥', isTr ? 'Combo Puanlama' : 'Combo Scoring', isDark),
+
+                      const SizedBox(height: 16),
+
+                      // İletişim Section
+                      _buildSectionTitle(isTr ? 'İletişim' : 'Contact', '📧', isDark),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey.shade800.withOpacity(0.5) : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.email_outlined, size: 18, color: Colors.indigo),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'support@sudokuclash.com',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.language, size: 18, color: Colors.indigo),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'www.sudokuclash.com',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        '${tr('features')}:',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildFeatureItem('🎮', tr('singlePlayer'), isDark),
-                      _buildFeatureItem('🌍', tr('onlineMultiplayer'), isDark),
-                      _buildFeatureItem('⚡', tr('fourDifficulties'), isDark),
-                      _buildFeatureItem('📝', tr('notesSystem'), isDark),
-                      _buildFeatureItem('💡', tr('hintSystem'), isDark),
-                      _buildFeatureItem('🎯', tr('comboScoring'), isDark),
-                      const SizedBox(height: 20),
+
+                      const SizedBox(height: 16),
+
+                      // Copyright
                       Center(
-                        child: Text(
-                          '© 2024 Sudoku Clash',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-                          ),
+                        child: Column(
+                          children: [
+                            Text(
+                              isTr ? 'Flutter & Firebase ile geliştirildi' : 'Built with Flutter & Firebase',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '© 2026 Sudoku Clash. All rights reserved.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -148,17 +219,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 // Button
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.blue.shade600],
+                        colors: [Colors.indigo.shade400, Colors.indigo.shade700],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.3),
+                          color: Colors.indigo.withOpacity(0.3),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
@@ -190,6 +261,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, String emoji, bool isDark) {
+    return Row(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 18)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 
@@ -227,331 +315,301 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showResetDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.warning, color: Colors.orange),
-            const SizedBox(width: 10),
-            Text(tr('resetData')),
-          ],
-        ),
-        content: Text(tr('resetConfirm')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(tr('cancel')),
-          ),
-          TextButton(
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-
-              themeNotifier.toggleTheme(false);
-              await AppLocalizations.setLanguage('tr');
-
-              Navigator.pop(context);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(tr('dataReset')),
-                  backgroundColor: Colors.green,
-                ),
-              );
-
-              setState(() {});
-            },
-            child: Text(tr('reset'), style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
-      appBar: AppBar(
-        title: Text(
-          tr('settings'),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            shadows: [
-              Shadow(
-                offset: Offset(2, 2),
-                blurRadius: 3,
-                color: Colors.black26,
-              ),
-              Shadow(
-                offset: Offset(-1, -1),
-                blurRadius: 2,
-                color: Colors.white70,
-              ),
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+            ? [const Color(0xFF1A237E), const Color(0xFF121212), const Color(0xFF121212)]
+            : [const Color(0xFF90CAF9), const Color(0xFFE3F2FD), const Color(0xFFF5F5F5)],
+          stops: const [0.0, 0.35, 1.0],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Hero(
-              tag: 'settings_icon',
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.settings_rounded,
-                  color: isDark ? Colors.white : Colors.black87,
-                  size: 24,
-                ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+
+                  // Custom Header
+                  Row(
+                    children: [
+                      // Geri Butonu
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: isDark ? Colors.white : Colors.black87,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      // Başlık
+                      Text(
+                        '⚙️ ${tr('settings')}',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(1, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      // Placeholder for symmetry
+                      const SizedBox(width: 44),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 1. PROFİL
+                  _buildPremiumSettingsCard(
+                    emoji: '👤',
+                    title: tr('profile'),
+                    subtitle: tr('editAccountInfo'),
+                    gradientColors: [const Color(0xFFFF6B6B), const Color(0xFFee5a24)],
+                    glowColor: const Color(0xFFFF6B6B),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 2. İSTATİSTİKLER
+                  _buildPremiumSettingsCard(
+                    emoji: '📊',
+                    title: tr('statistics'),
+                    subtitle: tr('viewPerformance'),
+                    gradientColors: [const Color(0xFFf7971e), const Color(0xFFffd200)],
+                    glowColor: const Color(0xFFf7971e),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const StatisticsScreen()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 3. BAŞARIMLAR
+                  _buildPremiumSettingsCard(
+                    emoji: '🏆',
+                    title: tr('achievements'),
+                    subtitle: tr('achievementsDesc'),
+                    gradientColors: [const Color(0xFFFFD700), const Color(0xFFFF8C00)],
+                    glowColor: const Color(0xFFFFD700),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 4. ROZETLER
+                  _buildPremiumSettingsCard(
+                    emoji: '🎖️',
+                    title: AppLocalizations.currentLanguage == 'tr' ? 'Rozetler' : 'Badges',
+                    subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Rozet seç ve göster' : 'Select and display badges',
+                    gradientColors: [const Color(0xFF56ab2f), const Color(0xFFa8e063)],
+                    glowColor: const Color(0xFF56ab2f),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const BadgeSelectorScreen()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 5. OYUN TEMALARI
+                  _buildPremiumSettingsCard(
+                    emoji: '🎨',
+                    title: AppLocalizations.currentLanguage == 'tr' ? 'Oyun Temaları' : 'Game Themes',
+                    subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Tahta renk temasını değiştir' : 'Change board color theme',
+                    gradientColors: [const Color(0xFF4facfe), const Color(0xFF00f2fe)],
+                    glowColor: const Color(0xFF4facfe),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ThemeSelectorScreen()),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 6. SİSTEM AYARLARI
+                  _buildPremiumSettingsCard(
+                    emoji: '🔧',
+                    title: tr('systemSettings'),
+                    subtitle: tr('systemSettingsDesc'),
+                    gradientColors: [const Color(0xFFa18cd1), const Color(0xFFfbc2eb)],
+                    glowColor: const Color(0xFFa18cd1),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SystemSettingsScreen()),
+                      ).then((_) => setState(() {}));
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 7. OYUN HAKKINDA
+                  _buildPremiumSettingsCard(
+                    emoji: 'ℹ️',
+                    title: tr('aboutGame'),
+                    subtitle: tr('versAndFeatures'),
+                    gradientColors: [const Color(0xFF667eea), const Color(0xFF764ba2)],
+                    glowColor: const Color(0xFF667eea),
+                    onTap: _showAboutDialog,
+                  ),
+
+                  const SizedBox(height: 30),
+                ],
               ),
             ),
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // PROFİL
-          _buildBigColorfulButton(
-            icon: Icons.person_rounded,
-            title: tr('profile'),
-            subtitle: tr('editAccountInfo'),
-            colors: [Colors.indigo.shade500, Colors.indigo.shade700],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // İSTATİSTİKLER
-          _buildBigColorfulButton(
-            icon: Icons.bar_chart_rounded,
-            title: tr('statistics'),
-            subtitle: tr('viewPerformance'),
-            colors: [Colors.red.shade500, Colors.red.shade700],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const StatisticsScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // BAŞARIMLAR
-          _buildBigColorfulButton(
-            icon: Icons.emoji_events,
-            title: tr('achievements'),
-            subtitle: tr('achievementsDesc'),
-            colors: [Colors.purple.shade500, Colors.purple.shade700],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AchievementsScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // OYUN TEMALARI
-          _buildBigColorfulButton(
-            icon: Icons.palette_rounded,
-            title: AppLocalizations.currentLanguage == 'tr' ? 'Oyun Temaları' : 'Game Themes',
-            subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Tahta renk temasını değiştir' : 'Change board color theme',
-            colors: [Colors.pink.shade500, Colors.pink.shade700],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ThemeSelectorScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // ROZETLER
-          _buildBigColorfulButton(
-            icon: Icons.military_tech,
-            title: AppLocalizations.currentLanguage == 'tr' ? 'Rozetler' : 'Badges',
-            subtitle: AppLocalizations.currentLanguage == 'tr' ? 'Rozet seç ve göster' : 'Select and display badges',
-            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BadgeSelectorScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // LİDERLİK TABLOSU
-          _buildBigColorfulButton(
-            icon: Icons.emoji_events_rounded,
-            title: tr('leaderboard'),
-            subtitle: tr('globalRankings'),
-            colors: [Colors.amber.shade600, Colors.amber.shade800],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
-              );
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // SİSTEM AYARLARI
-          _buildBigColorfulButton(
-            icon: Icons.settings_rounded,
-            title: tr('systemSettings'),
-            subtitle: tr('systemSettingsDesc'),
-            colors: [Colors.blue.shade500, Colors.blue.shade700],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SystemSettingsScreen()),
-              ).then((_) => setState(() {}));
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // OYUN HAKKINDA
-          _buildBigColorfulButton(
-            icon: Icons.info_rounded,
-            title: tr('aboutGame'),
-            subtitle: tr('versionAndFeatures'),
-            colors: [Colors.green.shade500, Colors.green.shade700],
-            onTap: _showAboutDialog,
-          ),
-
-          const SizedBox(height: 10),
-
-          // TEST: 1000 JETON EKLE
-          _buildBigColorfulButton(
-            icon: Icons.monetization_on,
-            title: '🧪 Test: 1000 Jeton Ekle',
-            subtitle: 'Mağaza test için jeton ekle',
-            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-            onTap: () async {
-              await CurrencyService().addCoins(1000);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✅ 1000 jeton eklendi! Mağazayı test edebilirsin.'),
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // VERİLERİ SIFIRLA
-          _buildBigColorfulButton(
-            icon: Icons.refresh_rounded,
-            title: tr('resetData'),
-            subtitle: tr('clearAllStats'),
-            colors: [Colors.grey.shade600, Colors.grey.shade800],
-            onTap: _showResetDialog,
-          ),
-
-          const SizedBox(height: 20),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildBigColorfulButton({
-    required IconData icon,
+  Widget _buildPremiumSettingsCard({
+    required String emoji,
     required String title,
     required String subtitle,
-    required List<Color> colors,
+    required List<Color> gradientColors,
+    required Color glowColor,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: colors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: colors[0].withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: Colors.white, size: 26),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: glowColor.withOpacity(0.5),
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Emoji Container
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Center(
+                child: Text(emoji, style: const TextStyle(fontSize: 26)),
               ),
-              Icon(
+            ),
+            const SizedBox(width: 16),
+            // Text Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(1, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.9),
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 2,
+                          offset: const Offset(0.5, 0.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Arrow Icon
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white,
                 size: 16,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

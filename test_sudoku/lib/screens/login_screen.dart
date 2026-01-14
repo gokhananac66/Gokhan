@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'home_screen.dart';
 
@@ -86,6 +87,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
+        serverClientId: '528775542030-naenn3n7ctanm62ee7eci3am3t4vfpfq.apps.googleusercontent.com',
       );
 
       await googleSignIn.signOut();
@@ -115,11 +117,72 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
-  void _goToHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-    );
+  Future<void> _goToHome() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // ✅ İlk kez giriş yapan kullanıcı için veritabanını initialize et
+    try {
+      final db = FirebaseDatabase.instance.ref();
+
+      // Kullanıcı node'u var mı kontrol et
+      final userSnapshot = await db.child('users/${user.uid}').get();
+
+      if (!userSnapshot.exists) {
+        // ✅ İlk giriş - default verilerle node oluştur
+        print('🆕 First time login - Initializing user data...');
+
+        final defaultNickname = user.displayName ?? 'Player${user.uid.substring(0, 6)}';
+
+        await db.child('users/${user.uid}').set({
+          'nickname': defaultNickname,
+          'nicknameLower': defaultNickname.toLowerCase(),
+          'email': user.email,
+          'createdAt': ServerValue.timestamp,
+          'isOnline': true,
+          'lastSeen': ServerValue.timestamp,
+          'rank': {
+            'level': 1,
+            'league': 'bronze',
+            'gamesPlayed': 0,
+            'wins': 0,
+            'losses': 0,
+            'winRate': 0,
+            'currentStreak': 0,
+            'bestStreak': 0,
+            'periodGames': 0,
+            'periodWins': 0,
+          },
+          'profile': {
+            'coins': 500,  // Başlangıç bonusu
+            'tokens': 0,
+            'selectedBadge': '',
+            'currentTheme': 'default',
+          },
+        });
+
+        // nicknames tablosuna ekle
+        await db.child('nicknames/${defaultNickname.toLowerCase()}').set(user.uid);
+
+        print('✅ User data initialized successfully!');
+      } else {
+        // ✅ Eski kullanıcı - sadece online yap
+        await db.child('users/${user.uid}').update({
+          'isOnline': true,
+          'lastSeen': ServerValue.timestamp,
+        });
+      }
+    } catch (e) {
+      print('❌ Error initializing user: $e');
+    }
+
+    // Navigate to home
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    }
   }
 
   String _getErrorMessage(String code) {

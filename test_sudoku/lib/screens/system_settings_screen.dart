@@ -113,111 +113,221 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade100,
-      appBar: AppBar(
-        title: Text(
-          tr('systemSettings'),
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            shadows: const [
-              Shadow(offset: Offset(2, 2), blurRadius: 3, color: Colors.black26),
-              Shadow(offset: Offset(-1, -1), blurRadius: 2, color: Colors.white70),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+            ? [const Color(0xFF1A237E), const Color(0xFF121212), const Color(0xFF121212)]
+            : [const Color(0xFF90CAF9), const Color(0xFFE3F2FD), const Color(0xFFF5F5F5)],
+          stops: const [0.0, 0.35, 1.0],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+
+              // Custom Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    // Geri Butonu
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: isDark ? Colors.white : Colors.black87,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    // Başlık
+                    Text(
+                      '⚙️ ${tr('systemSettings')}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(1, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    // Placeholder for symmetry
+                    const SizedBox(width: 44),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // İçerik
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      // Section Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [const Color(0xFF667eea).withOpacity(0.9), const Color(0xFF764ba2).withOpacity(0.9)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF667eea).withOpacity(0.4),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text('🎛️', style: TextStyle(fontSize: 20)),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              AppLocalizations.currentLanguage == 'tr' ? 'Tercihlerinizi Ayarlayın' : 'Configure Your Preferences',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(1, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // SES EFEKTLERİ
+                      _buildSettingSwitch(
+                        icon: Icons.volume_up_rounded,
+                        title: tr('soundEffects'),
+                        subtitle: tr('soundEffectsDesc'),
+                        colors: [const Color(0xFF56ab2f), const Color(0xFF388E3C)],
+                        value: soundEnabled,
+                        onChanged: (v) async {
+                          setState(() => soundEnabled = v);
+                          _saveSetting('soundEnabled', v);
+                          // Update sound service
+                          await SoundService().toggleSound(v);
+                          // Play test sound if enabled
+                          if (v) {
+                            await SoundService().playButtonClick();
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // TİTREŞİM
+                      _buildSettingSwitch(
+                        icon: Icons.vibration_rounded,
+                        title: tr('vibration'),
+                        subtitle: tr('vibrationDesc'),
+                        colors: [const Color(0xFF9C27B0), const Color(0xFF7B1FA2)],
+                        value: vibrationEnabled,
+                        onChanged: (v) async {
+                          setState(() => vibrationEnabled = v);
+                          _saveSetting('vibrationEnabled', v);
+                          // Update haptic service
+                          await HapticService().toggleHaptic(v);
+                          // Test vibration if enabled
+                          if (v) {
+                            await HapticService().mediumImpact();
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ZAMANLAYICI
+                      _buildSettingSwitch(
+                        icon: Icons.timer_rounded,
+                        title: tr('timer'),
+                        subtitle: tr('timerDesc'),
+                        colors: [const Color(0xFF2196F3), const Color(0xFF1976D2)],
+                        value: timerEnabled,
+                        onChanged: (v) {
+                          setState(() => timerEnabled = v);
+                          _saveSetting('timerEnabled', v);
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // KARANLIK TEMA
+                      _buildSettingSwitch(
+                        icon: Icons.dark_mode_rounded,
+                        title: tr('darkTheme'),
+                        subtitle: tr('darkThemeDesc'),
+                        colors: [const Color(0xFF3F51B5), const Color(0xFF303F9F)],
+                        value: darkMode,
+                        onChanged: (v) {
+                          setState(() => darkMode = v);
+                          _saveSetting('darkMode', v);
+                          themeNotifier.toggleTheme(v);
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // DİL
+                      _buildSettingButton(
+                        icon: Icons.language_rounded,
+                        title: tr('language'),
+                        subtitle: tr('languageDesc'),
+                        trailing: AppLocalizations.currentLanguage == 'tr' ? '🇹🇷 Türkçe' : '🇬🇧 English',
+                        colors: [const Color(0xFF00BCD4), const Color(0xFF0097A7)],
+                        onTap: _showLanguageDialog,
+                      ),
+
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // SES EFEKTLERİ
-          _buildSettingSwitch(
-            icon: Icons.volume_up_rounded,
-            title: tr('soundEffects'),
-            subtitle: tr('soundEffectsDesc'),
-            colors: [Colors.green.shade500, Colors.green.shade700],
-            value: soundEnabled,
-            onChanged: (v) async {
-              setState(() => soundEnabled = v);
-              _saveSetting('soundEnabled', v);
-              // Update sound service
-              await SoundService().toggleSound(v);
-              // Play test sound if enabled
-              if (v) {
-                await SoundService().playButtonClick();
-              }
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // TİTREŞİM
-          _buildSettingSwitch(
-            icon: Icons.vibration_rounded,
-            title: tr('vibration'),
-            subtitle: tr('vibrationDesc'),
-            colors: [Colors.purple.shade500, Colors.purple.shade700],
-            value: vibrationEnabled,
-            onChanged: (v) async {
-              setState(() => vibrationEnabled = v);
-              _saveSetting('vibrationEnabled', v);
-              // Update haptic service
-              await HapticService().toggleHaptic(v);
-              // Test vibration if enabled
-              if (v) {
-                await HapticService().mediumImpact();
-              }
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // ZAMANLAYICI
-          _buildSettingSwitch(
-            icon: Icons.timer_rounded,
-            title: tr('timer'),
-            subtitle: tr('timerDesc'),
-            colors: [Colors.blue.shade500, Colors.blue.shade700],
-            value: timerEnabled,
-            onChanged: (v) {
-              setState(() => timerEnabled = v);
-              _saveSetting('timerEnabled', v);
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // KARANLIK TEMA
-          _buildSettingSwitch(
-            icon: Icons.dark_mode_rounded,
-            title: tr('darkTheme'),
-            subtitle: tr('darkThemeDesc'),
-            colors: [Colors.deepPurple.shade600, Colors.deepPurple.shade900],
-            value: darkMode,
-            onChanged: (v) {
-              setState(() => darkMode = v);
-              _saveSetting('darkMode', v);
-              themeNotifier.toggleTheme(v);
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          // DİL
-          _buildSettingButton(
-            icon: Icons.language_rounded,
-            title: tr('language'),
-            subtitle: tr('languageDesc'),
-            trailing: AppLocalizations.currentLanguage == 'tr' ? '🇹🇷 Türkçe' : '🇬🇧 English',
-            colors: [Colors.teal.shade500, Colors.teal.shade700],
-            onTap: _showLanguageDialog,
-          ),
-
-          const SizedBox(height: 20),
-        ],
       ),
     );
   }
@@ -238,22 +348,27 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: colors[0].withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: colors[0].withOpacity(0.4),
+            blurRadius: 15,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.white.withOpacity(0.25),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: Colors.white, size: 26),
           ),
@@ -262,19 +377,44 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: Colors.white,
-            activeTrackColor: Colors.white.withOpacity(0.4),
-            inactiveThumbColor: Colors.white.withOpacity(0.8),
-            inactiveTrackColor: Colors.white.withOpacity(0.2),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Switch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: Colors.white,
+              activeTrackColor: Colors.white.withOpacity(0.4),
+              inactiveThumbColor: Colors.white.withOpacity(0.8),
+              inactiveTrackColor: Colors.white.withOpacity(0.2),
+            ),
           ),
         ],
       ),
@@ -293,7 +433,7 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -302,22 +442,27 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: colors[0].withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                color: colors[0].withOpacity(0.4),
+                blurRadius: 15,
+                spreadRadius: 1,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: Colors.white, size: 26),
               ),
@@ -326,15 +471,61 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 2),
-                    Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.85),
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Text(trailing, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  trailing,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(width: 8),
-              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.8), size: 16),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
+              ),
             ],
           ),
         ),
